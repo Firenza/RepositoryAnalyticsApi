@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  repositoryanalyticsapi:
+    image: repositoryanalyticsapi
+    build:
+      context: .
+      dockerfile: RepositoryAnalyticsApi/Dockerfile
