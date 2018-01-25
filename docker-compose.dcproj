@@ -5,7 +5,7 @@
     <DockerTargetOS>Linux</DockerTargetOS>
     <ProjectGuid>87ef9c4d-02c7-48e3-b754-a25907294348</ProjectGuid>
     <DockerLaunchBrowser>True</DockerLaunchBrowser>
-    <DockerServiceUrl>http://localhost:{ServicePort}/api/values</DockerServiceUrl>
+    <DockerServiceUrl>http://localhost:{ServicePort}/swagger</DockerServiceUrl>
     <DockerServiceName>repositoryanalyticsapi</DockerServiceName>
   </PropertyGroup>
   <ItemGroup>
