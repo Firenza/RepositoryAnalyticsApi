@@ -4,4 +4,9 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RepositoryAnaltyicsApi.Interfaces\RepositoryAnaltyicsApi.Interfaces.csproj" />
+    <ProjectReference Include="..\RepositoryAnalyticsApi.ServiceModel\RepositoryAnalyticsApi.ServiceModel.csproj" />
+  </ItemGroup>
+
 </Project>

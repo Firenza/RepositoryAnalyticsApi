@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System.Collections.Generic;
 
@@ -7,31 +8,35 @@ namespace RepositoryAnaltyicsApi.Controllers
     [Route("api/[controller]")]
     public class RepositoryController : ControllerBase
     {
-        [HttpGet]
-        public IEnumerable<string> Get()
+        private IRepositoryManager repositoryManager;
+
+        public RepositoryController(IRepositoryManager repositoryManager)
         {
-            return new string[] { "value2342342", "value2" };
+            this.repositoryManager = repositoryManager;
         }
 
         [HttpGet("{id}")]
-        public Repository Get(int id)
+        public Repository Get(string id)
         {
-            return new Repository();
+            return repositoryManager.Read(id);
         }
 
         [HttpPost]
         public void Post([FromBody]Repository value)
         {
+            repositoryManager.Create(value);
         }
 
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody]Repository value)
+        [HttpPut]
+        public void Put([FromBody]Repository value)
         {
+            repositoryManager.Update(value);
         }
 
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public void Delete(string id)
         {
+            repositoryManager.Delete(id);
         }
     }
 }

@@ -20,6 +20,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RepositoryAnaltyicsApi.Controllers\RepositoryAnaltyicsApi.Controllers.csproj" />
+    <ProjectReference Include="..\RepositoryAnaltyicsApi.Interfaces\RepositoryAnaltyicsApi.Interfaces.csproj" />
+    <ProjectReference Include="..\RepositoryAnaltyicsApi.Managers\RepositoryAnaltyicsApi.Managers.csproj" />
+    <ProjectReference Include="..\RepositoryAnalyticsApi.Repositories\RepositoryAnalyticsApi.Repositories.csproj" />
   </ItemGroup>
 
 </Project>

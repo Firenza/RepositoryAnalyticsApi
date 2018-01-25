@@ -21,6 +21,8 @@ namespace RepositoryAnalyticsApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.RegisterServices();
+
             services.AddMvc();
 
             // Register the Swagger generator, defining one or more Swagger documents

@@ -1,9 +1,11 @@
 ﻿using RepositoryAnalyticsApi.ServiceModel;
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace RepositoryAnaltyicsApi.Interfaces
 {
-    public interface IRepositoryManager
+    public interface IRepositoryRepository
     {
         void Create(Repository repository);
         Repository Read(string id);
