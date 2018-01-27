@@ -6,3 +6,10 @@ services:
     build:
       context: .
       dockerfile: RepositoryAnalyticsApi/Dockerfile
+    ports: 
+      - "32771:80"
+
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"

@@ -1,5 +1,6 @@
 ﻿using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Managers
 {
@@ -12,24 +13,24 @@ namespace RepositoryAnaltyicsApi.Managers
             this.repositoryRepository = repositoryRepository;
         }
 
-        public void Create(Repository repository)
+        public async Task CreateAsync(Repository repository)
         {
-            repositoryRepository.Create(repository);
+            await repositoryRepository.CreateAsync(repository).ConfigureAwait(false);
         }
 
-        public void Delete(string id)
+        public async Task DeleteAsync(string id)
         {
-            repositoryRepository.Delete(id);
+            await repositoryRepository.DeleteAsync(id).ConfigureAwait(false);
         }
 
-        public Repository Read(string id)
+        public async Task<Repository> ReadAsync(string id)
         {
-            return repositoryRepository.Read(id);
+            return await repositoryRepository.ReadAsync(id).ConfigureAwait(false);
         }
 
-        public void Update(Repository repository)
+        public async Task UpdateAsync(Repository repository)
         {
-            repositoryRepository.Update(repository);
+            await repositoryRepository.UpdateAsync(repository).ConfigureAwait(false);
         }
     }
 }

@@ -1,15 +1,13 @@
 ﻿using RepositoryAnalyticsApi.ServiceModel;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Interfaces
 {
     public interface IRepositoryRepository
     {
-        void Create(Repository repository);
-        Repository Read(string id);
-        void Update(Repository repository);
-        void Delete(string id);
+        Task CreateAsync(Repository repository);
+        Task<Repository> ReadAsync(string id);
+        Task UpdateAsync(Repository repository);
+        Task DeleteAsync(string id);
     }
 }

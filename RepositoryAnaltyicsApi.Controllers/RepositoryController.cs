@@ -2,6 +2,7 @@
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers
 {
@@ -16,27 +17,27 @@ namespace RepositoryAnaltyicsApi.Controllers
         }
 
         [HttpGet("{id}")]
-        public Repository Get(string id)
+        public async Task<Repository> Get(string id)
         {
-            return repositoryManager.Read(id);
+            return await repositoryManager.ReadAsync(id).ConfigureAwait(false);
         }
 
         [HttpPost]
-        public void Post([FromBody]Repository value)
+        public async Task Post([FromBody]Repository value)
         {
-            repositoryManager.Create(value);
+            await repositoryManager.CreateAsync(value).ConfigureAwait(false);
         }
 
         [HttpPut]
-        public void Put([FromBody]Repository value)
+        public async Task Put([FromBody]Repository value)
         {
-            repositoryManager.Update(value);
+            await repositoryManager.UpdateAsync(value).ConfigureAwait(false);
         }
 
         [HttpDelete("{id}")]
-        public void Delete(string id)
+        public async Task Delete(string id)
         {
-            repositoryManager.Delete(id);
+            await repositoryManager.DeleteAsync(id).ConfigureAwait(false);
         }
     }
 }

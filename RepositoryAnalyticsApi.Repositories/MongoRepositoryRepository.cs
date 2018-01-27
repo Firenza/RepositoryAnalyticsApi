@@ -2,34 +2,38 @@
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
+using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.Repositories
 {
     public class MongoRepositoryRepository : IRepositoryRepository
     {
-        public MongoRepositoryRepository()
+        private IMongoCollection<Repository> mongoCollection;
+
+        public MongoRepositoryRepository(IMongoCollection<Repository> mongoCollection)
         {
-            var client = new MongoClient("mongodb://localhost:27017");
-            var db = client.GetDatabase("local");
-            var collection = db.GetCollection<Repository>("repository");
+            this.mongoCollection = mongoCollection;
         }
 
-        public void Create(Repository repository)
+        public async Task CreateAsync(Repository repository)
         {
-            throw new NotImplementedException();
+            await mongoCollection.InsertOneAsync(repository);
         }
 
-        public void Delete(string id)
+        public async Task DeleteAsync(string id)
         {
-            throw new NotImplementedException();
+            await mongoCollection.DeleteOneAsync(repostiory => repostiory.Id == id);
         }
 
-        public Repository Read(string id)
+        public async Task<Repository> ReadAsync(string id)
         {
-            throw new NotImplementedException();
+            var cursor = await mongoCollection.FindAsync(reposity => reposity.Id == id);
+            var repository = await cursor.FirstAsync();
+
+            return repository;
         }
 
-        public void Update(Repository repository)
+        public async Task UpdateAsync(Repository repository)
         {
             throw new NotImplementedException();
         }
