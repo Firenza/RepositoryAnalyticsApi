@@ -35,7 +35,8 @@ namespace RepositoryAnalyticsApi.Repositories
 
         public async Task UpdateAsync(Repository repository)
         {
-            throw new NotImplementedException();
+            await mongoCollection.ReplaceOneAsync(repo => repo.Id == repository.Id, repository);
+            
         }
     }
 }
