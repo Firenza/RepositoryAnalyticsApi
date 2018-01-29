@@ -2,9 +2,11 @@
 using MongoDB.Driver;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnaltyicsApi.Managers;
+using RepositoryAnaltyicsApi.Managers.Dependencies;
 using RepositoryAnalyticsApi.Repositories;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
+using System.Collections.Generic;
 
 namespace RepositoryAnalyticsApi
 {
@@ -14,6 +16,14 @@ namespace RepositoryAnalyticsApi
         {
             services.AddTransient<IRepositoryManager, RepositoryManager>();
             services.AddTransient<IRepositoryRepository, MongoRepositoryRepository>();
+            services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
+
+            services.AddTransient<IEnumerable<IDependencyManager>>((serviceProvider) => new List<IDependencyManager> {
+                new BowerDependencyManager(serviceProvider.GetService<IRepositorySourceManager>()),
+                new DotNetProjectFileDependencyManager(serviceProvider.GetService<IRepositorySourceManager>()),
+                new NpmDependencyManager(serviceProvider.GetService<IRepositorySourceManager>()),
+                new NuGetDependencyManager(serviceProvider.GetService<IRepositorySourceManager>())
+            });
 
             // Add in mongo dependencies
             var client = new MongoClient(new MongoClientSettings
