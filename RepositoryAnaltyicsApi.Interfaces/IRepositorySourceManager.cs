@@ -10,6 +10,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
         List<RepositoryFile> ReadFiles(string repositoryId);
         List<Repository> ReadRepositories(string group, int pageCount, int pageSize, int startPage);
         Repository ReadRepository(string repositoryId);
-        string GetFileContent(string repositoryId, string fullFilePath);
+        string ReadFileContent(string repositoryId, string fullFilePath);
     }
 }

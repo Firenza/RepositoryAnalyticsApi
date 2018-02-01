@@ -26,7 +26,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
 
             if (bowerJsonFile != null)
             {
-                var bowerJsonContent = repositorySourceManager.GetFileContent(repositoryId, bowerJsonFile.FullPath); 
+                var bowerJsonContent = repositorySourceManager.ReadFileContent(repositoryId, bowerJsonFile.FullPath); 
 
                 var jObject = JObject.Parse(bowerJsonContent);
 

@@ -31,7 +31,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             {
                 foreach (var dotNetProjectFile in dotNetProjectFiles)
                 {
-                    var projectFileContent = this.repositorySourceManager.GetFileContent(repositoryId, dotNetProjectFile.FullPath);
+                    var projectFileContent = this.repositorySourceManager.ReadFileContent(repositoryId, dotNetProjectFile.FullPath);
 
                     string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
                     if (projectFileContent.StartsWith(byteOrderMarkUtf8))

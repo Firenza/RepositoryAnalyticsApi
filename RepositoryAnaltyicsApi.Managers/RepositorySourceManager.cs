@@ -15,7 +15,7 @@ namespace RepositoryAnaltyicsApi.Managers
             this.repositorySourceRepository = repositorySourceRepository;
         }
 
-        public string GetFileContent(string repositoryId, string fullFilePath)
+        public string ReadFileContent(string repositoryId, string fullFilePath)
         {
             throw new NotImplementedException();
         }

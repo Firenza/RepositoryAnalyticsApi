@@ -31,7 +31,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             {
                 foreach (var packageConfigFile in packageConfigFiles)
                 {
-                    var packageConfigContent = repositorySourceManager.GetFileContent(repositoryId, packageConfigFile.FullPath);
+                    var packageConfigContent = repositorySourceManager.ReadFileContent(repositoryId, packageConfigFile.FullPath);
 
                     string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
                     if (packageConfigContent.StartsWith(byteOrderMarkUtf8))
@@ -78,7 +78,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             {
                 foreach (var dotNetProjectFile in dotNetProjectFiles)
                 {
-                    var projectFileContent = repositorySourceManager.GetFileContent(repositoryId, dotNetProjectFile.FullPath);
+                    var projectFileContent = repositorySourceManager.ReadFileContent(repositoryId, dotNetProjectFile.FullPath);
 
                     string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
                     if (projectFileContent.StartsWith(byteOrderMarkUtf8))

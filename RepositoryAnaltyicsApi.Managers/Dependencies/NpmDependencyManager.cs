@@ -26,7 +26,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
 
             if (packageJsonFile != null)
             {
-                var packageJsonContent = repositorySourceManager.GetFileContent(repositoryId, packageJsonFile.FullPath);
+                var packageJsonContent = repositorySourceManager.ReadFileContent(repositoryId, packageJsonFile.FullPath);
 
                 var jObject = JObject.Parse(packageJsonContent);
 
