@@ -11,5 +11,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
         List<Repository> ReadRepositories(string group, int pageCount, int pageSize, int startPage);
         Repository ReadRepository(string repositoryId);
         string GetFileContent(string repositoryId, string fullFilePath);
+        List<(string fullFilePath, string fileContent)> GetMultipleFileContents(string repositoryName, string repositoryOwner, string branch, List<string> fullFilePaths);
     }
 }
