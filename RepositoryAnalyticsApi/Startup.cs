@@ -13,15 +13,18 @@ namespace RepositoryAnalyticsApi
 
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
         }
-
-        public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.RegisterServices();
+            var configuration = new ConfigurationBuilder()
+                .AddEnvironmentVariables()
+                .Build();
+
+            services.Configure<IConfiguration>(configuration);
+
+            ContainerManager.RegisterServices(services, configuration);
 
             services.AddMvc();
 
