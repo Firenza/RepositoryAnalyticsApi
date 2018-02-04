@@ -4,6 +4,7 @@ using RepositoryAnalyticsApi.ServiceModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Managers.Dependencies
 {
@@ -18,17 +19,17 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
 
         public Regex SourceFileRegex => new Regex(@"bower\.json");
 
-        public List<RepositoryDependency> Read(string repositoryId)
+        public async Task<List<RepositoryDependency>> ReadAsync(string owner, string name, string branch)
         {
             var dependencies = new List<RepositoryDependency>();
 
-            var files = repositorySourceManager.ReadFiles(repositoryId);
+            var files = repositorySourceManager.ReadFiles(owner, name, branch);
 
             var bowerJsonFile = files.FirstOrDefault(file => file.Name == "bower.json");
 
             if (bowerJsonFile != null)
             {
-                var bowerJsonContent = repositorySourceManager.ReadFileContent(repositoryId, bowerJsonFile.FullPath); 
+                var bowerJsonContent = await repositorySourceManager.ReadFileContentAsync(owner, name, bowerJsonFile.FullPath).ConfigureAwait(false); 
 
                 var jObject = JObject.Parse(bowerJsonContent);
 

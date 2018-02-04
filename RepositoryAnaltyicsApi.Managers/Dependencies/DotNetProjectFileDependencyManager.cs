@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace RepositoryAnaltyicsApi.Managers.Dependencies
@@ -20,11 +21,11 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
 
         public Regex SourceFileRegex => new Regex(@"\.csproj|\.vbproj");
 
-        public List<RepositoryDependency> Read(string repositoryId)
+        public async Task<List<RepositoryDependency>> ReadAsync(string owner, string name, string branch)
         {
             var dependencies = new List<RepositoryDependency>();
 
-            var files = this.repositorySourceManager.ReadFiles(repositoryId);
+            var files = this.repositorySourceManager.ReadFiles(owner, name, branch);
 
             var dotNetProjectFiles = files.Where(file => file.Name.EndsWith(".csproj") || file.Name.EndsWith(".vbproj"));
 
@@ -32,7 +33,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             {
                 foreach (var dotNetProjectFile in dotNetProjectFiles)
                 {
-                    var projectFileContent = this.repositorySourceManager.ReadFileContent(repositoryId, dotNetProjectFile.FullPath);
+                    var projectFileContent = await this.repositorySourceManager.ReadFileContentAsync(owner, name, dotNetProjectFile.FullPath).ConfigureAwait(false);
 
                     string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
                     if (projectFileContent.StartsWith(byteOrderMarkUtf8))

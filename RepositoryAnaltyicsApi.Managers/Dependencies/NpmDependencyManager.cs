@@ -4,6 +4,7 @@ using RepositoryAnalyticsApi.ServiceModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Managers.Dependencies
 {
@@ -18,17 +19,17 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
 
         public Regex SourceFileRegex => new Regex(@"package\.json");
 
-        public List<RepositoryDependency> Read(string repositoryId)
+        public async Task<List<RepositoryDependency>> ReadAsync(string owner, string name, string branch)
         {
             var dependencies = new List<RepositoryDependency>();
 
-            var files = repositorySourceManager.ReadFiles(repositoryId);
+            var files = repositorySourceManager.ReadFiles(owner, name, branch);
 
             var packageJsonFile = files.FirstOrDefault(file => file.Name == "package.json");
 
             if (packageJsonFile != null)
             {
-                var packageJsonContent = repositorySourceManager.ReadFileContent(repositoryId, packageJsonFile.FullPath);
+                var packageJsonContent = await repositorySourceManager.ReadFileContentAsync(owner, name, packageJsonFile.FullPath).ConfigureAwait(false);
 
                 var jObject = JObject.Parse(packageJsonContent);
 

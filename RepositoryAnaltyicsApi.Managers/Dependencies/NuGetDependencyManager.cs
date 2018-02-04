@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace RepositoryAnaltyicsApi.Managers.Dependencies
@@ -20,11 +21,11 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
 
         public Regex SourceFileRegex => new Regex(@"\.csproj|\.vbproj|packages\.config");
 
-        public List<RepositoryDependency> Read(string repositoryId)
+        public async Task<List<RepositoryDependency>> ReadAsync(string owner, string name, string branch)
         {
             var dependencies = new List<RepositoryDependency>();
 
-            var files = repositorySourceManager.ReadFiles(repositoryId);
+            var files = repositorySourceManager.ReadFiles(owner, name, branch);
 
             // Check for .NET framework NuGet packages
             var packageConfigFiles = files.Where(file => file.Name == "packages.config");
@@ -33,7 +34,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             {
                 foreach (var packageConfigFile in packageConfigFiles)
                 {
-                    var packageConfigContent = repositorySourceManager.ReadFileContent(repositoryId, packageConfigFile.FullPath);
+                    var packageConfigContent = await repositorySourceManager.ReadFileContentAsync(owner, name, packageConfigFile.FullPath).ConfigureAwait(false);
 
                     string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
                     if (packageConfigContent.StartsWith(byteOrderMarkUtf8))
@@ -80,7 +81,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             {
                 foreach (var dotNetProjectFile in dotNetProjectFiles)
                 {
-                    var projectFileContent = repositorySourceManager.ReadFileContent(repositoryId, dotNetProjectFile.FullPath);
+                    var projectFileContent = await repositorySourceManager.ReadFileContentAsync(owner, name, dotNetProjectFile.FullPath).ConfigureAwait(false);
 
                     string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
                     if (projectFileContent.StartsWith(byteOrderMarkUtf8))
