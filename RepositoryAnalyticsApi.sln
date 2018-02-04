@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2024
+VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnalyticsApi", "RepositoryAnalyticsApi\RepositoryAnalyticsApi.csproj", "{3FB597C8-DEED-4448-9315-EB94D05F9D22}"
 EndProject
@@ -13,9 +13,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnalyticsApi.Serv
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnaltyicsApi.Interfaces", "RepositoryAnaltyicsApi.Interfaces\RepositoryAnaltyicsApi.Interfaces.csproj", "{6A084DFD-F54A-4D2B-B5F8-FA838D373131}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RepositoryAnaltyicsApi.Controllers", "RepositoryAnaltyicsApi.Controllers\RepositoryAnaltyicsApi.Controllers.csproj", "{B684F6A5-0CEA-4217-B3AC-27A3AFBC7349}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnaltyicsApi.Controllers", "RepositoryAnaltyicsApi.Controllers\RepositoryAnaltyicsApi.Controllers.csproj", "{B684F6A5-0CEA-4217-B3AC-27A3AFBC7349}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RepositoryAnaltyicsApi.Managers", "RepositoryAnaltyicsApi.Managers\RepositoryAnaltyicsApi.Managers.csproj", "{A6183E3B-50D3-4C98-A12F-936439C558EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnaltyicsApi.Managers", "RepositoryAnaltyicsApi.Managers\RepositoryAnaltyicsApi.Managers.csproj", "{A6183E3B-50D3-4C98-A12F-936439C558EC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{B80E8E93-0F35-4243-B385-F0AEE93274E1}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
