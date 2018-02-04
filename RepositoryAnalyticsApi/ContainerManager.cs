@@ -39,6 +39,7 @@ namespace RepositoryAnalyticsApi
             services.AddTransient<IRepositoryManager, RepositoryManager>();
             services.AddTransient<IRepositoryRepository, MongoRepositoryRepository>();
             services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
+            services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
             services.AddTransient<IRepositorySourceRepository>(serviceProvider => codeRepo);
 
             services.AddTransient<IEnumerable<IDependencyManager>>((serviceProvider) => new List<IDependencyManager> {
