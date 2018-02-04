@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace RepositoryAnalyticsApi.ServiceModel
 {
@@ -9,5 +10,7 @@ namespace RepositoryAnalyticsApi.ServiceModel
         public DateTime CreatedOn { get; set; }
         public DateTime LastUpdatedOn { get; set; }
         public string DefaultBranch { get; set; }
+        public IEnumerable<string> Topics { get; set; }
+        public IEnumerable<RepositoryDependency> Dependencies { get; set; }
     }
 }

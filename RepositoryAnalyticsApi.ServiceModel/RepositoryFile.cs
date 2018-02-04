@@ -1,5 +1,8 @@
-﻿namespace RepositoryAnalyticsApi.ServiceModel
+﻿using System.Diagnostics;
+
+namespace RepositoryAnalyticsApi.ServiceModel
 {
+    [DebuggerDisplay("Name = {Name}, FullPath = {FullPath}")]
     public class RepositoryFile
     {
         public string Name { get; set; }

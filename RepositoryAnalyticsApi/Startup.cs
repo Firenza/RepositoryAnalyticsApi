@@ -28,6 +28,8 @@ namespace RepositoryAnalyticsApi
 
             services.AddMvc();
 
+            services.AddMemoryCache();
+
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
             {

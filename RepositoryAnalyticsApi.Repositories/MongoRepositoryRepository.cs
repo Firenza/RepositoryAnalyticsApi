@@ -28,9 +28,19 @@ namespace RepositoryAnalyticsApi.Repositories
         public async Task<Repository> ReadAsync(string id)
         {
             var cursor = await mongoCollection.FindAsync(reposity => reposity.Id == id);
-            var repository = await cursor.FirstAsync();
+            var repository = await cursor.FirstOrDefaultAsync();
 
             return repository;
+
+            //if (anyDocsToRead)
+            //{
+            //    var repository = await cursor.FirstAsync();
+            //    return repository;
+            //}
+            //else
+            //{
+            //    return null;
+            //}
         }
 
         public async Task UpdateAsync(Repository repository)
