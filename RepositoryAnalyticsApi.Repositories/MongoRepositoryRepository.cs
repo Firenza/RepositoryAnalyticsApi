@@ -31,16 +31,6 @@ namespace RepositoryAnalyticsApi.Repositories
             var repository = await cursor.FirstOrDefaultAsync();
 
             return repository;
-
-            //if (anyDocsToRead)
-            //{
-            //    var repository = await cursor.FirstAsync();
-            //    return repository;
-            //}
-            //else
-            //{
-            //    return null;
-            //}
         }
 
         public async Task UpdateAsync(Repository repository)
