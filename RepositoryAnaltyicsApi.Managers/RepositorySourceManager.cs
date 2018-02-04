@@ -1,38 +1,102 @@
-﻿using RepositoryAnaltyicsApi.Interfaces;
+﻿using Microsoft.Extensions.Caching.Memory;
+using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Managers
 {
     public class RepositorySourceManager : IRepositorySourceManager
     {
         private IRepositorySourceRepository repositorySourceRepository;
+        private IMemoryCache memoryCache;
 
-        public RepositorySourceManager(IRepositorySourceRepository repositorySourceRepository)
+        public RepositorySourceManager(IRepositorySourceRepository repositorySourceRepository, IMemoryCache memoryCache)
         {
             this.repositorySourceRepository = repositorySourceRepository;
+            this.memoryCache = memoryCache;
         }
 
-        public string ReadFileContent(string repositoryId, string fullFilePath)
+        public List<(string fullFilePath, string fileContent)> GetMultipleFileContents(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"retrieving file contents from source");
+
+            var filesContentInformation = repositorySourceRepository.GetMultipleFileContents(repositoryOwner, repositoryName, branch, fullFilePaths);
+
+            foreach (var fileContentInformation in filesContentInformation)
+            {
+                var cacheKey = GetFileContentCacheKey(repositoryOwner, repositoryName, fileContentInformation.fullFilePath);
+
+                memoryCache.Set<string>(cacheKey, fileContentInformation.fileContent);
+            }
+
+            return filesContentInformation;
         }
 
-        public List<RepositoryFile> ReadFiles(string repositoryId)
+        public async Task<string> ReadFileContentAsync(string owner, string name, string fullFilePath)
         {
-            throw new NotImplementedException();
+            var cacheKey = GetFileContentCacheKey(owner, name, fullFilePath);
+
+            var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                Console.WriteLine($"retrieving {cacheKey} from source");
+                entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+                return await repositorySourceRepository.ReadFileContentAsync(owner, name, fullFilePath);
+            }).ConfigureAwait(false);
+
+            return cacheEntry;
+        }
+
+        public List<RepositoryFile> ReadFiles(string owner, string name, string branch)
+        {
+            var cacheKey = GetFileListCacheKey(owner, name, branch);
+
+            var cacheEntry = memoryCache.GetOrCreate(cacheKey, entry =>
+            {
+                Console.WriteLine($"retrieving {cacheKey} from source");
+                entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+                return repositorySourceRepository.ReadFiles(owner, name, branch);
+            });
+
+            return cacheEntry;
         }
 
         public List<Repository> ReadRepositories(string group, int pageCount, int pageSize, int startPage)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"retrieving repositories from source");
+
+            return repositorySourceRepository.ReadRepositories(group, pageCount, pageSize, startPage);
         }
 
-        public Repository ReadRepository(string repositoryId)
+        public async Task<Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
         {
-            throw new NotImplementedException();
+            var cacheKey = GetRepositroyCacheKey(repositoryOwner, repositoryName);
+
+            var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                Console.WriteLine($"retrieving {cacheKey} from source");
+                entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+                var repository = await this.repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName);
+                return repository;
+            }).ConfigureAwait(false);
+
+            return cacheEntry;
+        }
+
+        private string GetFileContentCacheKey(string owner, string name, string fullFilePath)
+        {
+            return $"fileContent|{owner}|{name}|{fullFilePath}";
+        }
+
+        private string GetFileListCacheKey(string owner, string name, string fullFilePath)
+        {
+            return $"fileList|{owner}|{name}|{fullFilePath}";
+        }
+
+        private string GetRepositroyCacheKey(string owner, string name)
+        {
+            return $"repository|{owner}|{name}";
         }
     }
 }

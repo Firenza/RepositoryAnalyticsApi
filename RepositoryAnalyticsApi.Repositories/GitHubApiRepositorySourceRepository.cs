@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.Repositories
 {
@@ -24,22 +25,29 @@ namespace RepositoryAnalyticsApi.Repositories
             this.graphQLClient = graphQLClient;
         }
 
-        public string GetFileContent(string repositoryId, string fullFilePath)
+        public async Task<string> ReadFileContentAsync(string owner,string name, string fullFilePath)
         {
-            var gitHubRepoId = Convert.ToInt64(repositoryId);
+            var repositoryContent = await gitHubClient.Repository.Content.GetAllContents(owner, name, fullFilePath);
 
-            var fileContent = gitHubClient.Repository.Content.GetAllContents(gitHubRepoId, fullFilePath).Result.First().Content;
-
-            return fileContent;
+            if (repositoryContent != null && repositoryContent.Any())
+            {
+                return repositoryContent.First().Content;
+            }
+            else
+            {
+                return null;
+            }
         }
 
-        public List<(string fullFilePath, string fileContent)> GetMultipleFileContents(string repositoryName, string repositoryOwner, string branch, List<string> fullFilePaths)
+        public List<(string fullFilePath, string fileContent)> GetMultipleFileContents(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths)
         {
             var tupleList = new List<(string fullFilePath, string fileContent)>();
 
-            // Build up the list of file content requests
+            
             var fileContentRequestBuilder = new StringBuilder();
-
+            // Build up the list of file content requests.  This is needed because GraphQl does not allow 
+            // the returning of multiple nodes of the same name.  This loop builds up the file request json
+            // aliases on these nodes
             for (int i = 0; i < fullFilePaths.Count; i++)
             {
                 var fileContentRequestJson = GetFileContentRequestJson(i + 1, branch, fullFilePaths[i]);
@@ -54,12 +62,13 @@ namespace RepositoryAnalyticsApi.Repositories
             }}
             ";
 
-            var variables = new { repoName = repositoryName, repoOwner = repositoryOwner };
+            var variables = new { repoOwner = repositoryOwner, repoName = repositoryName};
 
             var responseBodyString = graphQLClient.QueryAsync(query, variables).Result;
 
             var jObject = JObject.Parse(responseBodyString);
 
+            // Parse the aliased file 
             for (int i = 0; i < fullFilePaths.Count; i++)
             {
                 var fileContent = jObject["data"]["repository"][$"file{i + 1}"]["text"].Value<string>();
@@ -81,11 +90,9 @@ namespace RepositoryAnalyticsApi.Repositories
             }
         }
 
-        public List<RepositoryFile> ReadFiles(string repositoryId, string branch)
+        public List<RepositoryFile> ReadFiles(string owner, string name,  string branch)
         {
-            var gitHubRepoId = Convert.ToInt64(repositoryId);
-
-            var treeItems = this.treesClient.GetRecursive(gitHubRepoId, branch).Result.Tree;
+            var treeItems = this.treesClient.GetRecursive(owner, name, branch).Result.Tree;
 
             var repoFiles = new List<RepositoryFile>();
 
@@ -123,13 +130,64 @@ namespace RepositoryAnalyticsApi.Repositories
             return codeRepositories;
         }
 
-        public ServiceModel.Repository ReadRepository(string repositoryId)
+        public async Task<ServiceModel.Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
         {
-            var gitHubRepoId = Convert.ToInt64(repositoryId);
+            var query = @"
+            query ($repoName:String!, $repoOwner:String!){
+              repository(owner: $repoOwner, name: $repoName){
+	            name,
+                url,
+                pushedAt,
+                createdAt,
+                defaultBranchRef{
+                  name
+                },
+                repositoryTopics(first:50){
+                  nodes{
+                    topic{
+                      name
+                    }
+                  }
+                }
+              }
+            }
+            ";
 
-            var gitHubRepo = gitHubClient.Repository.Get(gitHubRepoId).Result;
+            var variables = new { repoOwner = repositoryOwner, repoName = repositoryName};
 
-            var codeRepository = MapFromGitHubRepo(gitHubRepo);
+            var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
+
+            var repository = MapFromGraphQlGitHubRepoBodyString(responseBodyString);
+
+            return repository;
+        }
+
+        private ServiceModel.Repository MapFromGraphQlGitHubRepoBodyString(string responseBodyString)
+        {
+            var codeRepository = new ServiceModel.Repository();
+
+            dynamic jObject = JObject.Parse(responseBodyString);
+
+            codeRepository.Id = jObject.data.repository.url;
+            codeRepository.Name = jObject.data.repository.name;
+            codeRepository.CreatedOn = jObject.data.repository.createdAt;
+            codeRepository.LastUpdatedOn = jObject.data.repository.pushedAt;
+            codeRepository.DefaultBranch = jObject.data.repository.defaultBranchRef.name;
+
+            var numberOfTopics = jObject.data.repository.repositoryTopics.nodes.Count;
+
+            if (numberOfTopics > 0)
+            {
+                var topics = new List<string>();
+
+                for (int i = 0; i < numberOfTopics; i++)
+                {
+                    var topicName = jObject.data.repository.repositoryTopics.nodes[i].topic.name.Value;
+                    topics.Add(topicName);
+                }
+
+                codeRepository.Topics = topics;
+            }
 
             return codeRepository;
         }

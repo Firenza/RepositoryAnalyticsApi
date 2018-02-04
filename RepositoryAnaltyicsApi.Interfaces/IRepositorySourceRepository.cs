@@ -2,15 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Interfaces
 {
     public interface IRepositorySourceRepository
     {
-        List<RepositoryFile> ReadFiles(string repositoryId, string branch);
+        List<RepositoryFile> ReadFiles(string owner, string name, string branch);
         List<Repository> ReadRepositories(string group, int pageCount, int pageSize, int startPage);
-        Repository ReadRepository(string repositoryId);
-        string GetFileContent(string repositoryId, string fullFilePath);
-        List<(string fullFilePath, string fileContent)> GetMultipleFileContents(string repositoryName, string repositoryOwner, string branch, List<string> fullFilePaths);
+        Task<Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName);
+        Task<string> ReadFileContentAsync(string owner, string name, string fullFilePath);
+        List<(string fullFilePath, string fileContent)> GetMultipleFileContents(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths);
     }
 }
