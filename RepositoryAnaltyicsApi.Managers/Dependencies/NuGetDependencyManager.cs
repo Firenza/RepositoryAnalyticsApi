@@ -18,6 +18,8 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             this.repositorySourceManager = repositorySourceManager;
         }
 
+        public Regex SourceFileRegex => new Regex(@"\.csproj|\.vbproj|packages\.config");
+
         public List<RepositoryDependency> Read(string repositoryId)
         {
             var dependencies = new List<RepositoryDependency>();

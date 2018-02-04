@@ -16,6 +16,8 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             this.repositorySourceManager = repositorySourceManager;
         }
 
+        public Regex SourceFileRegex => new Regex(@"package\.json");
+
         public List<RepositoryDependency> Read(string repositoryId)
         {
             var dependencies = new List<RepositoryDependency>();

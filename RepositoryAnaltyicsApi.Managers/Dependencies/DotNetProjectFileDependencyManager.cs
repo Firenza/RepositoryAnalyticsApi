@@ -18,6 +18,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             this.repositorySourceManager = repositorySourceManager;
         }
 
+        public Regex SourceFileRegex => new Regex(@"\.csproj|\.vbproj");
 
         public List<RepositoryDependency> Read(string repositoryId)
         {
