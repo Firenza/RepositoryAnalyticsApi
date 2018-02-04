@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Managers.Dependencies
 {
-    public class BowerDependencyManager : IDependencyManager
+    public class BowerDependencyScraperManager : IDependencyScraperManager
     {
         private IRepositorySourceManager repositorySourceManager;
 
-        public BowerDependencyManager(IRepositorySourceManager repositorySourceManager)
+        public BowerDependencyScraperManager(IRepositorySourceManager repositorySourceManager)
         {
             this.repositorySourceManager = repositorySourceManager;
         }

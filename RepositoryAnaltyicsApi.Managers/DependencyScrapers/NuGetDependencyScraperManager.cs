@@ -10,11 +10,11 @@ using System.Xml.Linq;
 
 namespace RepositoryAnaltyicsApi.Managers.Dependencies
 {
-    public class NuGetDependencyManager : IDependencyManager
+    public class NuGetDependencyScraperManager : IDependencyScraperManager
     {
         private IRepositorySourceManager repositorySourceManager;
 
-        public NuGetDependencyManager(IRepositorySourceManager repositorySourceManager)
+        public NuGetDependencyScraperManager(IRepositorySourceManager repositorySourceManager)
         {
             this.repositorySourceManager = repositorySourceManager;
         }

@@ -12,13 +12,13 @@ namespace RepositoryAnaltyicsApi.Managers
     {
         private IRepositoryManager repositoryManager;
         private IRepositorySourceManager repositorySourceManager;
-        private IEnumerable<IDependencyManager> dependencyManagers;
+        private IEnumerable<IDependencyScraperManager> dependencyScraperManagers;
 
-        public RepositoryAnalysisManager(IRepositoryManager repositoryManager, IRepositorySourceManager repositorySourceManager, IEnumerable<IDependencyManager> dependencyManagers)
+        public RepositoryAnalysisManager(IRepositoryManager repositoryManager, IRepositorySourceManager repositorySourceManager, IEnumerable<IDependencyScraperManager> dependencyScraperManagers)
         {
             this.repositoryManager = repositoryManager;
             this.repositorySourceManager = repositorySourceManager;
-            this.dependencyManagers = dependencyManagers;
+            this.dependencyScraperManagers = dependencyScraperManagers;
         }
 
         public async Task CreateAsync(string repositoryUrl)
@@ -47,14 +47,14 @@ namespace RepositoryAnaltyicsApi.Managers
                 repo.Id = repoSourceRepo.Id;
                 repo.Topics = repoSourceRepo.Topics;
 
-                repo.Dependencies = await ReadDependenciesAsync();
+                repo.Dependencies = await ScrapeDependenciesAsync();
 
                 await repositoryManager.CreateAsync(repo);
             }
 
-            async Task<List<RepositoryDependency>> ReadDependenciesAsync()
+            async Task<List<RepositoryDependency>> ScrapeDependenciesAsync()
             {
-                var sourceFileRegexes = dependencyManagers.Select(dependencyManager => dependencyManager.SourceFileRegex);
+                var sourceFileRegexes = dependencyScraperManagers.Select(dependencyManager => dependencyManager.SourceFileRegex);
                 var sourceFiles = repositorySourceManager.ReadFiles(parsedRepoUrl.owner, parsedRepoUrl.name, repoSourceRepo.DefaultBranch);
 
                 var sourceFilesToRead = new List<string>();
@@ -74,7 +74,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 var allDependencies = new List<RepositoryDependency>();
 
-                foreach (var dependencyManager in dependencyManagers)
+                foreach (var dependencyManager in dependencyScraperManagers)
                 {
                     var dependencies = await dependencyManager.ReadAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repoSourceRepo.DefaultBranch).ConfigureAwait(false);
                     allDependencies.AddRange(dependencies);

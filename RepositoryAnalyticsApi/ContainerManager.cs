@@ -42,11 +42,11 @@ namespace RepositoryAnalyticsApi
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
             services.AddTransient<IRepositorySourceRepository>(serviceProvider => codeRepo);
 
-            services.AddTransient<IEnumerable<IDependencyManager>>((serviceProvider) => new List<IDependencyManager> {
-                new BowerDependencyManager(serviceProvider.GetService<IRepositorySourceManager>()),
-                new DotNetProjectFileDependencyManager(serviceProvider.GetService<IRepositorySourceManager>()),
-                new NpmDependencyManager(serviceProvider.GetService<IRepositorySourceManager>()),
-                new NuGetDependencyManager(serviceProvider.GetService<IRepositorySourceManager>())
+            services.AddTransient<IEnumerable<IDependencyScraperManager>>((serviceProvider) => new List<IDependencyScraperManager> {
+                new BowerDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
+                new DotNetProjectFileDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
+                new NpmDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
+                new NuGetDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>())
             });
 
             // Add in mongo dependencies

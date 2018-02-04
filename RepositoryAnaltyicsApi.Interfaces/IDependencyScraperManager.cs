@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Interfaces
 {
-    public interface IDependencyManager
+    public interface IDependencyScraperManager
     {
         Task<List<RepositoryDependency>> ReadAsync(string owner, string name, string branch);
         
