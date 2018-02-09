@@ -16,9 +16,9 @@ namespace RepositoryAnaltyicsApi.Managers
             this.dependencyRepository = dependencyRepository;
         }
 
-        public async Task<List<RepositoryDependency>> SearchAsync(string name)
+        public async Task<List<string>> SearchNamesAsync(string name)
         {
-            return await dependencyRepository.SearchAsync(name).ConfigureAwait(false);
+            return await dependencyRepository.SearchNamesAsync(name).ConfigureAwait(false);
         }
     }
 }

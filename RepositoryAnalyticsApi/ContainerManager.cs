@@ -64,6 +64,7 @@ namespace RepositoryAnalyticsApi
 
             var db = client.GetDatabase("local");
 
+            services.AddScoped((serviceProvider) => db);
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.Repository>("repository"));
 
             return services;

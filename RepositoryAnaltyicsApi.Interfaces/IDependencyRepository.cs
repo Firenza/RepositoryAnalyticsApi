@@ -8,6 +8,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
 {
     public interface IDependencyRepository
     {
-        Task<List<RepositoryDependency>> SearchAsync(string name);
+        Task<List<string>> SearchNamesAsync(string name);
     }
 }
