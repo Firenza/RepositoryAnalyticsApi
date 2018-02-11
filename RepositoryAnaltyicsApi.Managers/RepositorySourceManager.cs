@@ -48,25 +48,18 @@ namespace RepositoryAnaltyicsApi.Managers
             return cacheEntry;
         }
 
-        public List<RepositoryFile> ReadFiles(string owner, string name, string branch)
+        public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name, string branch)
         {
             var cacheKey = GetFileListCacheKey(owner, name, branch);
 
-            var cacheEntry = memoryCache.GetOrCreate(cacheKey, entry =>
+            var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey,  async entry =>
             {
                 Console.WriteLine($"retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromSeconds(10);
-                return repositorySourceRepository.ReadFiles(owner, name, branch);
+                return await repositorySourceRepository.ReadFilesAsync(owner, name, branch);
             });
 
             return cacheEntry;
-        }
-
-        public List<Repository> ReadRepositories(string group, int pageCount, int pageSize, int startPage)
-        {
-            Console.WriteLine($"retrieving repositories from source");
-
-            return repositorySourceRepository.ReadRepositories(group, pageCount, pageSize, startPage);
         }
 
         public async Task<Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)

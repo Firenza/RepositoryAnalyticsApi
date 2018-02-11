@@ -90,9 +90,10 @@ namespace RepositoryAnalyticsApi.Repositories
             }
         }
 
-        public List<RepositoryFile> ReadFiles(string owner, string name,  string branch)
+        public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name,  string branch)
         {
-            var treeItems = this.treesClient.GetRecursive(owner, name, branch).Result.Tree;
+            var treeResponse = await treesClient.GetRecursive(owner, name, branch);
+            var treeItems = treeResponse.Tree;
 
             var repoFiles = new List<RepositoryFile>();
 
@@ -109,25 +110,6 @@ namespace RepositoryAnalyticsApi.Repositories
             }
 
             return repoFiles;
-        }
-
-        public List<ServiceModel.Repository> ReadRepositories(string group, int pageCount, int pageSize, int startPage)
-        {
-            var gitHubRepos = gitHubClient.Repository.GetAllForOrg(group, new ApiOptions { PageSize = pageSize, PageCount = pageCount, StartPage = startPage }).Result;
-
-            var codeRepositories = new List<ServiceModel.Repository>();
-
-            if (gitHubRepos != null && gitHubRepos.Any())
-            {
-                foreach (var gitHubRepo in gitHubRepos)
-                {
-                    var codeRepository = MapFromGitHubRepo(gitHubRepo);
-
-                    codeRepositories.Add(codeRepository);
-                }
-            }
-
-            return codeRepositories;
         }
 
         public async Task<ServiceModel.Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)

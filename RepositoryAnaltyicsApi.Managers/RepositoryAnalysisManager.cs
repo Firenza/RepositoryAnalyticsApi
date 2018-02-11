@@ -55,7 +55,7 @@ namespace RepositoryAnaltyicsApi.Managers
             async Task<List<RepositoryDependency>> ScrapeDependenciesAsync()
             {
                 var sourceFileRegexes = dependencyScraperManagers.Select(dependencyManager => dependencyManager.SourceFileRegex);
-                var sourceFiles = repositorySourceManager.ReadFiles(parsedRepoUrl.owner, parsedRepoUrl.name, repoSourceRepo.DefaultBranch);
+                var sourceFiles = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repoSourceRepo.DefaultBranch);
 
                 var sourceFilesToRead = new List<string>();
                 foreach (var sourceFile in sourceFiles)
