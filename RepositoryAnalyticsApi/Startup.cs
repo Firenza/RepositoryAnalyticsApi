@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
+using System;
+using System.IO;
 
 namespace RepositoryAnalyticsApi
 {
@@ -36,6 +38,10 @@ namespace RepositoryAnalyticsApi
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Info { Title = appName, Version = $"v{appVersion}" });
+
+                var basePath = AppContext.BaseDirectory;
+                var xmlPath = Path.Combine(basePath, "RepositoryAnaltyicsApi.Controllers.xml");
+                c.IncludeXmlComments(xmlPath);
             });
         }
 
