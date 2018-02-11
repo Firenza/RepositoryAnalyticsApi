@@ -31,7 +31,7 @@ namespace RepositoryAnalyticsApi.Repositories
                     {{ $unwind: {{ path: ""$Dependencies""}}}},
                     {{ $match: {{ ""Dependencies.Name"": ""{name}""}}}},
                     {{ $group: {{ _id: {{ Name: ""$Dependencies.Name"", Version: ""$Dependencies.Version""}}, count : {{$sum: 1}}}}}},
-                   {{ $sort: {{ count: -1 }}}},
+                    {{ $sort: {{ count: -1 }}}},
                 ]
             }}        
             ";
