@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers
 {
+    [Produces("application/json")]
     [Route("api/[controller]")]
     public class RepositoryAnalysisController : ControllerBase
     {
