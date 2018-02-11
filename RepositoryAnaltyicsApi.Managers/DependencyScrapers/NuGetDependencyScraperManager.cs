@@ -25,7 +25,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
         {
             var dependencies = new List<RepositoryDependency>();
 
-            var files = repositorySourceManager.ReadFiles(owner, name, branch);
+            var files = await repositorySourceManager.ReadFilesAsync(owner, name, branch).ConfigureAwait(false);
 
             // Check for .NET framework NuGet packages
             var packageConfigFiles = files.Where(file => file.Name == "packages.config");

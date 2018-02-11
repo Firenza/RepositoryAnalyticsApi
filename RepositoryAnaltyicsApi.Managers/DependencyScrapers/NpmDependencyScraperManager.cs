@@ -23,7 +23,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
         {
             var dependencies = new List<RepositoryDependency>();
 
-            var files = repositorySourceManager.ReadFiles(owner, name, branch);
+            var files = await repositorySourceManager.ReadFilesAsync(owner, name, branch).ConfigureAwait(false);
 
             var packageJsonFile = files.FirstOrDefault(file => file.Name == "package.json");
 

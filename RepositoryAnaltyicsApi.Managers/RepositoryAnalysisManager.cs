@@ -70,7 +70,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 }
 
                 // Read in the file content in bulk to get the files cached for the dependency managers to read
-                repositorySourceManager.GetMultipleFileContents(parsedRepoUrl.owner, parsedRepoUrl.name, repoSourceRepo.DefaultBranch, sourceFilesToRead);
+                await repositorySourceManager.GetMultipleFileContentsAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repoSourceRepo.DefaultBranch, sourceFilesToRead).ConfigureAwait(false);
 
                 var allDependencies = new List<RepositoryDependency>();
 

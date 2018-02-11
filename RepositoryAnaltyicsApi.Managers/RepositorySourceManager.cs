@@ -18,11 +18,11 @@ namespace RepositoryAnaltyicsApi.Managers
             this.memoryCache = memoryCache;
         }
 
-        public List<(string fullFilePath, string fileContent)> GetMultipleFileContents(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths)
+        public async Task<List<(string fullFilePath, string fileContent)>> GetMultipleFileContentsAsync(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths)
         {
             Console.WriteLine($"retrieving file contents from source");
 
-            var filesContentInformation = repositorySourceRepository.GetMultipleFileContents(repositoryOwner, repositoryName, branch, fullFilePaths);
+            var filesContentInformation = await repositorySourceRepository.GetMultipleFileContentsAsync(repositoryOwner, repositoryName, branch, fullFilePaths).ConfigureAwait(false);
 
             foreach (var fileContentInformation in filesContentInformation)
             {

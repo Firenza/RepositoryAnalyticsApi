@@ -39,7 +39,7 @@ namespace RepositoryAnalyticsApi.Repositories
             }
         }
 
-        public List<(string fullFilePath, string fileContent)> GetMultipleFileContents(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths)
+        public async Task<List<(string fullFilePath, string fileContent)>> GetMultipleFileContentsAsync(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths)
         {
             var tupleList = new List<(string fullFilePath, string fileContent)>();
 
@@ -64,7 +64,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var variables = new { repoOwner = repositoryOwner, repoName = repositoryName};
 
-            var responseBodyString = graphQLClient.QueryAsync(query, variables).Result;
+            var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
 
             var jObject = JObject.Parse(responseBodyString);
 

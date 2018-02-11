@@ -25,7 +25,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
         {
             var dependencies = new List<RepositoryDependency>();
 
-            var files = this.repositorySourceManager.ReadFiles(owner, name, branch);
+            var files = await repositorySourceManager.ReadFilesAsync(owner, name, branch).ConfigureAwait(false);
 
             var dotNetProjectFiles = files.Where(file => file.Name.EndsWith(".csproj") || file.Name.EndsWith(".vbproj"));
 
