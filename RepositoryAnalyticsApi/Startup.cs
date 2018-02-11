@@ -26,7 +26,9 @@ namespace RepositoryAnalyticsApi
 
             ContainerManager.RegisterServices(services, configuration);
 
-            services.AddMvc();
+            services.AddMvc().AddJsonOptions(options => 
+                options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+            );
 
             services.AddMemoryCache();
 
