@@ -28,11 +28,11 @@ namespace RepositoryAnalyticsApi.Repositories
                 pipeline:
                 [
                     {{ $match: {{ ""Dependencies.Name"" : ""{name}""}}}},
-		            {{ $unwind: {{ path: ""$Dependencies""}}}},
-		            {{ $match: {{ ""Dependencies.Name"": ""{name}""}}}},
+                    {{ $unwind: {{ path: ""$Dependencies""}}}},
+                    {{ $match: {{ ""Dependencies.Name"": ""{name}""}}}},
                     {{ $group: {{ _id: {{ Name: ""$Dependencies.Name"", Version: ""$Dependencies.Version""}}, count : {{$sum: 1}}}}}},
-		            {{ $sort: {{ count: -1 }}}},
-	            ]
+                   {{ $sort: {{ count: -1 }}}},
+                ]
             }}        
             ";
 
@@ -73,11 +73,11 @@ namespace RepositoryAnalyticsApi.Repositories
                 pipeline:
                 [
                     {{ $match: {{ ""Dependencies.Name"" : /{name}/i}}}},
-		            {{ $unwind: {{ path: ""$Dependencies""}}}},
-		            {{ $match: {{ ""Dependencies.Name"": /{name}/i}}}},
-		            {{ $group: {{ _id: {{ Name: ""$Dependencies.Name""}}}}}},
-		            {{ $sort: {{ _id: 1 }}}},
-	            ]
+                    {{ $unwind: {{ path: ""$Dependencies""}}}},
+                    {{ $match: {{ ""Dependencies.Name"": /{name}/i}}}},
+                    {{ $group: {{ _id: {{ Name: ""$Dependencies.Name""}}}}}},
+                    {{ $sort: {{ _id: 1 }}}},
+                ]
             }}        
             ";
 
