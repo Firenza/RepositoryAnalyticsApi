@@ -144,6 +144,79 @@ namespace RepositoryAnalyticsApi.Repositories
             return repository;
         }
 
+        public async Task<CursorPagedResults<RepositorySourceRepository>> ReadRepositoriesAsync(string organization, string user, int take, string endCursor)
+        {
+            string loginType = null;
+            string login = null;
+            string endCursorQuerySegment = string.Empty;
+            string endCursorVariableDeclaration = string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(user))
+            {
+                loginType = "user";
+                login = user;
+            }
+            else
+            {
+                loginType = "organization";
+                login = organization;
+            }
+
+            if (!string.IsNullOrWhiteSpace(endCursor))
+            {
+                endCursorQuerySegment = $", after: \"{endCursor}\"";
+                endCursorVariableDeclaration = ", $endCursor: String!";
+            }
+
+
+            var query = $@"
+            query ($login: String!, $take: Int{endCursorVariableDeclaration}) {{
+              {loginType}(login:$login){{
+                repositories(first: $take, orderBy: {{field:PUSHED_AT, direction:DESC}}{endCursorQuerySegment}){{
+                  edges{{
+                    node{{
+                      url,
+                      createdAt,
+                      pushedAt
+                    }}
+                  }},
+                pageInfo{{
+                  hasNextPage,
+                  endCursor
+                }}
+              }}
+             }}
+            }}
+            ";
+
+            var variables = new { login = login, take = take};
+
+            var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
+
+            var jObject = JObject.Parse(responseBodyString);
+            dynamic repositories = jObject["data"][loginType]["repositories"];
+
+            var cursorPagedResults = new CursorPagedResults<RepositorySourceRepository>();
+            cursorPagedResults.EndCursor = repositories.pageInfo.endCursor;
+            cursorPagedResults.MoreToRead = repositories.pageInfo.hasNextPage;
+
+            var results = new List<RepositorySourceRepository>();
+
+            foreach (var edge in repositories.edges)
+            {
+                var repositorySourceRepository = new RepositorySourceRepository();
+                repositorySourceRepository.CreatedAt = edge.node.createdAt;
+                repositorySourceRepository.UpdatedAt = edge.node.pushedAt;
+                repositorySourceRepository.Url = edge.node.url;
+
+                results.Add(repositorySourceRepository);
+            }
+
+            cursorPagedResults.Results = results;
+
+            return cursorPagedResults;
+        }
+
         private ServiceModel.Repository MapFromGraphQlGitHubRepoBodyString(string responseBodyString)
         {
             var codeRepository = new ServiceModel.Repository();
@@ -185,5 +258,6 @@ namespace RepositoryAnalyticsApi.Repositories
 
             return codeRepository;
         }
+
     }
 }

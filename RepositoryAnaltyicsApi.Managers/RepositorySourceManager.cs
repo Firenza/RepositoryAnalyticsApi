@@ -62,6 +62,13 @@ namespace RepositoryAnaltyicsApi.Managers
             return cacheEntry;
         }
 
+        public async Task<CursorPagedResults<RepositorySourceRepository>> ReadRepositoriesAsync(string organization, string user, int take, string endCursor)
+        {
+            var repositories = await repositorySourceRepository.ReadRepositoriesAsync(organization, user, take, endCursor);
+
+            return repositories;
+        }
+
         public async Task<Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
         {
             var cacheKey = GetRepositroyCacheKey(repositoryOwner, repositoryName);
