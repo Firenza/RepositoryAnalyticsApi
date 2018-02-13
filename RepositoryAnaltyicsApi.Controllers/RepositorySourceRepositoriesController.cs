@@ -25,7 +25,7 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// <param name="user"></param>
         /// <param name="organization"></param>
         /// <param name="take">Number of records to return</param>
-        /// <param name="endCursor">Key denoting where the last request left off</param>
+        /// <param name="endCursor">Key denoting where the last request left off. This will be empty for the first request</param>
         /// <returns></returns>
         /// <remarks>
         /// Pages through the repositories from the source (E.G. GitHub) sorted by descending time of last update.  This route's main function is to
