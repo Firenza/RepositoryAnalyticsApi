@@ -149,7 +149,6 @@ namespace RepositoryAnalyticsApi.Repositories
             string loginType = null;
             string login = null;
             string endCursorQuerySegment = string.Empty;
-            string endCursorVariableDeclaration = string.Empty;
 
             if (!string.IsNullOrWhiteSpace(user))
             {
@@ -165,12 +164,11 @@ namespace RepositoryAnalyticsApi.Repositories
             if (!string.IsNullOrWhiteSpace(endCursor))
             {
                 endCursorQuerySegment = $", after: \"{endCursor}\"";
-                endCursorVariableDeclaration = ", $endCursor: String!";
             }
 
 
             var query = $@"
-            query ($login: String!, $take: Int{endCursorVariableDeclaration}) {{
+            query ($login: String!, $take: Int) {{
               {loginType}(login:$login){{
                 repositories(first: $take, orderBy: {{field:PUSHED_AT, direction:DESC}}{endCursorQuerySegment}){{
                   edges{{
