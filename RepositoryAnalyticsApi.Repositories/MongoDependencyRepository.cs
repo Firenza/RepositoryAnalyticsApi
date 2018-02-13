@@ -31,7 +31,7 @@ namespace RepositoryAnalyticsApi.Repositories
                     {{ $unwind: {{ path: ""$Dependencies""}}}},
                     {{ $match: {{ ""Dependencies.Name"": ""{name}""}}}},
                     {{ $group: {{ _id: {{ Name: ""$Dependencies.Name"", Version: ""$Dependencies.Version""}}, count : {{$sum: 1}}}}}},
-                    {{ $sort: {{ count: -1 }}}},
+                    {{ $sort: {{ ""_id.Version"": -1 }}}},
                 ]
             }}        
             ";
@@ -49,11 +49,11 @@ namespace RepositoryAnalyticsApi.Repositories
                 {
                     var searchResult = new RepositoryDependencySearchResult
                     {
-                      Count = jObject["result"][0]["count"].Value<int>(),
+                      Count = jObject["result"][i]["count"].Value<int>(),
                       RepositoryDependency = new RepositoryDependency
                       {
-                          Name = jObject["result"][0]["_id"]["Name"].Value<string>(),
-                          Version = jObject["result"][0]["_id"]["Version"].Value<string>()
+                          Name = jObject["result"][i]["_id"]["Name"].Value<string>(),
+                          Version = jObject["result"][i]["_id"]["Version"].Value<string>()
                       }
                     };
 
