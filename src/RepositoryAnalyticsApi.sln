@@ -17,11 +17,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnaltyicsApi.Cont
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnaltyicsApi.Managers", "RepositoryAnaltyicsApi.Managers\RepositoryAnaltyicsApi.Managers.csproj", "{A6183E3B-50D3-4C98-A12F-936439C558EC}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{B80E8E93-0F35-4243-B385-F0AEE93274E1}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{1602EDF1-9936-4268-8631-AD1C42C627EC}"
 	ProjectSection(SolutionItems) = preProject
-		.gitattributes = ../.gitattributes
-		.gitignore = ../.gitignore
-		README.md = ../README.md
+		..\.gitattributes = ..\.gitattributes
+		..\.gitignore = ..\.gitignore
+		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Global
