@@ -68,7 +68,14 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 repository.Dependencies = await ScrapeDependenciesAsync();
 
-                await repositoryManager.CreateAsync(repository);
+                if (repository.CreatedOn != repository.LastUpdatedOn)
+                {
+                    await repositoryManager.UpdateAsync(repository);
+                }
+                else
+                {
+                    await repositoryManager.CreateAsync(repository);
+                }
             }
 
             async Task<List<RepositoryDependency>> ScrapeDependenciesAsync()
