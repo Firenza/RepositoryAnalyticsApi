@@ -19,7 +19,7 @@ namespace RepositoryAnaltyicsApi.Controllers
         [HttpPost]
         public async Task Post([FromBody]RepositoryAnalysis repositoyAnalysis)
         {
-            await repositoryAnalysisManager.CreateAsync(repositoyAnalysis.RepositoryUrl).ConfigureAwait(false);
+            await repositoryAnalysisManager.CreateAsync(repositoyAnalysis).ConfigureAwait(false);
         }
     }
 }
