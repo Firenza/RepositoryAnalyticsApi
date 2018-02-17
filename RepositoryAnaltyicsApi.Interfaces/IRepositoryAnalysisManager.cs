@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using RepositoryAnalyticsApi.ServiceModel;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Interfaces
 {
     public interface IRepositoryAnalysisManager
     {
-        Task CreateAsync(string repositoryUrl);
+        Task CreateAsync(RepositoryAnalysis repositoryAnalysis);
     }
 }

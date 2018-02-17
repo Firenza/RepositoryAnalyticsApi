@@ -21,41 +21,60 @@ namespace RepositoryAnaltyicsApi.Managers
             this.dependencyScraperManagers = dependencyScraperManagers;
         }
 
-        public async Task CreateAsync(string repositoryUrl)
+        public async Task CreateAsync(RepositoryAnalysis repositoryAnalysis)
         {
-            var parsedRepoUrl = ParseRepositoryUrl();
+            var repository = await repositoryManager.ReadAsync(repositoryAnalysis.RepositoryUrl);
+            Repository repositorySourceRepository = null;
 
-            // First check to see if the repo has changed since it was last analyzed
-            var repoSourceRead = repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.owner, parsedRepoUrl.name);
-            var repoRead = repositoryManager.ReadAsync(repositoryUrl);
+            var now = DateTime.Now;
 
-            var repoSourceRepo = await repoSourceRead.ConfigureAwait(false);
-            var repo = await repoRead.ConfigureAwait(false);
-
-            if (repo == null)
+            if (repository == null)
             {
-                var now = DateTime.Now;
-                repo = new Repository();
-                repo.CreatedOn = now;
+                repository = new Repository();
+                repository.CreatedOn = now;
             }
 
-            if (repo.LastUpdatedOn < repoSourceRepo.LastUpdatedOn)
+            var parsedRepoUrl = ParseRepositoryUrl();
+
+            var repositoryNeedsUpdating = false;
+
+            if (repositoryAnalysis.ForceCompleteRefresh)
             {
-                repo.LastUpdatedOn = DateTime.Now;
-                repo.DefaultBranch = repoSourceRepo.DefaultBranch;
-                repo.Name = repoSourceRepo.Name;
-                repo.Id = repoSourceRepo.Id;
-                repo.Topics = repoSourceRepo.Topics;
+                repositoryNeedsUpdating = true;
+            }
+            else if(repositoryAnalysis.LastUpdatedOn.HasValue)
+            {
+                repositoryNeedsUpdating = repository.LastUpdatedOn < repositoryAnalysis.LastUpdatedOn.Value;
+            }
+            else
+            {
+                repositorySourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.owner, parsedRepoUrl.name);
 
-                repo.Dependencies = await ScrapeDependenciesAsync();
+                repositoryNeedsUpdating = repository.LastUpdatedOn < repositorySourceRepository.LastUpdatedOn;
+            }
+  
+            if (repositoryNeedsUpdating)
+            {
+                if (repositorySourceRepository == null)
+                {
+                    repositorySourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.owner, parsedRepoUrl.name);
+                }
 
-                await repositoryManager.CreateAsync(repo);
+                repository.LastUpdatedOn = now;
+                repository.DefaultBranch = repositorySourceRepository.DefaultBranch;
+                repository.Name = repositorySourceRepository.Name;
+                repository.Id = repositorySourceRepository.Id;
+                repository.Topics = repositorySourceRepository.Topics;
+
+                repository.Dependencies = await ScrapeDependenciesAsync();
+
+                await repositoryManager.CreateAsync(repository);
             }
 
             async Task<List<RepositoryDependency>> ScrapeDependenciesAsync()
             {
                 var sourceFileRegexes = dependencyScraperManagers.Select(dependencyManager => dependencyManager.SourceFileRegex);
-                var sourceFiles = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repoSourceRepo.DefaultBranch);
+                var sourceFiles = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repositorySourceRepository.DefaultBranch);
 
                 var sourceFilesToRead = new List<string>();
                 foreach (var sourceFile in sourceFiles)
@@ -70,13 +89,13 @@ namespace RepositoryAnaltyicsApi.Managers
                 }
 
                 // Read in the file content in bulk to get the files cached for the dependency managers to read
-                await repositorySourceManager.GetMultipleFileContentsAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repoSourceRepo.DefaultBranch, sourceFilesToRead).ConfigureAwait(false);
+                await repositorySourceManager.GetMultipleFileContentsAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repositorySourceRepository.DefaultBranch, sourceFilesToRead).ConfigureAwait(false);
 
                 var allDependencies = new List<RepositoryDependency>();
 
                 foreach (var dependencyManager in dependencyScraperManagers)
                 {
-                    var dependencies = await dependencyManager.ReadAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repoSourceRepo.DefaultBranch).ConfigureAwait(false);
+                    var dependencies = await dependencyManager.ReadAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repositorySourceRepository.DefaultBranch).ConfigureAwait(false);
                     allDependencies.AddRange(dependencies);
                 }
 
@@ -85,7 +104,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
             (string owner, string name) ParseRepositoryUrl()
             {
-                var repositoryUri = new Uri(repositoryUrl);
+                var repositoryUri = new Uri(repositoryAnalysis.RepositoryUrl);
                 var owner = repositoryUri.Segments[1].TrimEnd('/');
                 var name = repositoryUri.Segments[2].TrimEnd('/');
 
