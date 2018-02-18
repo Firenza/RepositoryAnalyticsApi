@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Composition.Hosting;
 using System.Reflection;
+using System.Linq;
 
 namespace RepositoryAnalyticsApi
 {
@@ -81,10 +82,14 @@ namespace RepositoryAnalyticsApi
             {
                 var typeAndImplementationDerivers = extensionAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
 
+                Console.WriteLine("\nLoading the following internal IDeriveRepositoryTypeAndImplementations\n");
+
                 foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
                 {
-                    Console.WriteLine($"Importing internal IDeriveRepositoryTypeAndImplementations for type {typeAndImplementationDeriver.TypeName} and implementation {typeAndImplementationDeriver.ImplementationName}");
+                    Console.WriteLine(typeAndImplementationDeriver.GetType().Name);
                 }
+
+                Console.WriteLine();
 
                 services.AddTransient((serviceProvider) => typeAndImplementationDerivers);
             }
