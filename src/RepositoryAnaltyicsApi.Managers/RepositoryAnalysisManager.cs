@@ -70,8 +70,9 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 repository.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repository.DefaultBranch);
                 var typeAndImplementationInfo = await ScrapeRepositoryTypeAndImplementation(repository, parsedRepoUrl.owner);
-                
-                
+
+                repository.TypeName = typeAndImplementationInfo.TypeName;
+                repository.Implementations = typeAndImplementationInfo.Implementations;
 
                 if (repository.CreatedOn != repository.LastUpdatedOn)
                 {
@@ -124,9 +125,8 @@ namespace RepositoryAnaltyicsApi.Managers
             return allDependencies;
         }
 
-        private async Task<RespositoryTypeAndImplementationInfo> ScrapeRepositoryTypeAndImplementation(Repository repository, string owner)
+        private async Task<(string TypeName, IEnumerable<RepositoryImplementation> Implementations)> ScrapeRepositoryTypeAndImplementation(Repository repository, string owner)
         {
-            var repositoryTypeAndImplmentationInfo = new RespositoryTypeAndImplementationInfo();
             var readFileContentAsync = new Func<string, Task<string>>((fullFilePath) => repositorySourceManager.ReadFileContentAsync(owner, repository.Name, fullFilePath));
             var readFilesAsync = new Func<Task<List<RepositoryFile>>>(() => repositorySourceManager.ReadFilesAsync(owner, repository.Name, repository.DefaultBranch));
 
@@ -134,13 +134,13 @@ namespace RepositoryAnaltyicsApi.Managers
             {
                 var typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(repository.Dependencies, readFilesAsync, repository.Topics, repository.Name, readFileContentAsync);
 
-                if (typeAndImplementationInfo != null)
+                if (!string.IsNullOrWhiteSpace(typeAndImplementationInfo.TypeName))
                 {
                     return typeAndImplementationInfo;
                 }
             }
 
-            return repositoryTypeAndImplmentationInfo;
+            return (null, null);
         }
     }
 }
