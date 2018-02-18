@@ -6,16 +6,20 @@ using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnaltyicsApi.Managers;
 using RepositoryAnaltyicsApi.Managers.Dependencies;
+using RepositoryAnalyticsApi.Extensibliity;
+using RepositoryAnalyticsApi.Extensions;
 using RepositoryAnalyticsApi.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Composition.Hosting;
+using System.Reflection;
 
 namespace RepositoryAnalyticsApi
 {
     public static class ContainerManager
     {
-        public static IServiceCollection RegisterServices(IServiceCollection services, IConfiguration configuration)
+        public static void RegisterServices(IServiceCollection services, IConfiguration configuration)
         {
             // Read in environment variables
             var gitHubv3ApiUrl = configuration["GITHUB_V3_API_URL"];
@@ -66,9 +70,24 @@ namespace RepositoryAnalyticsApi
 
             services.AddScoped((serviceProvider) => db);
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.Repository>("repository"));
-
-            return services;
         }
 
+        public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
+        {
+            // Load internal extensions
+            var extensionAssemblyConfiguration = new ContainerConfiguration().WithAssembly(typeof(ExtensionAssembly).GetTypeInfo().Assembly);
+
+            using (var extensionAssemblyContainer = extensionAssemblyConfiguration.CreateContainer())
+            {
+                var typeAndImplementationDerivers = extensionAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
+
+                foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
+                {
+                    Console.WriteLine($"Importing internal IDeriveRepositoryTypeAndImplementations for type {typeAndImplementationDeriver.TypeName} and implementation {typeAndImplementationDeriver.ImplementationName}");
+                }
+
+                services.AddTransient((serviceProvider) => typeAndImplementationDerivers);
+            }
+        }
     }
 }

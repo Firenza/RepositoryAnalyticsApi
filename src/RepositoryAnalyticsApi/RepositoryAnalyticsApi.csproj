@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="GraphQl.NetStandard.Client" Version="1.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.5" />
+    <PackageReference Include="Microsoft.Composition" Version="1.0.31" />
     <PackageReference Include="Octokit" Version="0.28.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="1.1.0" />
   </ItemGroup>
@@ -21,9 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\RepositoryAnalyticsApi.Extensions\RepositoryAnalyticsApi.Extensions.csproj" />
     <ProjectReference Include="..\RepositoryAnaltyicsApi.Controllers\RepositoryAnaltyicsApi.Controllers.csproj" />
     <ProjectReference Include="..\RepositoryAnaltyicsApi.Interfaces\RepositoryAnaltyicsApi.Interfaces.csproj" />
     <ProjectReference Include="..\RepositoryAnaltyicsApi.Managers\RepositoryAnaltyicsApi.Managers.csproj" />
+    <ProjectReference Include="..\RepositoryAnalyticsApi.Extensibility\RepositoryAnalyticsApi.Extensibility.csproj" />
     <ProjectReference Include="..\RepositoryAnalyticsApi.Repositories\RepositoryAnalyticsApi.Repositories.csproj" />
   </ItemGroup>
 

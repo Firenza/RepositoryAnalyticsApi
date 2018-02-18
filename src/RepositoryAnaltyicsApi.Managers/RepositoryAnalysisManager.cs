@@ -1,8 +1,8 @@
 ﻿using RepositoryAnaltyicsApi.Interfaces;
+using RepositoryAnalyticsApi.Extensibliity;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,12 +13,14 @@ namespace RepositoryAnaltyicsApi.Managers
         private IRepositoryManager repositoryManager;
         private IRepositorySourceManager repositorySourceManager;
         private IEnumerable<IDependencyScraperManager> dependencyScraperManagers;
+        private IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers;
 
-        public RepositoryAnalysisManager(IRepositoryManager repositoryManager, IRepositorySourceManager repositorySourceManager, IEnumerable<IDependencyScraperManager> dependencyScraperManagers)
+        public RepositoryAnalysisManager(IRepositoryManager repositoryManager, IRepositorySourceManager repositorySourceManager, IEnumerable<IDependencyScraperManager> dependencyScraperManagers, IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers)
         {
             this.repositoryManager = repositoryManager;
             this.repositorySourceManager = repositorySourceManager;
             this.dependencyScraperManagers = dependencyScraperManagers;
+            this.typeAndImplementationDerivers = typeAndImplementationDerivers;
         }
 
         public async Task CreateAsync(RepositoryAnalysis repositoryAnalysis)
@@ -66,7 +68,10 @@ namespace RepositoryAnaltyicsApi.Managers
                 repository.Id = repositorySourceRepository.Id;
                 repository.Topics = repositorySourceRepository.Topics;
 
-                repository.Dependencies = await ScrapeDependenciesAsync();
+                repository.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repository.DefaultBranch);
+                var typeAndImplementationInfo = await ScrapeRepositoryTypeAndImplementation(repository, parsedRepoUrl.owner);
+                
+                
 
                 if (repository.CreatedOn != repository.LastUpdatedOn)
                 {
@@ -78,37 +83,6 @@ namespace RepositoryAnaltyicsApi.Managers
                 }
             }
 
-            async Task<List<RepositoryDependency>> ScrapeDependenciesAsync()
-            {
-                var sourceFileRegexes = dependencyScraperManagers.Select(dependencyManager => dependencyManager.SourceFileRegex);
-                var sourceFiles = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repositorySourceRepository.DefaultBranch);
-
-                var sourceFilesToRead = new List<string>();
-                foreach (var sourceFile in sourceFiles)
-                {
-                    foreach (var sourceFileRegex in sourceFileRegexes)
-                    {
-                        if (sourceFileRegex.IsMatch(sourceFile.FullPath))
-                        {
-                            sourceFilesToRead.Add(sourceFile.FullPath);
-                        }
-                    }
-                }
-
-                // Read in the file content in bulk to get the files cached for the dependency managers to read
-                await repositorySourceManager.GetMultipleFileContentsAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repositorySourceRepository.DefaultBranch, sourceFilesToRead).ConfigureAwait(false);
-
-                var allDependencies = new List<RepositoryDependency>();
-
-                foreach (var dependencyManager in dependencyScraperManagers)
-                {
-                    var dependencies = await dependencyManager.ReadAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repositorySourceRepository.DefaultBranch).ConfigureAwait(false);
-                    allDependencies.AddRange(dependencies);
-                }
-
-                return allDependencies;
-            }
-
             (string owner, string name) ParseRepositoryUrl()
             {
                 var repositoryUri = new Uri(repositoryAnalysis.RepositoryUrl);
@@ -117,6 +91,56 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 return (owner, name);
             }
+        }
+
+        private async Task<List<RepositoryDependency>> ScrapeDependenciesAsync(string owner, string name, string defaultBranch)
+        {
+            var sourceFileRegexes = dependencyScraperManagers.Select(dependencyManager => dependencyManager.SourceFileRegex);
+            var sourceFiles = await repositorySourceManager.ReadFilesAsync(owner, name, defaultBranch);
+
+            var sourceFilesToRead = new List<string>();
+            foreach (var sourceFile in sourceFiles)
+            {
+                foreach (var sourceFileRegex in sourceFileRegexes)
+                {
+                    if (sourceFileRegex.IsMatch(sourceFile.FullPath))
+                    {
+                        sourceFilesToRead.Add(sourceFile.FullPath);
+                    }
+                }
+            }
+
+            // Read in the file content in bulk to get the files cached for the dependency managers to read
+            await repositorySourceManager.GetMultipleFileContentsAsync(owner, name, defaultBranch, sourceFilesToRead).ConfigureAwait(false);
+
+            var allDependencies = new List<RepositoryDependency>();
+
+            foreach (var dependencyManager in dependencyScraperManagers)
+            {
+                var dependencies = await dependencyManager.ReadAsync(owner, name, defaultBranch).ConfigureAwait(false);
+                allDependencies.AddRange(dependencies);
+            }
+
+            return allDependencies;
+        }
+
+        private async Task<RespositoryTypeAndImplementationInfo> ScrapeRepositoryTypeAndImplementation(Repository repository, string owner)
+        {
+            var repositoryTypeAndImplmentationInfo = new RespositoryTypeAndImplementationInfo();
+            var readFileContentAsync = new Func<string, Task<string>>((fullFilePath) => repositorySourceManager.ReadFileContentAsync(owner, repository.Name, fullFilePath));
+            var readFilesAsync = new Func<Task<List<RepositoryFile>>>(() => repositorySourceManager.ReadFilesAsync(owner, repository.Name, repository.DefaultBranch));
+
+            foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
+            {
+                var typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(repository.Dependencies, readFilesAsync, repository.Topics, repository.Name, readFileContentAsync);
+
+                if (typeAndImplementationInfo != null)
+                {
+                    return typeAndImplementationInfo;
+                }
+            }
+
+            return repositoryTypeAndImplmentationInfo;
         }
     }
 }

@@ -2,9 +2,13 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RepositoryAnalyticsApi.Extensibliity;
+using RepositoryAnalyticsApi.Extensions;
 using Swashbuckle.AspNetCore.Swagger;
 using System;
+using System.Composition.Hosting;
 using System.IO;
+using System.Reflection;
 
 namespace RepositoryAnalyticsApi
 {
@@ -27,6 +31,7 @@ namespace RepositoryAnalyticsApi
             services.Configure<IConfiguration>(configuration);
 
             ContainerManager.RegisterServices(services, configuration);
+            ContainerManager.RegisterExtensions(services, configuration);
 
             services.AddMvc().AddJsonOptions(options => 
                 options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
@@ -48,6 +53,7 @@ namespace RepositoryAnalyticsApi
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
