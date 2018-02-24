@@ -16,6 +16,6 @@ namespace RepositoryAnalyticsApi.Extensibliity
         /// <param name="name"></param>
         /// <param name="readFileContentAsync"></param>
         /// <returns></returns>
-        Task<(string TypeName, IEnumerable<RepositoryImplementation> Implemementations)> DeriveImplementationAsync(IEnumerable<RepositoryDependency> dependencies, Func<Task<List<RepositoryFile>>> readFilesAsync, IEnumerable<string> topics, string name, Func<string, Task<string>> readFileContentAsync);
+        Task<RepositoryTypeAndImplementations> DeriveImplementationAsync(IEnumerable<RepositoryDependency> dependencies, Func<Task<List<RepositoryFile>>> readFilesAsync, IEnumerable<string> topics, string name, Func<string, Task<string>> readFileContentAsync);
     }
 }

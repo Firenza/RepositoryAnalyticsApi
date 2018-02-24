@@ -2,13 +2,9 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using RepositoryAnalyticsApi.Extensibliity;
-using RepositoryAnalyticsApi.Extensions;
 using Swashbuckle.AspNetCore.Swagger;
 using System;
-using System.Composition.Hosting;
 using System.IO;
-using System.Reflection;
 
 namespace RepositoryAnalyticsApi
 {

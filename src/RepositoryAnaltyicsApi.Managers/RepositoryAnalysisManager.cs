@@ -69,10 +69,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 repository.Topics = repositorySourceRepository.Topics;
 
                 repository.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repository.DefaultBranch);
-                var typeAndImplementationInfo = await ScrapeRepositoryTypeAndImplementation(repository, parsedRepoUrl.owner);
-
-                repository.TypeName = typeAndImplementationInfo.TypeName;
-                repository.Implementations = typeAndImplementationInfo.Implementations;
+                repository.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(repository, parsedRepoUrl.owner);
 
                 if (repository.CreatedOn != repository.LastUpdatedOn)
                 {
@@ -125,22 +122,29 @@ namespace RepositoryAnaltyicsApi.Managers
             return allDependencies;
         }
 
-        private async Task<(string TypeName, IEnumerable<RepositoryImplementation> Implementations)> ScrapeRepositoryTypeAndImplementation(Repository repository, string owner)
+        private async Task<IEnumerable<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(Repository repository, string owner)
         {
-            var readFileContentAsync = new Func<string, Task<string>>((fullFilePath) => repositorySourceManager.ReadFileContentAsync(owner, repository.Name, fullFilePath));
-            var readFilesAsync = new Func<Task<List<RepositoryFile>>>(() => repositorySourceManager.ReadFilesAsync(owner, repository.Name, repository.DefaultBranch));
+            var typesAndImplementations = new List<RepositoryTypeAndImplementations>();
+
+            var readFileContentAsync = new Func<string, Task<string>>(async (fullFilePath) => 
+                await repositorySourceManager.ReadFileContentAsync(owner, repository.Name, fullFilePath).ConfigureAwait(false)
+            );
+
+            var readFilesAsync = new Func<Task<List<RepositoryFile>>>(async () => 
+                await repositorySourceManager.ReadFilesAsync(owner, repository.Name, repository.DefaultBranch).ConfigureAwait(false)
+            );
 
             foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
             {
                 var typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(repository.Dependencies, readFilesAsync, repository.Topics, repository.Name, readFileContentAsync);
 
-                if (!string.IsNullOrWhiteSpace(typeAndImplementationInfo.TypeName))
+                if (typeAndImplementationInfo != null)
                 {
-                    return typeAndImplementationInfo;
+                    typesAndImplementations.Add(typeAndImplementationInfo);
                 }
             }
 
-            return (null, null);
+            return typesAndImplementations;
         }
     }
 }
