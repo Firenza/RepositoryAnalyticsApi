@@ -9,7 +9,7 @@ services:
     ports: 
       - "32771:80"
     env_file:
-      - GitHubConfiguration.env
+      - configuration.env
 
   mongodb:
     image: mongo

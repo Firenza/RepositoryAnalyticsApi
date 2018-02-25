@@ -26,6 +26,8 @@ namespace RepositoryAnalyticsApi
             var gitHubv3ApiUrl = configuration["GITHUB_V3_API_URL"];
             var gitHubGraphQLApiUrl = configuration["GITHUB_GRAPHQL_API_URL"];
             var gitHubAccessToken = configuration["GITHUB_ACCESS_TOKEN"];
+            var mongoDbConnection = configuration["MONGO_DB_CONNECTION"];
+            var mongoDbDatabase = configuration["MONGO_DB_DATABASE"];
 
             // Setup GitHub V3 Api clients
             var gitHubV3ApiCredentials = new Credentials(gitHubAccessToken);
@@ -37,7 +39,7 @@ namespace RepositoryAnalyticsApi
             var requestHeaders = new NameValueCollection();
             requestHeaders.Add("Authorization", $"Bearer {gitHubAccessToken}");
             requestHeaders.Add("User-Agent", "RepositoryAnalyticsApi");
-            var graphQLClient = new GraphQLClient(configuration["GITHUB_GRAPHQL_API_URL"], requestHeaders);
+            var graphQLClient = new GraphQLClient(gitHubGraphQLApiUrl, requestHeaders);
 
             IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
 
@@ -57,17 +59,8 @@ namespace RepositoryAnalyticsApi
             });
 
             // Add in mongo dependencies
-            var client = new MongoClient(new MongoClientSettings
-            {
-                SocketTimeout = new TimeSpan(0, 0, 0, 2),
-                Server = new MongoServerAddress("localhost", 27017),
-                ConnectTimeout = new TimeSpan(0, 0, 0, 2),
-                ServerSelectionTimeout = new TimeSpan(0, 0, 0, 2)
-            });
-
-            client = new MongoClient("mongodb://mongodb:27017");
-
-            var db = client.GetDatabase("local");
+            var client = new MongoClient(mongoDbConnection);
+            var db = client.GetDatabase(mongoDbDatabase);
 
             services.AddScoped((serviceProvider) => db);
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.Repository>("repository"));
