@@ -9,7 +9,7 @@ services:
     ports: 
       - "32771:80"
     env_file:
-      - configuration.env
+      - RepositoryAnalyticsApi\configuration.env
 
   mongodb:
     image: mongo

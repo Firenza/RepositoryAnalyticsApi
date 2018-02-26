@@ -260,4 +260,4 @@ paket-files/
 __pycache__/
 *.pyc
 
-/src/Configuration.env
+/src/RepositoryAnalyticsApi/configuration.env

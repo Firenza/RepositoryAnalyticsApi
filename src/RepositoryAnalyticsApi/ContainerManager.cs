@@ -15,6 +15,8 @@ using System.Collections.Specialized;
 using System.Composition.Hosting;
 using System.Reflection;
 using System.Linq;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace RepositoryAnalyticsApi
 {
@@ -23,11 +25,11 @@ namespace RepositoryAnalyticsApi
         public static void RegisterServices(IServiceCollection services, IConfiguration configuration)
         {
             // Read in environment variables
-            var gitHubv3ApiUrl = configuration["GITHUB_V3_API_URL"];
-            var gitHubGraphQLApiUrl = configuration["GITHUB_GRAPHQL_API_URL"];
-            var gitHubAccessToken = configuration["GITHUB_ACCESS_TOKEN"];
-            var mongoDbConnection = configuration["MONGO_DB_CONNECTION"];
-            var mongoDbDatabase = configuration["MONGO_DB_DATABASE"];
+            var gitHubv3ApiUrl = ReadEnvironmentVariable("GITHUB_V3_API_URL", configuration);
+            var gitHubGraphQLApiUrl = ReadEnvironmentVariable("GITHUB_GRAPHQL_API_URL", configuration);
+            var gitHubAccessToken = ReadEnvironmentVariable("GITHUB_ACCESS_TOKEN", configuration); 
+            var mongoDbConnection = ReadEnvironmentVariable("MONGO_DB_CONNECTION", configuration); 
+            var mongoDbDatabase = ReadEnvironmentVariable("MONGO_DB_DATABASE", configuration);
 
             // Setup GitHub V3 Api clients
             var gitHubV3ApiCredentials = new Credentials(gitHubAccessToken);
@@ -85,6 +87,37 @@ namespace RepositoryAnalyticsApi
                 Console.WriteLine();
 
                 services.AddTransient((serviceProvider) => typeAndImplementationDerivers);
+            }
+        }
+
+        /// <summary>
+        /// Reads an environment varible based on whether or not the api is running in docker or not
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        private static string ReadEnvironmentVariable(string name, IConfiguration configuration)
+        {
+            // If the environment variable specified in the RepositoryAnaltyicsApi startup coniguration is not there
+            // then we must be running inside of Docker so just load the enviornment variables normally
+            if (configuration["RUNNING_OUTSIDE_OF_DOCKER"] != "true")
+            {
+                return configuration[name];
+            }
+            else
+            {
+                var configurationFileLines = File.ReadAllLines("configuration.env");
+
+                foreach (var configurationFileLine in configurationFileLines)
+                {
+                    var match = Regex.Match(configurationFileLine, $"^{name}=(.*)");
+
+                    if (match.Success)
+                    {
+                        return match.Groups[1].Value;
+                    }
+                }
+
+                return null;
             }
         }
     }
