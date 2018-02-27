@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Chad Oftedahl</Authors>
+    <Company />
+    <Description>Types used when interacting with the RepositoryAnalyticsApi</Description>
+    <Version>0.0.1</Version>
   </PropertyGroup>
 
 </Project>
