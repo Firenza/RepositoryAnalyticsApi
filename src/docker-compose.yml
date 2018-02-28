@@ -12,6 +12,6 @@ services:
       - RepositoryAnalyticsApi\configuration.env
 
   mongodb:
-    image: mongo
+    image: mongo:3.4.13
     ports:
       - "27017:27017"
