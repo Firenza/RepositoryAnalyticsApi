@@ -6,16 +6,15 @@ using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnaltyicsApi.Managers;
 using RepositoryAnaltyicsApi.Managers.Dependencies;
-using RepositoryAnalyticsApi.Extensibliity;
+using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.Extensions;
 using RepositoryAnalyticsApi.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Composition.Hosting;
-using System.Reflection;
-using System.Linq;
 using System.IO;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace RepositoryAnalyticsApi

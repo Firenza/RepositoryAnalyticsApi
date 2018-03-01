@@ -1,5 +1,4 @@
 ﻿using RepositoryAnalyticsApi.Extensibility;
-using RepositoryAnalyticsApi.Extensibliity;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;

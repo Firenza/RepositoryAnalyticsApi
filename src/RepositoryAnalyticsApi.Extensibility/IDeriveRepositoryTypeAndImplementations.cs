@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace RepositoryAnalyticsApi.Extensibliity
+namespace RepositoryAnalyticsApi.Extensibility
 {
     public interface IDeriveRepositoryTypeAndImplementations
     {
