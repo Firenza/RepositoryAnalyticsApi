@@ -14,7 +14,9 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Composition.Hosting;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Text.RegularExpressions;
 
 namespace RepositoryAnalyticsApi
@@ -69,24 +71,112 @@ namespace RepositoryAnalyticsApi
 
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
         {
+            var typeAndImplementationDerivers = new List<IDeriveRepositoryTypeAndImplementations>();
+            IDeriveRepositoryDevOpsIntegrations devOpsIntegrationDeriver = null;
+
+
             // Load internal extensions
             var extensionAssemblyConfiguration = new ContainerConfiguration().WithAssembly(typeof(ExtensionAssembly).GetTypeInfo().Assembly);
 
             using (var extensionAssemblyContainer = extensionAssemblyConfiguration.CreateContainer())
             {
-                var typeAndImplementationDerivers = extensionAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
+                var internalTypeAndImplementationDerivers = extensionAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
 
                 Console.WriteLine("\nLoading the following internal IDeriveRepositoryTypeAndImplementations\n");
 
-                foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
+                foreach (var typeAndImplementationDeriver in internalTypeAndImplementationDerivers)
                 {
                     Console.WriteLine(typeAndImplementationDeriver.GetType().Name);
                 }
 
-                Console.WriteLine();
-
-                services.AddTransient((serviceProvider) => typeAndImplementationDerivers);
+                typeAndImplementationDerivers.AddRange(internalTypeAndImplementationDerivers);
             }
+
+            // Now load any external extensions in the defined plugin directory
+            var externalPluginDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Plugins");
+
+            Console.WriteLine($"\nScanning directory {externalPluginDirectory} for external plugins\n");
+
+            var externalPluginAsemblies = new List<Assembly>();
+
+            foreach (var file in Directory.GetFiles(externalPluginDirectory, "*.dll"))
+            {
+                try
+                {
+                    var externalPluginAssembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(file);
+                    externalPluginAsemblies.Add(externalPluginAssembly);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+
+            }
+
+            var externalAssemblyConfiguration = new ContainerConfiguration().WithAssemblies(externalPluginAsemblies);
+
+            try
+            {
+                using (var externalAssemblyContainer = externalAssemblyConfiguration.CreateContainer())
+                {
+                    var loadedExternalTypeAndImplementationDerivers = externalAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
+
+                    if (loadedExternalTypeAndImplementationDerivers.Any())
+                    {
+                        Console.WriteLine("\nLoading the following external IDeriveRepositoryTypeAndImplementations\n");
+
+                        foreach (var typeAndImplementationDeriver in loadedExternalTypeAndImplementationDerivers)
+                        {
+                            Console.WriteLine(typeAndImplementationDeriver.GetType().Name);
+                        }
+
+                        Console.WriteLine();
+
+                        typeAndImplementationDerivers.AddRange(loadedExternalTypeAndImplementationDerivers);
+                    }
+                    else
+                    {
+                        Console.WriteLine("No external IDeriveRepositoryTypeAndImplementations found");
+                    }
+
+                    try
+                    {
+                        var externalDevOpsIntegrationDeriver = externalAssemblyContainer.GetExport<IDeriveRepositoryDevOpsIntegrations>();
+
+                        if (externalDevOpsIntegrationDeriver != null)
+                        {
+                            Console.WriteLine("\nLoading the following external IDeriveRepositoryDevOpsIntegrations\n");
+
+                            Console.WriteLine(externalDevOpsIntegrationDeriver.GetType().Name);
+
+                            devOpsIntegrationDeriver = externalDevOpsIntegrationDeriver;
+                        }
+                    }
+                    catch (CompositionFailedException ex)
+                    {
+                        Console.WriteLine("No External IDeriveRepositoryDevOpsIntegrations found");
+                    }
+                }
+
+                // Now put what we found in the container
+                services.AddScoped<IEnumerable<IDeriveRepositoryTypeAndImplementations>>(serviceProvider => typeAndImplementationDerivers);
+
+                if (devOpsIntegrationDeriver != null)
+                {
+                    services.AddScoped<IDeriveRepositoryDevOpsIntegrations>(serviceProvider => devOpsIntegrationDeriver);
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                Console.WriteLine("!!!! Error when loading external plugin assemblies !!!!!\n");
+
+                foreach (var loaderException in ex.LoaderExceptions)
+                {
+                    Console.WriteLine(loaderException.Message);
+                }
+            }
+
+            Console.WriteLine();
         }
 
         /// <summary>
