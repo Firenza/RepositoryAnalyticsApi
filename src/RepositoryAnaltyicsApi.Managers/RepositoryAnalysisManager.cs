@@ -14,13 +14,15 @@ namespace RepositoryAnaltyicsApi.Managers
         private IRepositorySourceManager repositorySourceManager;
         private IEnumerable<IDependencyScraperManager> dependencyScraperManagers;
         private IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers;
+        private IDeriveRepositoryDevOpsIntegrations devOpsIntegrationsDeriver;
 
-        public RepositoryAnalysisManager(IRepositoryManager repositoryManager, IRepositorySourceManager repositorySourceManager, IEnumerable<IDependencyScraperManager> dependencyScraperManagers, IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers)
+        public RepositoryAnalysisManager(IRepositoryManager repositoryManager, IRepositorySourceManager repositorySourceManager, IEnumerable<IDependencyScraperManager> dependencyScraperManagers, IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers, IDeriveRepositoryDevOpsIntegrations devOpsIntegrationsDeriver)
         {
             this.repositoryManager = repositoryManager;
             this.repositorySourceManager = repositorySourceManager;
             this.dependencyScraperManagers = dependencyScraperManagers;
             this.typeAndImplementationDerivers = typeAndImplementationDerivers;
+            this.devOpsIntegrationsDeriver = devOpsIntegrationsDeriver;
         }
 
         public async Task CreateAsync(RepositoryAnalysis repositoryAnalysis)
@@ -70,6 +72,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 repository.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repository.DefaultBranch);
                 repository.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(repository, parsedRepoUrl.owner);
+                repository.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repository.Name);
 
                 if (repository.CreatedOn != repository.LastUpdatedOn)
                 {
@@ -90,6 +93,21 @@ namespace RepositoryAnaltyicsApi.Managers
                 return (owner, name);
             }
         }
+
+        private async Task<RepositoryDevOpsIntegrations> ScrapeDevOpsIntegrations(string repositoryName)
+        {
+            if (devOpsIntegrationsDeriver != null)
+            {
+                var devOpsIntegrations = await devOpsIntegrationsDeriver.DeriveIntegrationsAsync(repositoryName);
+
+                return devOpsIntegrations;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
 
         private async Task<List<RepositoryDependency>> ScrapeDependenciesAsync(string owner, string name, string defaultBranch)
         {
