@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -33,7 +34,16 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
                 {
                     var packageJsonContent = await repositorySourceManager.ReadFileContentAsync(owner, name, packageJsonFile.FullPath).ConfigureAwait(false);
 
-                    var jObject = JObject.Parse(packageJsonContent);
+                    JObject jObject = null;
+                    try
+                    {
+                       jObject = JObject.Parse(packageJsonContent);
+                    }
+                    catch(Exception ex)
+                    {
+                        var exceptionMessage = $"Error parsing JSON from {owner} - {name} - {packageJsonFile.FullPath}";
+                        throw new ArgumentException(exceptionMessage, ex);
+                    }  
 
                     var npmProdDependencies = jObject["dependencies"];
 
