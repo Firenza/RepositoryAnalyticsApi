@@ -111,6 +111,8 @@ namespace RepositoryAnaltyicsApi.Managers
 
         private async Task<List<RepositoryDependency>> ScrapeDependenciesAsync(string owner, string name, string defaultBranch)
         {
+            var allDependencies = new List<RepositoryDependency>();
+
             var sourceFileRegexes = dependencyScraperManagers.Select(dependencyManager => dependencyManager.SourceFileRegex);
             var sourceFiles = await repositorySourceManager.ReadFilesAsync(owner, name, defaultBranch);
 
@@ -126,15 +128,16 @@ namespace RepositoryAnaltyicsApi.Managers
                 }
             }
 
-            // Read in the file content in bulk to get the files cached for the dependency managers to read
-            await repositorySourceManager.GetMultipleFileContentsAsync(owner, name, defaultBranch, sourceFilesToRead).ConfigureAwait(false);
-
-            var allDependencies = new List<RepositoryDependency>();
-
-            foreach (var dependencyManager in dependencyScraperManagers)
+            if (sourceFilesToRead.Any())
             {
-                var dependencies = await dependencyManager.ReadAsync(owner, name, defaultBranch).ConfigureAwait(false);
-                allDependencies.AddRange(dependencies);
+                // Read in the file content in bulk to get the files cached for the dependency managers to read
+                await repositorySourceManager.GetMultipleFileContentsAsync(owner, name, defaultBranch, sourceFilesToRead).ConfigureAwait(false);
+
+                foreach (var dependencyManager in dependencyScraperManagers)
+                {
+                    var dependencies = await dependencyManager.ReadAsync(owner, name, defaultBranch).ConfigureAwait(false);
+                    allDependencies.AddRange(dependencies);
+                }
             }
 
             return allDependencies;
