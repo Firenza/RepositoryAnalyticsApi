@@ -22,7 +22,7 @@ namespace RepositoryAnalyticsApi
              .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
              .Enrich.FromLogContext()
              .WriteTo.Console()
-             .WriteTo.RollingFile(Path.Combine(Directory.GetCurrentDirectory(), "log-{Date}.txt"))
+             .WriteTo.Elasticsearch("http://localhost:9200")
              .CreateLogger();
         }
 
