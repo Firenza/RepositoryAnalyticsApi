@@ -77,14 +77,10 @@ namespace RepositoryAnalyticsApi
             {
                 var typeAndImplementationDerivers = extensionAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
 
-                Log.Logger.Information("\nLoading the following internal IDeriveRepositoryTypeAndImplementations\n");
-
                 foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
                 {
-                    Log.Logger.Information(typeAndImplementationDeriver.GetType().Name);
+                    Log.Logger.Information($"Loading internalIDeriveRepositoryTypeAndImplementations {typeAndImplementationDeriver.GetType().Name}");
                 }
-
-                Log.Logger.Information(string.Empty);
 
                 services.AddTransient((serviceProvider) => typeAndImplementationDerivers);
             }
