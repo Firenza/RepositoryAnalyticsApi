@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
@@ -11,16 +12,18 @@ namespace RepositoryAnaltyicsApi.Managers
     {
         private IRepositorySourceRepository repositorySourceRepository;
         private IMemoryCache memoryCache;
+        private ILogger<RepositorySourceManager> logger;
 
-        public RepositorySourceManager(IRepositorySourceRepository repositorySourceRepository, IMemoryCache memoryCache)
+        public RepositorySourceManager(ILogger<RepositorySourceManager> logger, IRepositorySourceRepository repositorySourceRepository, IMemoryCache memoryCache)
         {
+            this.logger = logger;
             this.repositorySourceRepository = repositorySourceRepository;
             this.memoryCache = memoryCache;
         }
 
         public async Task<List<(string fullFilePath, string fileContent)>> GetMultipleFileContentsAsync(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths)
         {
-            Console.WriteLine($"retrieving file contents from source");
+            logger.LogDebug("Retrieving file contents from source");
 
             var filesContentInformation = await repositorySourceRepository.GetMultipleFileContentsAsync(repositoryOwner, repositoryName, branch, fullFilePaths).ConfigureAwait(false);
 
@@ -40,7 +43,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
             {
-                Console.WriteLine($"retrieving {cacheKey} from source");
+                logger.LogDebug($"Retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromSeconds(10);
                 return await repositorySourceRepository.ReadFileContentAsync(owner, name, fullFilePath);
             }).ConfigureAwait(false);
@@ -54,7 +57,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey,  async entry =>
             {
-                Console.WriteLine($"retrieving {cacheKey} from source");
+                logger.LogDebug($"retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromSeconds(10);
                 return await repositorySourceRepository.ReadFilesAsync(owner, name, branch);
             });
@@ -75,7 +78,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
             {
-                Console.WriteLine($"retrieving {cacheKey} from source");
+                logger.LogDebug($"retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromSeconds(10);
                 var repository = await this.repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName);
                 return repository;
