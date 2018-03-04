@@ -34,4 +34,8 @@
     <ProjectReference Include="..\RepositoryAnalyticsApi.Repositories\RepositoryAnalyticsApi.Repositories.csproj" />
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="docker-compose -f &quot;$(ProjectDir)dependencies-docker-compose.yml&quot; up --remove-orphans -d" />
+  </Target>
+
 </Project>
