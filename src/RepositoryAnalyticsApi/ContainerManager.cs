@@ -9,6 +9,7 @@ using RepositoryAnaltyicsApi.Managers.Dependencies;
 using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.Extensions;
 using RepositoryAnalyticsApi.Repositories;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -76,14 +77,14 @@ namespace RepositoryAnalyticsApi
             {
                 var typeAndImplementationDerivers = extensionAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
 
-                Console.WriteLine("\nLoading the following internal IDeriveRepositoryTypeAndImplementations\n");
+                Log.Logger.Information("\nLoading the following internal IDeriveRepositoryTypeAndImplementations\n");
 
                 foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
                 {
-                    Console.WriteLine(typeAndImplementationDeriver.GetType().Name);
+                    Log.Logger.Information(typeAndImplementationDeriver.GetType().Name);
                 }
 
-                Console.WriteLine();
+                Log.Logger.Information(string.Empty);
 
                 services.AddTransient((serviceProvider) => typeAndImplementationDerivers);
             }
