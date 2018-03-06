@@ -30,8 +30,8 @@ namespace RepositoryAnalyticsApi
             // Read in environment variables
             var gitHubv3ApiUrl = ReadEnvironmentVariable("GITHUB_V3_API_URL", configuration);
             var gitHubGraphQLApiUrl = ReadEnvironmentVariable("GITHUB_GRAPHQL_API_URL", configuration);
-            var gitHubAccessToken = ReadEnvironmentVariable("GITHUB_ACCESS_TOKEN", configuration); 
-            var mongoDbConnection = ReadEnvironmentVariable("MONGO_DB_CONNECTION", configuration); 
+            var gitHubAccessToken = ReadEnvironmentVariable("GITHUB_ACCESS_TOKEN", configuration);
+            var mongoDbConnection = ReadEnvironmentVariable("MONGO_DB_CONNECTION", configuration);
             var mongoDbDatabase = ReadEnvironmentVariable("MONGO_DB_DATABASE", configuration);
 
             // Setup GitHub V3 Api clients
@@ -129,6 +129,14 @@ namespace RepositoryAnalyticsApi
 
                 }
             }
+            catch (ReflectionTypeLoadException ex)
+            {
+                Log.Logger.Error(ex, "!!!! Error when loading external plugin assemblies !!!!!\n");
+                foreach (var loaderException in ex.LoaderExceptions)
+                {
+                    Log.Logger.Error(loaderException, string.Empty);
+                }
+            }
             catch (Exception ex)
             {
                 Log.Logger.Error(ex, "!!!! Error when loading external plugin assemblies !!!!!\n");
@@ -143,7 +151,7 @@ namespace RepositoryAnalyticsApi
 
                 return matchingAssembly;
             }
-        
+
             List<Assembly> LoadAssembliesFromDirectory(string directory)
             {
                 var assemblies = new List<Assembly>();
