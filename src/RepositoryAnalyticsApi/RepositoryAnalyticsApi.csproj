@@ -10,11 +10,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GraphQl.NetStandard.Client" Version="1.1.0" />
+    <PackageReference Include="GraphQl.NetStandard.Client" Version="1.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.5" />
     <PackageReference Include="Microsoft.Composition" Version="1.0.31" />
     <PackageReference Include="Octokit" Version="0.28.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="1.1.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="2.1.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="6.3.0" />
+    <PackageReference Include="Serilog.Sinks.RollingFile" Version="3.3.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,5 +33,9 @@
     <ProjectReference Include="..\RepositoryAnalyticsApi.Extensibility\RepositoryAnalyticsApi.Extensibility.csproj" />
     <ProjectReference Include="..\RepositoryAnalyticsApi.Repositories\RepositoryAnalyticsApi.Repositories.csproj" />
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="docker-compose -f &quot;$(ProjectDir)dependencies-docker-compose.yml&quot; up --remove-orphans -d" />
+  </Target>
 
 </Project>

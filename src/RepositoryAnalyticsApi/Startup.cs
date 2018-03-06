@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
+using Serilog.Events;
 using Swashbuckle.AspNetCore.Swagger;
 using System;
 using System.IO;
@@ -15,6 +17,13 @@ namespace RepositoryAnalyticsApi
 
         public Startup(IConfiguration configuration)
         {
+            Log.Logger = new LoggerConfiguration()
+             .MinimumLevel.Debug()
+             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+             .Enrich.FromLogContext()
+             .WriteTo.Console()
+             .WriteTo.Elasticsearch("http://localhost:9200")
+             .CreateLogger();
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.

@@ -15,3 +15,13 @@ services:
     image: mongo:3.4.13
     ports:
       - "27017:27017"
+
+  elasticsearch:
+    image: elasticsearch
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: kibana
+    ports: 
+      - "5601:5601"

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -25,52 +26,64 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
 
             var files = await repositorySourceManager.ReadFilesAsync(owner, name, branch).ConfigureAwait(false);
 
-            var packageJsonFile = files.FirstOrDefault(file => file.Name == "package.json");
+            var packageJsonFiles = files.Where(file => file.Name == "package.json");
 
-            if (packageJsonFile != null)
+            if (packageJsonFiles != null)
             {
-                var packageJsonContent = await repositorySourceManager.ReadFileContentAsync(owner, name, packageJsonFile.FullPath).ConfigureAwait(false);
-
-                var jObject = JObject.Parse(packageJsonContent);
-
-                var npmProdDependencies = jObject["dependencies"];
-
-                if (npmProdDependencies != null)
+                foreach (var packageJsonFile in packageJsonFiles)
                 {
-                    foreach (var token in npmProdDependencies)
+                    var packageJsonContent = await repositorySourceManager.ReadFileContentAsync(owner, name, packageJsonFile.FullPath).ConfigureAwait(false);
+
+                    JObject jObject = null;
+                    try
                     {
-                        var property = token as JProperty;
-
-                        var dependency = new RepositoryDependency();
-                        dependency.Environment = "Production";
-                        dependency.Source = "npm";
-                        dependency.Name = property.Name;
-                        var cleansedVersionMatch = Regex.Match(property.Value.ToString(), @"[\d\.]+");
-                        dependency.Version = cleansedVersionMatch.Value;
-                        dependency.MajorVersion = Regex.Match(dependency.Version, @"\d+").Value;
-
-                        dependencies.Add(dependency);
+                       jObject = JObject.Parse(packageJsonContent);
                     }
-                }
-
-                var npmDevDependencies = jObject["devDependencies"];
-
-
-                if (npmDevDependencies != null)
-                {
-                    foreach (var token in npmDevDependencies)
+                    catch(Exception ex)
                     {
-                        var property = token as JProperty;
+                        var exceptionMessage = $"Error parsing JSON from {owner} - {name} - {packageJsonFile.FullPath}";
+                        throw new ArgumentException(exceptionMessage, ex);
+                    }  
 
-                        var dependency = new RepositoryDependency();
-                        dependency.Environment = "Development";
-                        dependency.Source = "npm";
-                        dependency.Name = property.Name;
-                        var cleansedVersionMatch = Regex.Match(property.Value.ToString(), @"[\d\.]+");
-                        dependency.Version = cleansedVersionMatch.Value;
-                        dependency.MajorVersion = Regex.Match(dependency.Version, @"\d+").Value;
+                    var npmProdDependencies = jObject["dependencies"];
 
-                        dependencies.Add(dependency);
+                    if (npmProdDependencies != null)
+                    {
+                        foreach (var token in npmProdDependencies)
+                        {
+                            var property = token as JProperty;
+
+                            var dependency = new RepositoryDependency();
+                            dependency.Environment = "Production";
+                            dependency.Source = "npm";
+                            dependency.Name = property.Name;
+                            var cleansedVersionMatch = Regex.Match(property.Value.ToString(), @"[\d\.]+");
+                            dependency.Version = cleansedVersionMatch.Value;
+                            dependency.MajorVersion = Regex.Match(dependency.Version, @"\d+").Value;
+
+                            dependencies.Add(dependency);
+                        }
+                    }
+
+                    var npmDevDependencies = jObject["devDependencies"];
+
+
+                    if (npmDevDependencies != null)
+                    {
+                        foreach (var token in npmDevDependencies)
+                        {
+                            var property = token as JProperty;
+
+                            var dependency = new RepositoryDependency();
+                            dependency.Environment = "Development";
+                            dependency.Source = "npm";
+                            dependency.Name = property.Name;
+                            var cleansedVersionMatch = Regex.Match(property.Value.ToString(), @"[\d\.]+");
+                            dependency.Version = cleansedVersionMatch.Value;
+                            dependency.MajorVersion = Regex.Match(dependency.Version, @"\d+").Value;
+
+                            dependencies.Add(dependency);
+                        }
                     }
                 }
             }

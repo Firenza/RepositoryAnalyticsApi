@@ -25,7 +25,7 @@ namespace RepositoryAnalyticsApi.Repositories
             this.graphQLClient = graphQLClient;
         }
 
-        public async Task<string> ReadFileContentAsync(string owner,string name, string fullFilePath)
+        public async Task<string> ReadFileContentAsync(string owner, string name, string fullFilePath)
         {
             var repositoryContent = await gitHubClient.Repository.Content.GetAllContents(owner, name, fullFilePath);
 
@@ -43,7 +43,7 @@ namespace RepositoryAnalyticsApi.Repositories
         {
             var tupleList = new List<(string fullFilePath, string fileContent)>();
 
-            
+
             var fileContentRequestBuilder = new StringBuilder();
             // Build up the list of file content requests.  This is needed because GraphQl does not allow 
             // the returning of multiple nodes of the same name.  This loop builds up the file request json
@@ -62,7 +62,7 @@ namespace RepositoryAnalyticsApi.Repositories
             }}
             ";
 
-            var variables = new { repoOwner = repositoryOwner, repoName = repositoryName};
+            var variables = new { repoOwner = repositoryOwner, repoName = repositoryName };
 
             var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
 
@@ -90,7 +90,7 @@ namespace RepositoryAnalyticsApi.Repositories
             }
         }
 
-        public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name,  string branch)
+        public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name, string branch)
         {
             var treeResponse = await treesClient.GetRecursive(owner, name, branch);
             var treeItems = treeResponse.Tree;
@@ -135,13 +135,14 @@ namespace RepositoryAnalyticsApi.Repositories
             }
             ";
 
-            var variables = new { repoOwner = repositoryOwner, repoName = repositoryName};
+            var variables = new { repoOwner = repositoryOwner, repoName = repositoryName };
 
             var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
 
             var repository = MapFromGraphQlGitHubRepoBodyString(responseBodyString);
 
             return repository;
+
         }
 
         public async Task<CursorPagedResults<RepositorySourceRepository>> ReadRepositoriesAsync(string organization, string user, int take, string endCursor)
@@ -187,7 +188,7 @@ namespace RepositoryAnalyticsApi.Repositories
             }}
             ";
 
-            var variables = new { login = login, take = take};
+            var variables = new { login = login, take = take };
 
             var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
 
@@ -225,7 +226,16 @@ namespace RepositoryAnalyticsApi.Repositories
             codeRepository.Name = jObject.data.repository.name;
             codeRepository.CreatedOn = jObject.data.repository.createdAt;
             codeRepository.LastUpdatedOn = jObject.data.repository.pushedAt;
-            codeRepository.DefaultBranch = jObject.data.repository.defaultBranchRef.name;
+
+            //// For whatever reason sometimes the default branch ref isn't popluated for some respositories.
+            if (jObject.data.repository.defaultBranchRef != null)
+            {
+                codeRepository.DefaultBranch = jObject.data.repository.defaultBranchRef.name;
+            }
+            else
+            {
+                throw new ArgumentException($"Unable to determine default branch for {codeRepository.Name}");
+            }
 
             var numberOfTopics = jObject.data.repository.repositoryTopics.nodes.Count;
 
