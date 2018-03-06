@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Composition.Hosting;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -73,26 +74,97 @@ namespace RepositoryAnalyticsApi
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
         {
             var typeAndImplementationDerivers = new List<IDeriveRepositoryTypeAndImplementations>();
-            IDeriveRepositoryDevOpsIntegrations devOpsIntegrationDeriver = null;
 
+            var internalExtensionAssembly = typeof(ExtensionAssembly).GetTypeInfo().Assembly;
 
             // Load internal extensions
-            var extensionAssemblyConfiguration = new ContainerConfiguration().WithAssembly(typeof(ExtensionAssembly).GetTypeInfo().Assembly);
+            var extensionAssemblyConfiguration = new ContainerConfiguration().WithAssembly(internalExtensionAssembly);
 
             using (var extensionAssemblyContainer = extensionAssemblyConfiguration.CreateContainer())
             {
-                var typeAndImplementationDerivers = extensionAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
+                var internalTypeAndImplementationDerivers = extensionAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
 
-                foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
+                foreach (var typeAndImplementationDeriver in internalTypeAndImplementationDerivers)
                 {
-                    Log.Logger.Information($"Loading internalIDeriveRepositoryTypeAndImplementations {typeAndImplementationDeriver.GetType().Name}");
+                    Log.Logger.Information($"Loading internal IDeriveRepositoryTypeAndImplementations {typeAndImplementationDeriver.GetType().Name}");
                 }
 
-                services.AddTransient((serviceProvider) => typeAndImplementationDerivers);
+                typeAndImplementationDerivers.AddRange(internalTypeAndImplementationDerivers);
+
             }
 
-            Console.WriteLine();
+            // Load external extensions
+            List<Assembly> externalPluginDirectoryAssemblies = null;
+
+            try
+            {
+                // For some reason when the MEF container is created it needs help resolving dependency references
+                AssemblyLoadContext.Default.Resolving += ResolveAssemblyDependency;
+
+                // Load any external extensions in the defined plugin directory
+                var externalPluginDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Plugins");
+                externalPluginDirectoryAssemblies = LoadAssembliesFromDirectory(externalPluginDirectory);
+
+                Log.Logger.Information($"Scanning directory {externalPluginDirectory} for external plugins");
+
+                var externalAssemblyConfiguration = new ContainerConfiguration().WithAssemblies(externalPluginDirectoryAssemblies);
+
+                using (var externalAssemblyContainer = externalAssemblyConfiguration.CreateContainer())
+                {
+                    var loadedExternalTypeAndImplementationDerivers = externalAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
+
+                    foreach (var externalTypeAndImplementationDeriver in loadedExternalTypeAndImplementationDerivers)
+                    {
+                        Log.Logger.Information($"Loading external IDeriveRepositoryTypeAndImplementations {externalTypeAndImplementationDeriver.GetType().Name}");
+                    }
+
+                    typeAndImplementationDerivers.AddRange(loadedExternalTypeAndImplementationDerivers);
+
+                    if (externalAssemblyContainer.TryGetExport<IDeriveRepositoryDevOpsIntegrations>(out var loadedExternalDevOpsImplementationDerivers))
+                    {
+                        Log.Logger.Information($"Loading external IDeriveRepositoryDevOpsIntegrations {loadedExternalDevOpsImplementationDerivers.GetType().Name}");
+
+                        services.AddTransient<IDeriveRepositoryDevOpsIntegrations>(serviceProvider => loadedExternalDevOpsImplementationDerivers);
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error(ex, "!!!! Error when loading external plugin assemblies !!!!!\n");
+            }
+
+            // Now add any lists of extension types that we found in the container
+            services.AddTransient((serviceProvider) => typeAndImplementationDerivers.AsEnumerable());
+
+            Assembly ResolveAssemblyDependency(AssemblyLoadContext assemblyLoadContext, AssemblyName assemblyName)
+            {
+                var matchingAssembly = externalPluginDirectoryAssemblies.FirstOrDefault(assembly => assembly.FullName == assemblyName.FullName);
+
+                return matchingAssembly;
+            }
+        
+            List<Assembly> LoadAssembliesFromDirectory(string directory)
+            {
+                var assemblies = new List<Assembly>();
+
+                foreach (var file in Directory.GetFiles(directory, "*.dll"))
+                {
+                    try
+                    {
+                        var assembly = Assembly.LoadFile(file);
+                        assemblies.Add(assembly);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+
+                return assemblies;
+            }
         }
+
 
         /// <summary>
         /// Reads an environment varible based on whether or not the api is running in docker or not
