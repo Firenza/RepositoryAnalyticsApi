@@ -124,6 +124,15 @@ namespace RepositoryAnalyticsApi.Repositories
                 defaultBranchRef{
                   name
                 },
+                projects{
+                  totalCount
+                },
+    		    issues{
+                  totalCount
+                },
+                pullRequests{
+                  totalCount
+                }
                 repositoryTopics(first:50){
                   nodes{
                     topic{
@@ -227,15 +236,19 @@ namespace RepositoryAnalyticsApi.Repositories
             codeRepository.CreatedOn = jObject.data.repository.createdAt;
             codeRepository.LastUpdatedOn = jObject.data.repository.pushedAt;
 
-            //// For whatever reason sometimes the default branch ref isn't popluated for some respositories.
             if (jObject.data.repository.defaultBranchRef != null)
             {
                 codeRepository.DefaultBranch = jObject.data.repository.defaultBranchRef.name;
             }
-            else
-            {
-                throw new ArgumentException($"Unable to determine default branch for {codeRepository.Name}");
-            }
+
+            var projectCount = jObject.data.repository.projects.totalCount;
+            codeRepository.HasProjects = projectCount > 0;
+
+            var issueCount = jObject.data.repository.issues.totalCount;
+            codeRepository.HasIssues = issueCount > 0;
+
+            var pullRequestCount = jObject.data.repository.pullReqeusts.totalCount;
+            codeRepository.HasPullRequests = pullRequestCount > 0;
 
             var numberOfTopics = jObject.data.repository.repositoryTopics.nodes.Count;
 
@@ -254,18 +267,5 @@ namespace RepositoryAnalyticsApi.Repositories
 
             return codeRepository;
         }
-
-        private ServiceModel.Repository MapFromGitHubRepo(Octokit.Repository gitHubRepository)
-        {
-            var codeRepository = new ServiceModel.Repository();
-            codeRepository.CreatedOn = gitHubRepository.CreatedAt.LocalDateTime;
-            codeRepository.LastUpdatedOn = gitHubRepository.UpdatedAt.LocalDateTime;
-            codeRepository.Id = gitHubRepository.Id.ToString();
-            codeRepository.Name = gitHubRepository.Name;
-            codeRepository.DefaultBranch = gitHubRepository.DefaultBranch;
-
-            return codeRepository;
-        }
-
     }
 }
