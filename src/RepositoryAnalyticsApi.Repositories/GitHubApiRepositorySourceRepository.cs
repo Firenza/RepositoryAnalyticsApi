@@ -247,7 +247,7 @@ namespace RepositoryAnalyticsApi.Repositories
             var issueCount = jObject.data.repository.issues.totalCount;
             codeRepository.HasIssues = issueCount > 0;
 
-            var pullRequestCount = jObject.data.repository.pullReqeusts.totalCount;
+            var pullRequestCount = jObject.data.repository.pullRequests.totalCount;
             codeRepository.HasPullRequests = pullRequestCount > 0;
 
             var numberOfTopics = jObject.data.repository.repositoryTopics.nodes.Count;
