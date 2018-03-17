@@ -14,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Composition.Hosting;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -48,8 +47,8 @@ namespace RepositoryAnalyticsApi
 
             IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
 
-            services.AddTransient<IRepositoryManager, RepositoryManager>();
-            services.AddTransient<IRepositoryRepository, MongoRepositoryRepository>();
+            services.AddTransient<IRepositoriesManager, RepositoryManager>();
+            services.AddTransient<IRepositoriesRepository, MongoRepositoryRepository>();
             services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
             services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();

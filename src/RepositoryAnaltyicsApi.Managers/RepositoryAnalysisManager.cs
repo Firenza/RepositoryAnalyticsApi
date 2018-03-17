@@ -10,13 +10,13 @@ namespace RepositoryAnaltyicsApi.Managers
 {
     public class RepositoryAnalysisManager : IRepositoryAnalysisManager
     {
-        private IRepositoryManager repositoryManager;
+        private IRepositoriesManager repositoryManager;
         private IRepositorySourceManager repositorySourceManager;
         private IEnumerable<IDependencyScraperManager> dependencyScraperManagers;
         private IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers;
         private IDeriveRepositoryDevOpsIntegrations devOpsIntegrationsDeriver;
 
-        public RepositoryAnalysisManager(IRepositoryManager repositoryManager, IRepositorySourceManager repositorySourceManager, IEnumerable<IDependencyScraperManager> dependencyScraperManagers, IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers, IDeriveRepositoryDevOpsIntegrations devOpsIntegrationsDeriver)
+        public RepositoryAnalysisManager(IRepositoriesManager repositoryManager, IRepositorySourceManager repositorySourceManager, IEnumerable<IDependencyScraperManager> dependencyScraperManagers, IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers, IDeriveRepositoryDevOpsIntegrations devOpsIntegrationsDeriver)
         {
             this.repositoryManager = repositoryManager;
             this.repositorySourceManager = repositorySourceManager;
