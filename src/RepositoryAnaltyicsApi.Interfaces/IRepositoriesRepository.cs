@@ -10,6 +10,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
         Task<Repository> ReadAsync(string id);
         Task UpdateAsync(Repository repository);
         Task DeleteAsync(string id);
-        Task<List<Repository>> SearchAsync(string typeName, string implementationName, List<(string Name, string Version)> dependencies);
+        Task<List<Repository>> SearchAsync(RepositorySearch repositorySearch);
     }
 }

@@ -29,9 +29,9 @@ namespace RepositoryAnaltyicsApi.Managers
             return await repositoryRepository.ReadAsync(id).ConfigureAwait(false);
         }
 
-        public async Task<List<Repository>> SearchAsync(string typeName, string implementationName, List<(string Name, string Version)> dependencies)
+        public async Task<List<Repository>> SearchAsync(RepositorySearch repositorySearch)
         {
-            return await repositoryRepository.SearchAsync(typeName, implementationName, dependencies);
+            return await repositoryRepository.SearchAsync(repositorySearch);
         }
 
         public async Task UpdateAsync(Repository repository)

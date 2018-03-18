@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RepositoryAnaltyicsApi.Interfaces;
+using RepositoryAnalyticsApi.ServiceModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,11 +24,11 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// <param name="typeName">Exact match</param>
         /// <param name="implementationName">Exact match</param>
         /// <param name="dependencies">Exact match on name</param>
-        /// <remarks>Dependency matches can contain both a name and partial or complete version number.  E.G. ".NET Framework:4" matches any .NET Framework 
+        /// <remarks>Dependency matches can contain both a name and partial or complete version number.  E.G. ".NET Framework:4" matches any .NET Framework
         /// dependencies with a major version of 4 and ".NET Framework:4.5.2" matches .NET Framework dependencies with version 4.5.2</remarks>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> GetAsync([FromQuery]string typeName, [FromQuery]string implementationName, [FromQuery]List<string> dependencies)
+        public async Task<IActionResult> GetAsync([FromQuery]string typeName, [FromQuery]string implementationName, [FromQuery]List<string> dependencies, [FromQuery]bool? hasContinuousDelivery)
         {
             var parsedDependencies = new List<(string name, string version)>();
 
@@ -48,7 +49,15 @@ namespace RepositoryAnaltyicsApi.Controllers
                 }
             }
 
-            var repositories = await repositoriesManager.SearchAsync(typeName, implementationName,  parsedDependencies);
+            var repositorySearch = new RepositorySearch
+            {
+                TypeName = typeName,
+                ImplementationName = implementationName,
+                HasContinuousDelivery = hasContinuousDelivery,
+                Dependencies = parsedDependencies
+            };
+
+            var repositories = await repositoriesManager.SearchAsync(repositorySearch);
 
             return new ObjectResult(repositories);
         }

@@ -35,48 +35,60 @@ namespace RepositoryAnalyticsApi.Repositories
             return repository;
         }
 
-        public async Task<List<Repository>> SearchAsync(string typeName, string implementationName, List<(string Name, string Version)> dependencies)
+        public async Task<List<Repository>> SearchAsync(RepositorySearch repositorySearch)
         {
             var foundRepositories = new List<Repository>();
 
             BsonDocument filter = new BsonDocument();
             var filterArray = new BsonArray();
 
-            if (!string.IsNullOrWhiteSpace(typeName))
+            if (!string.IsNullOrWhiteSpace(repositorySearch.TypeName))
             {
-                filterArray.Add(new BsonDocument()
-                               .Add(nameof(Repository.TypesAndImplementations), new BsonDocument()
-                                       .Add("$elemMatch", new BsonDocument()
-                                               .Add(nameof(RepositoryTypeAndImplementations.TypeName), typeName)
-                                       )
-                               )
-                       );
+                filterArray
+                    .Add(new BsonDocument()
+                       .Add(nameof(Repository.TypesAndImplementations), new BsonDocument()
+                           .Add("$elemMatch", new BsonDocument()
+                               .Add(nameof(RepositoryTypeAndImplementations.TypeName), repositorySearch.TypeName)
+                           )
+                       )
+                    );
             }
 
-            if (!string.IsNullOrWhiteSpace(implementationName))
+            if (!string.IsNullOrWhiteSpace(repositorySearch.ImplementationName))
             {
-                filterArray.Add(new BsonDocument()
-                               .Add($"{nameof(Repository.TypesAndImplementations)}.{nameof(RepositoryTypeAndImplementations.Implementations)}", new BsonDocument()
-                                       .Add("$elemMatch", new BsonDocument()
-                                               .Add(nameof(RepositoryImplementation.Name), implementationName)
-                                       )
+                filterArray
+                    .Add(new BsonDocument()
+                      .Add($"{nameof(Repository.TypesAndImplementations)}.{nameof(RepositoryTypeAndImplementations.Implementations)}", new BsonDocument()
+                          .Add("$elemMatch", new BsonDocument()
+                               .Add(nameof(RepositoryImplementation.Name), repositorySearch.ImplementationName)
                                )
-                       );
+                          )
+                    );
             }
 
-            if (dependencies.Any())
+            if (repositorySearch.Dependencies.Any())
             {
-                foreach (var dependency in dependencies)
+                foreach (var dependency in repositorySearch.Dependencies)
                 {
-                    filterArray.Add(new BsonDocument()
+                    filterArray
+                        .Add(new BsonDocument()
                             .Add(nameof(Repository.Dependencies), new BsonDocument()
-                                    .Add("$elemMatch", new BsonDocument()
-                                            .Add(nameof(RepositoryDependency.Name), dependency.Name)
-                                            .Add(nameof(RepositoryDependency.Version), new BsonRegularExpression($"^{dependency.Version}", "i"))
+                                .Add("$elemMatch", new BsonDocument()
+                                    .Add(nameof(RepositoryDependency.Name), dependency.Name)
+                                    .Add(nameof(RepositoryDependency.Version), new BsonRegularExpression($"^{dependency.Version}", "i"))
                                     )
                             )
                     );
                 }
+            }
+
+            if (repositorySearch.HasContinuousDelivery.HasValue)
+            {
+                filterArray
+                    .Add(new BsonDocument()
+                       .Add("DevOpsIntegrations.ContinuousDelivery", new BsonBoolean(true)
+                    )
+                );
             }
 
             filter.Add("$and", filterArray);
