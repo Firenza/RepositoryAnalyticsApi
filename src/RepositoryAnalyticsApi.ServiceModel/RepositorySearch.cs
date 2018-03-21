@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿using System.Collections.Generic;
 namespace RepositoryAnalyticsApi.ServiceModel
 {
     public class RepositorySearch
     {
         public string TypeName { get; set; }
         public string ImplementationName { get; set; }
-        public List<(string Name, string Version)> Dependencies { get; set; }
+        public List<(string Name, string Version, RangeSpecifier RangeSpecifier)> Dependencies { get; set; }
         public bool? HasContinuousDelivery { get; set; }
     }
 }

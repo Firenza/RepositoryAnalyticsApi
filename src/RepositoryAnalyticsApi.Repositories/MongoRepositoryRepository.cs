@@ -70,14 +70,39 @@ namespace RepositoryAnalyticsApi.Repositories
             {
                 foreach (var dependency in repositorySearch.Dependencies)
                 {
-                    var regexEscapedDependencyVersion = dependency.Version.Replace(".", @"\.");
+                    BsonValue versionFilter = null;
+
+                    if (dependency.RangeSpecifier == RangeSpecifier.Unspecified)
+                    {
+                        var regexEscapedDependencyVersion = dependency.Version.Replace(".", @"\.");
+
+                        versionFilter = new BsonRegularExpression($"^{regexEscapedDependencyVersion}", "i");
+                    }
+                    else
+                    {
+                        switch (dependency.RangeSpecifier)
+                        {
+                            case RangeSpecifier.GreaterThan:
+                                versionFilter = new BsonDocument().Add("$gt", dependency.Version);
+                                break;
+                            case RangeSpecifier.GreaterThanOrEqualTo:
+                                versionFilter = new BsonDocument().Add("$gte", dependency.Version);
+                                break;
+                            case RangeSpecifier.LessThan:
+                                versionFilter = new BsonDocument().Add("$lt", dependency.Version);
+                                break;
+                            case RangeSpecifier.LessThanOrEqualTo:
+                                versionFilter = new BsonDocument().Add("$lte", dependency.Version);
+                                break;
+                        }
+                    }
 
                     filterArray
                         .Add(new BsonDocument()
                             .Add(nameof(Repository.Dependencies), new BsonDocument()
                                 .Add("$elemMatch", new BsonDocument()
                                     .Add(nameof(RepositoryDependency.Name), dependency.Name)
-                                    .Add(nameof(RepositoryDependency.Version), new BsonRegularExpression($"^{regexEscapedDependencyVersion}", "i"))
+                                    .Add(nameof(RepositoryDependency.Version), versionFilter)
                                     )
                             )
                     );

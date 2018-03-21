@@ -3,6 +3,7 @@ using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers
@@ -12,6 +13,9 @@ namespace RepositoryAnaltyicsApi.Controllers
     public class RepositoriesController : ControllerBase
     {
         private IRepositoriesManager repositoriesManager;
+        // Get any non digit portion at the start of the version number.  If there is one assume it's a range
+        // specifier like >=
+        private string rangeSpecifierRegex = @"^[^\d]+";
 
         public RepositoriesController(IRepositoriesManager repositoriesManager)
         {
@@ -30,7 +34,7 @@ namespace RepositoryAnaltyicsApi.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAsync([FromQuery]string typeName, [FromQuery]string implementationName, [FromQuery]List<string> dependencies, [FromQuery]bool? hasContinuousDelivery)
         {
-            var parsedDependencies = new List<(string name, string version)>();
+            var parsedDependencies = new List<(string Name, string Version, RangeSpecifier RangeSpecifier)>();
 
             if (dependencies.Any())
             {
@@ -38,13 +42,48 @@ namespace RepositoryAnaltyicsApi.Controllers
                 {
                     var dependencyParts = dependency.Split(':');
 
-                    if (dependencyParts.Length == 1)
+                    var dependencyName = dependencyParts[0];
+                    string dependencyVersion = null;
+
+                    if (dependencyParts.Length == 2)
                     {
-                        parsedDependencies.Add((dependencyParts[0], null));
+                        dependencyVersion = dependencyParts[1];
                     }
-                    else if (dependencyParts.Length == 2)
+
+                    if (string.IsNullOrWhiteSpace(dependencyVersion))
                     {
-                        parsedDependencies.Add((dependencyParts[0], dependencyParts[1]));
+                        parsedDependencies.Add((dependencyParts[0], null, RangeSpecifier.Unspecified));
+                    }
+                    else
+                    {
+                        var rangeSpecifier = RangeSpecifier.Unspecified;
+
+                        var match = Regex.Match(dependencyVersion, rangeSpecifierRegex);
+
+                        if (match.Success)
+                        {
+                            switch (match.Value)
+                            {
+                                case ">=":
+                                    dependencyVersion = dependencyVersion.Replace(">=", "");
+                                    rangeSpecifier = RangeSpecifier.GreaterThanOrEqualTo;
+                                    break;
+                                case ">":
+                                    dependencyVersion = dependencyVersion.Replace(">", "");
+                                    rangeSpecifier = RangeSpecifier.GreaterThan;
+                                    break;
+                                case "<":
+                                    dependencyVersion = dependencyVersion.Replace("<", "");
+                                    rangeSpecifier = RangeSpecifier.LessThan;
+                                    break;
+                                case "<=":
+                                    dependencyVersion = dependencyVersion.Replace("<=", "");
+                                    rangeSpecifier = RangeSpecifier.LessThanOrEqualTo;
+                                    break;
+                            }
+                        }
+
+                        parsedDependencies.Add((dependencyName, dependencyVersion, rangeSpecifier));
                     }
                 }
             }
