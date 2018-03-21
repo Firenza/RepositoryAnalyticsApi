@@ -28,8 +28,21 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// <param name="typeName">Exact match</param>
         /// <param name="implementationName">Exact match</param>
         /// <param name="dependencies">Exact match on name</param>
-        /// <remarks>Dependency matches can contain both a name and partial or complete version number.  E.G. ".NET Framework:4" matches any .NET Framework
-        /// dependencies with a major version of 4 and ".NET Framework:4.5.2" matches .NET Framework dependencies with version 4.5.2</remarks>
+        /// <remarks>
+        /// Dependency filters can be one of the following four flavors and you can have multiple filters specified
+        /// 1. Just a name
+        ///
+        ///     `.NET Framework`
+        /// 2. A name and an exact version you want to match, with a `:` seperating the two
+        ///
+        ///     `.NET Framework:4.6.2`
+        /// 3. A name and a partial version you want to match
+        ///
+        ///     `.NET Framwork:4.6` will match versions `4.6.1`, `4.6.2`, etc.
+        /// 4. A name and a version with a range specifier (>, >=, etc)
+        ///
+        ///    `.NET Framework:>=4` will match versions `4.x.x`, `5.x.x`, etc.
+        /// </remarks>
         /// <returns></returns>
         [HttpGet]
         public async Task<IActionResult> GetAsync([FromQuery]string typeName, [FromQuery]string implementationName, [FromQuery]List<string> dependencies, [FromQuery]bool? hasContinuousDelivery)
