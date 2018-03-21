@@ -70,12 +70,14 @@ namespace RepositoryAnalyticsApi.Repositories
             {
                 foreach (var dependency in repositorySearch.Dependencies)
                 {
+                    var regexEscapedDependencyVersion = dependency.Version.Replace(".", @"\.");
+
                     filterArray
                         .Add(new BsonDocument()
                             .Add(nameof(Repository.Dependencies), new BsonDocument()
                                 .Add("$elemMatch", new BsonDocument()
                                     .Add(nameof(RepositoryDependency.Name), dependency.Name)
-                                    .Add(nameof(RepositoryDependency.Version), new BsonRegularExpression($"^{dependency.Version}", "i"))
+                                    .Add(nameof(RepositoryDependency.Version), new BsonRegularExpression($"^{regexEscapedDependencyVersion}", "i"))
                                     )
                             )
                     );
