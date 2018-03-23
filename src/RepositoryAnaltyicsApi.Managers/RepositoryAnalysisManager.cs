@@ -35,7 +35,7 @@ namespace RepositoryAnaltyicsApi.Managers
             if (repository == null)
             {
                 repository = new Repository();
-                repository.CreatedOn = now;
+                repository.AnalysisCreatedOn = now;
             }
 
             var parsedRepoUrl = ParseRepositoryUrl();
@@ -48,15 +48,15 @@ namespace RepositoryAnaltyicsApi.Managers
             }
             else if(repositoryAnalysis.LastUpdatedOn.HasValue)
             {
-                repositoryNeedsUpdating = repository.LastUpdatedOn < repositoryAnalysis.LastUpdatedOn.Value;
+                repositoryNeedsUpdating = repository.AnalysisLastUpdatedOn < repositoryAnalysis.LastUpdatedOn.Value;
             }
             else
             {
                 repositorySourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.owner, parsedRepoUrl.name);
 
-                repositoryNeedsUpdating = repository.LastUpdatedOn < repositorySourceRepository.LastUpdatedOn;
+                repositoryNeedsUpdating = repository.AnalysisLastUpdatedOn < repositorySourceRepository.LastUpdatedOn;
             }
-  
+
             if (repositoryNeedsUpdating)
             {
                 if (repositorySourceRepository == null)
@@ -64,7 +64,9 @@ namespace RepositoryAnaltyicsApi.Managers
                     repositorySourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.owner, parsedRepoUrl.name);
                 }
 
-                repository.LastUpdatedOn = now;
+                repository.AnalysisLastUpdatedOn = now;
+                repository.CreatedOn = repositorySourceRepository.CreatedOn;
+                repository.LastUpdatedOn = repositorySourceRepository.LastUpdatedOn;
                 repository.DefaultBranch = repositorySourceRepository.DefaultBranch;
                 repository.Name = repositorySourceRepository.Name;
                 repository.Id = repositorySourceRepository.Id;
@@ -147,11 +149,11 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             var typesAndImplementations = new List<RepositoryTypeAndImplementations>();
 
-            var readFileContentAsync = new Func<string, Task<string>>(async (fullFilePath) => 
+            var readFileContentAsync = new Func<string, Task<string>>(async (fullFilePath) =>
                 await repositorySourceManager.ReadFileContentAsync(owner, repository.Name, fullFilePath).ConfigureAwait(false)
             );
 
-            var readFilesAsync = new Func<Task<List<RepositoryFile>>>(async () => 
+            var readFilesAsync = new Func<Task<List<RepositoryFile>>>(async () =>
                 await repositorySourceManager.ReadFilesAsync(owner, repository.Name, repository.DefaultBranch).ConfigureAwait(false)
             );
 
