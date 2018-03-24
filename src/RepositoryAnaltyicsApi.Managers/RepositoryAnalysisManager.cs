@@ -35,7 +35,6 @@ namespace RepositoryAnaltyicsApi.Managers
             if (repository == null)
             {
                 repository = new Repository();
-                repository.AnalysisCreatedOn = now;
             }
 
             var parsedRepoUrl = ParseRepositoryUrl();

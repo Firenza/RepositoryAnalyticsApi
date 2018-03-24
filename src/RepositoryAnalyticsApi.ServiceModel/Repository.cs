@@ -9,7 +9,6 @@ namespace RepositoryAnalyticsApi.ServiceModel
         public string Name { get; set; }
         public DateTime? CreatedOn { get; set; }
         public DateTime? LastUpdatedOn { get; set; }
-        public DateTime? AnalysisCreatedOn { get; set; }
         public DateTime? AnalysisLastUpdatedOn { get; set; }
         public string DefaultBranch { get; set; }
         public bool? HasIssues { get; set; }
