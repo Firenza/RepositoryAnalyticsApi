@@ -1,6 +1,7 @@
 ﻿using GraphQl.NetStandard.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
@@ -54,6 +55,8 @@ namespace RepositoryAnalyticsApi
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
             services.AddTransient<IDependencyManager, DependencyManager>();
             services.AddTransient<IRepositorySourceRepository>(serviceProvider => codeRepo);
+            services.AddTransient<IRepositoryImplementationsManager, RepositoryImplementationsManager>();
+            services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
 
             services.AddTransient<IEnumerable<IDependencyScraperManager>>((serviceProvider) => new List<IDependencyScraperManager> {
                 new BowerDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
@@ -62,12 +65,17 @@ namespace RepositoryAnalyticsApi
                 new NuGetDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>())
             });
 
+            var mongoClientSettings = new MongoClientSettings();
+            mongoClientSettings.Server = new MongoServerAddress("localhost", 27017);
+            mongoClientSettings.ConnectTimeout = new TimeSpan(0, 0, 0, 2, 0);
+
             // Add in mongo dependencies
-            var client = new MongoClient(mongoDbConnection);
+            var client = new MongoClient(mongoClientSettings);
             var db = client.GetDatabase(mongoDbDatabase);
 
             services.AddScoped((serviceProvider) => db);
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.Repository>("repository"));
+            services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repository"));
         }
 
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
