@@ -2,6 +2,7 @@
 using MongoDB.Driver;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -33,6 +34,11 @@ namespace RepositoryAnalyticsApi.Repositories
             var repository = await cursor.FirstOrDefaultAsync();
 
             return repository;
+        }
+
+        public async Task UpdateAsync(Repository repository)
+        {
+            await mongoCollection.ReplaceOneAsync(repo => repo.Id == repository.Id, repository);
         }
 
         public async Task<List<Repository>> SearchAsync(RepositorySearch repositorySearch)
@@ -70,40 +76,46 @@ namespace RepositoryAnalyticsApi.Repositories
             {
                 foreach (var dependency in repositorySearch.Dependencies)
                 {
-                    BsonValue versionFilter = null;
+                    var dependencyElemMatchFilters = new BsonDocument();
 
-                    if (dependency.RangeSpecifier == RangeSpecifier.Unspecified)
-                    {
-                        var regexEscapedDependencyVersion = dependency.Version.Replace(".", @"\.");
+                    dependencyElemMatchFilters.Add(nameof(RepositoryDependency.Name), dependency.Name);
 
-                        versionFilter = new BsonRegularExpression($"^{regexEscapedDependencyVersion}", "i");
-                    }
-                    else
+                    if (!string.IsNullOrWhiteSpace(dependency.Version))
                     {
-                        switch (dependency.RangeSpecifier)
+                        BsonValue versionFilter = null;
+
+                        if (dependency.RangeSpecifier == RangeSpecifier.Unspecified)
                         {
-                            case RangeSpecifier.GreaterThan:
-                                versionFilter = new BsonDocument().Add("$gt", dependency.Version);
-                                break;
-                            case RangeSpecifier.GreaterThanOrEqualTo:
-                                versionFilter = new BsonDocument().Add("$gte", dependency.Version);
-                                break;
-                            case RangeSpecifier.LessThan:
-                                versionFilter = new BsonDocument().Add("$lt", dependency.Version);
-                                break;
-                            case RangeSpecifier.LessThanOrEqualTo:
-                                versionFilter = new BsonDocument().Add("$lte", dependency.Version);
-                                break;
+                            var regexEscapedDependencyVersion = dependency.Version.Replace(".", @"\.");
+
+                            versionFilter = new BsonRegularExpression($"^{regexEscapedDependencyVersion}", "i");
                         }
+                        else if (!string.IsNullOrWhiteSpace(dependency.Version))
+                        {
+                            switch (dependency.RangeSpecifier)
+                            {
+                                case RangeSpecifier.GreaterThan:
+                                    versionFilter = new BsonDocument().Add("$gt", dependency.Version);
+                                    break;
+                                case RangeSpecifier.GreaterThanOrEqualTo:
+                                    versionFilter = new BsonDocument().Add("$gte", dependency.Version);
+                                    break;
+                                case RangeSpecifier.LessThan:
+                                    versionFilter = new BsonDocument().Add("$lt", dependency.Version);
+                                    break;
+                                case RangeSpecifier.LessThanOrEqualTo:
+                                    versionFilter = new BsonDocument().Add("$lte", dependency.Version);
+                                    break;
+                            }
+                        }
+
+                        dependencyElemMatchFilters.Add(nameof(RepositoryDependency.Version), versionFilter);
                     }
 
                     filterArray
                         .Add(new BsonDocument()
                             .Add(nameof(Repository.Dependencies), new BsonDocument()
-                                .Add("$elemMatch", new BsonDocument()
-                                    .Add(nameof(RepositoryDependency.Name), dependency.Name)
-                                    .Add(nameof(RepositoryDependency.Version), versionFilter)
-                                    )
+                                .Add("$elemMatch", dependencyElemMatchFilters)
                             )
                     );
                 }
@@ -141,12 +153,6 @@ namespace RepositoryAnalyticsApi.Repositories
             }
 
             return foundRepositories;
-        }
-
-        public async Task UpdateAsync(Repository repository)
-        {
-            await mongoCollection.ReplaceOneAsync(repo => repo.Id == repository.Id, repository);
-
         }
     }
 }
