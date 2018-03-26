@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
@@ -30,10 +29,6 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                         Name = "ASP.NET Core",
                         Version = aspNetCoreAllDependency.Version,
                         MajorVersion = aspNetCoreAllDependency.Version.GetMajorVersion()
-                    },
-                    new RepositoryImplementation
-                    {
-                        Name = "Web API"
                     }
                 };
 
