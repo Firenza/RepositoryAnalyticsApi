@@ -96,6 +96,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 var teamCacheEntry = await memoryCache.GetOrCreateAsync(teamsCacheKey, async entry =>
                 {
                     logger.LogDebug($"retrieving {teamsCacheKey} from source");
+                    // Set this duration login enough that a scan of all the repositories will only result in one read of the data
                     entry.SlidingExpiration = TimeSpan.FromHours(1);
                     var teamToRepsoitoriesMap = await this.repositorySourceRepository.ReadTeamToRepositoriesMaps(repositoryOwner);
                     return teamToRepsoitoriesMap;
