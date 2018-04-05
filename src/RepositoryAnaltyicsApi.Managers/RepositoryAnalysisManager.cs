@@ -70,6 +70,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 repository.Name = repositorySourceRepository.Name;
                 repository.Id = repositorySourceRepository.Id;
                 repository.Topics = repositorySourceRepository.Topics;
+                repository.Teams = repositorySourceRepository.Teams;
 
                 repository.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repository.DefaultBranch);
                 repository.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(repository, parsedRepoUrl.owner);

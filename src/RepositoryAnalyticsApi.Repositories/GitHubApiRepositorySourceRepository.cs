@@ -45,7 +45,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
 
             var fileContentRequestBuilder = new StringBuilder();
-            // Build up the list of file content requests.  This is needed because GraphQl does not allow 
+            // Build up the list of file content requests.  This is needed because GraphQl does not allow
             // the returning of multiple nodes of the same name.  This loop builds up the file request json
             // aliases on these nodes
             for (int i = 0; i < fullFilePaths.Count; i++)
@@ -68,7 +68,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var jObject = JObject.Parse(responseBodyString);
 
-            // Parse the aliased file 
+            // Parse the aliased file
             for (int i = 0; i < fullFilePaths.Count; i++)
             {
                 var fileContent = jObject["data"]["repository"][$"file{i + 1}"]["text"].Value<string>();
@@ -224,6 +224,157 @@ namespace RepositoryAnalyticsApi.Repositories
 
             return cursorPagedResults;
         }
+
+
+        public async Task<Dictionary<string, List<string>>> ReadTeamToRepositoriesMaps(string organization)
+        {
+            var teamToRespositoriesMap = new Dictionary<string, List<string>>();
+
+            var endCursorQuerySegment = "";
+            var moreTeamsToRead = true;
+
+            while (moreTeamsToRead)
+            {
+                var allTeamsRepositoriesQuery = $@"
+                query ($login: String!) {{
+                  organization(login: $login) {{
+                    teams(first: 100, {endCursorQuerySegment} orderBy:{{field:NAME, direction:ASC}}) {{
+                      nodes {{
+                        name
+                        repositories(first: 100) {{
+                          nodes {{
+                            name
+                          }}
+                          pageInfo {{
+                            endCursor
+                            hasNextPage
+                          }}
+                        }}
+                      }}
+                      pageInfo {{
+                        endCursor
+                        hasNextPage
+                      }}
+                    }}
+                  }}
+                }}
+               ";
+
+                var allTeamsRepositoriesVariables = new { login = organization };
+
+                var allTeamsRepositoriesResponseBodyString = await graphQLClient.QueryAsync(allTeamsRepositoriesQuery, allTeamsRepositoriesVariables);
+
+                dynamic jObject = JObject.Parse(allTeamsRepositoriesResponseBodyString);
+
+                var numberOfTeams = jObject.data.organization.teams.nodes.Count;
+
+                for (int i = 0; i < numberOfTeams; i++)
+                {
+                    var teamNode = jObject.data.organization.teams.nodes[i];
+                    var teamName = teamNode.name.Value;
+
+                    var numberOfTeamRepositories = teamNode.repositories.nodes.Count;
+
+                    var teamRepositoryNames = new List<string>();
+
+                    for (int j = 0; j < numberOfTeamRepositories; j++)
+                    {
+                        var repositoryName = teamNode.repositories.nodes[j].name.Value;
+                        teamRepositoryNames.Add(repositoryName);
+                    }
+
+                    // Now get the additional pages of repositories if we need to
+                    bool moreTeamRepositoriesToRead = teamNode.repositories.pageInfo.hasNextPage.Value;
+                    var afterCursor = teamNode.repositories.pageInfo.endCursor.Value;
+
+                    while (moreTeamRepositoriesToRead)
+                    {
+
+                        var result = await GetAdditionalTeamRepositoriesAsync(teamName, afterCursor);
+
+                        teamRepositoryNames.AddRange(result.TeamNames);
+
+                        if (result.AfterCursor != null)
+                        {
+                            moreTeamRepositoriesToRead = true;
+                            afterCursor = result.AfterCursor;
+                        }
+                        else
+                        {
+                            moreTeamRepositoriesToRead = false;
+                        }
+                    }
+
+                    teamToRespositoriesMap.Add(teamName, teamRepositoryNames);
+                }
+
+                moreTeamsToRead = jObject.data.organization.teams.pageInfo.hasNextPage.Value;
+
+                if (moreTeamsToRead)
+                {
+                    var endCursor = jObject.data.organization.teams.pageInfo.endCursor.Value;
+                    endCursorQuerySegment = $"after: \"{endCursor}\" ,";
+                }
+
+            }
+
+            return teamToRespositoriesMap;
+
+            async Task<(List<string> TeamNames, string AfterCursor)> GetAdditionalTeamRepositoriesAsync(string teamName, string afterCursor)
+            {
+                var teamRepositoriesQuery = @"
+                    query ($login: String!, $teamName: String!, $repositoriesAfter: String) {
+                      organization(login: $login) {
+                        teams(first: 1, query: $teamName) {
+                          nodes {
+                            name
+                            repositories(first: 100, after: $repositoriesAfter) {
+                              nodes {
+                                name
+                              }
+                              pageInfo {
+                                endCursor
+                                hasNextPage
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                ";
+
+                var teamRepositoriesVariables = new { login = organization, teamName = teamName, repositoriesAfter = afterCursor };
+
+                var responseBodyString = await graphQLClient.QueryAsync(teamRepositoriesQuery, teamRepositoriesVariables).ConfigureAwait(false);
+
+                dynamic jObject2 = JObject.Parse(responseBodyString);
+
+                var teamNode = jObject2.data.organization.teams.nodes[0];
+
+                var numberofRepositories = teamNode.repositories.nodes.Count;
+
+                var repositoryNames = new List<string>();
+                string nextAfterCursor = null;
+
+                for (int i = 0; i < numberofRepositories; i++)
+                {
+                    var repositoryName = teamNode.repositories.nodes[i].name.Value;
+
+                    repositoryNames.Add(repositoryName);
+                }
+
+                bool moreRepositoriesToRead = teamNode.repositories.pageInfo.hasNextPage.Value;
+
+                if (moreRepositoriesToRead)
+                {
+                    nextAfterCursor = teamNode.repositories.pageInfo.endCursor.Value;
+                }
+
+                return (repositoryNames, nextAfterCursor);
+            }
+        }
+
+
 
         private ServiceModel.Repository MapFromGraphQlGitHubRepoBodyString(string responseBodyString)
         {
