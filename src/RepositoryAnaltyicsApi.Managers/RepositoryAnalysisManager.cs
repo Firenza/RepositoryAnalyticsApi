@@ -31,10 +31,12 @@ namespace RepositoryAnaltyicsApi.Managers
             Repository repositorySourceRepository = null;
 
             var now = DateTime.Now;
+            bool repositoryAlreadyExists = true;
 
             if (repository == null)
             {
                 repository = new Repository();
+                repositoryAlreadyExists = false;
             }
 
             var parsedRepoUrl = ParseRepositoryUrl();
@@ -76,7 +78,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 repository.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(repository, parsedRepoUrl.owner);
                 repository.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repository.Name);
 
-                if (repository.CreatedOn != repository.LastUpdatedOn)
+                if (repositoryAlreadyExists)
                 {
                     await repositoryManager.UpdateAsync(repository);
                 }
