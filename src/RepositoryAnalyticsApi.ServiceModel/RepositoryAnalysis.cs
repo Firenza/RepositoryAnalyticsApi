@@ -13,11 +13,6 @@ namespace RepositoryAnalyticsApi.ServiceModel
         /// Refresh all data even if there have been no updates in the source
         /// </summary>
         public bool ForceCompleteRefresh { get; set; }
-        
-        /// <summary>
-        /// Optionally provide the last time the repository was updated to save a read call to fetch this data
-        /// </summary>
-        public DateTime? SourceRepositoryLastUpdatedOn { get; set; }
 
         /// <summary>
         /// The id of the commit that is closest to the AsOf time without being after it
@@ -27,7 +22,7 @@ namespace RepositoryAnalyticsApi.ServiceModel
         /// <summary>
         /// The time of the commit that is closest to the AsOf time without being after it
         /// </summary>
-        public DateTime? ClosestCommitOn { get; set; }
+        public DateTime? ClosestCommitPushedOn { get; set; }
 
         /// <summary>
         /// The point in time at which to do the analysis.  If not populated the current time is used.

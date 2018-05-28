@@ -14,6 +14,8 @@ namespace RepositoryAnalyticsApi.Repositories
 {
     public class GitHubApiRepositorySourceRepository : IRepositorySourceRepository
     {
+        const string DATE_TIME_ISO8601_FORMAT = "yyyy-MM-ddTHH:mm:ssZ";
+
         private IGitHubClient gitHubClient;
         private ITreesClient treesClient;
         private IGraphQLClient graphQLClient;
@@ -155,50 +157,64 @@ namespace RepositoryAnalyticsApi.Repositories
 
         }
 
-        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositorySummariesAsync(string organization, string user, int take, string endCursor)
+        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositorySummariesAsync(string organization, string user, int take, string endCursor, DateTime? asOf)
         {
             string loginType = null;
             string login = null;
             string endCursorQuerySegment = string.Empty;
 
+            var query = @"
+            query ($login: String!, $branch: String!, $take: Int, $after: String, $asOf: GitTimestamp) {
+              #LOGIN_TYPE#(login: $login) {
+                repositories(first: $take, after: $after, orderBy: {field: PUSHED_AT, direction: DESC}) {
+                  edges {
+                    node {
+                      commitHistory: object(expression: $branch) {
+                        ... on Commit {
+                          history(first: 1, until: $asOf) {
+                            nodes {
+                              message
+                              pushedDate
+                              id
+                            }
+                          }
+                        }
+                      }
+                      url
+                      createdAt
+                      pushedAt
+                    }
+                  }
+                  pageInfo {
+                    hasNextPage
+                    endCursor
+                  }
+                }
+              }
+            }
+            ";
+
             if (!string.IsNullOrWhiteSpace(user))
             {
                 loginType = "user";
                 login = user;
+                query = query.Replace("#LOGIN_TYPE#", loginType);
             }
             else
             {
                 loginType = "organization";
                 login = organization;
+                query = query.Replace("#LOGIN_TYPE#", "organization");
             }
 
-            if (!string.IsNullOrWhiteSpace(endCursor))
+            string asOfGitTimestamp = null;
+
+            if (asOf.HasValue)
             {
-                endCursorQuerySegment = $", after: \"{endCursor}\"";
+                asOfGitTimestamp = asOf.Value.ToString(DATE_TIME_ISO8601_FORMAT);
             }
 
-
-            var query = $@"
-            query ($login: String!, $take: Int) {{
-              {loginType}(login:$login){{
-                repositories(first: $take, orderBy: {{field:PUSHED_AT, direction:DESC}}{endCursorQuerySegment}){{
-                  edges{{
-                    node{{
-                      url,
-                      createdAt,
-                      pushedAt
-                    }}
-                  }},
-                pageInfo{{
-                  hasNextPage,
-                  endCursor
-                }}
-              }}
-             }}
-            }}
-            ";
-
-            var variables = new { login = login, take = take };
+            var variables = new { login = login, take = take, branch = "master", asOf = asOfGitTimestamp };
 
             var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
 
@@ -213,12 +229,21 @@ namespace RepositoryAnalyticsApi.Repositories
 
             foreach (var edge in repositories.edges)
             {
-                var repositorySourceRepository = new RepositorySummary();
-                repositorySourceRepository.CreatedAt = edge.node.createdAt;
-                repositorySourceRepository.UpdatedAt = edge.node.pushedAt;
-                repositorySourceRepository.Url = edge.node.url;
+                var repositorySummary = new RepositorySummary();
+                repositorySummary.CreatedAt = edge.node.createdAt;
+                repositorySummary.UpdatedAt = edge.node.pushedAt;
+                repositorySummary.Url = edge.node.url;
 
-                results.Add(repositorySourceRepository);
+                var closestCommit = edge.node.commitHistory.history.nodes[0];
+
+                // Forks will have commit id's but not pushed dates so do a null check
+                if (closestCommit.pushedDate != null)
+                {
+                    repositorySummary.ClosestCommitPushedDate = edge.node.commitHistory.history.nodes[0].pushedDate;
+                }
+                repositorySummary.ClosestCommitId = closestCommit.id;
+
+                results.Add(repositorySummary);
             }
 
             cursorPagedResults.Results = results;

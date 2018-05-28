@@ -10,5 +10,13 @@ namespace RepositoryAnalyticsApi.ServiceModel
         public string Url { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        /// <summary>
+        /// The id of the commit closest to but not after a provided datetime
+        /// </summary>
+        public string ClosestCommitId { get; set; }
+        /// <summary>
+        /// The pushed date of the commit closest to but not after a provided datetime
+        /// </summary>
+        public DateTime? ClosestCommitPushedDate { get; set; }
     }
 }

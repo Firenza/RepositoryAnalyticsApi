@@ -66,9 +66,9 @@ namespace RepositoryAnaltyicsApi.Managers
             return cacheEntry;
         }
 
-        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositoriesAsync(string organization, string user, int take, string endCursor)
+        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositoriesAsync(string organization, string user, int take, string endCursor, DateTime? asOf)
         {
-            var repositories = await repositorySourceRepository.ReadRepositorySummariesAsync(organization, user, take, endCursor);
+            var repositories = await repositorySourceRepository.ReadRepositorySummariesAsync(organization, user, take, endCursor, asOf);
 
             return repositories;
         }

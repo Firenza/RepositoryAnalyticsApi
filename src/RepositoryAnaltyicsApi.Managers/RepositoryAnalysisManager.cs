@@ -49,7 +49,7 @@ namespace RepositoryAnaltyicsApi.Managers
              * 
              */
 
-            DateTime? newSnapshotWindowStart = repositoryAnalysis.ClosestCommitOn;
+            DateTime? newSnapshotWindowStart = repositoryAnalysis.ClosestCommitPushedOn;
             string asOfDateRepositoryClosestCommitId = null;
             bool createNewSnapshot = false;
 
