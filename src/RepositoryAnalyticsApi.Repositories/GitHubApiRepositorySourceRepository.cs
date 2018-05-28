@@ -399,6 +399,36 @@ namespace RepositoryAnalyticsApi.Repositories
             }
         }
 
+        public async Task<OwnerType> ReadOwnerType(string owner)
+        {
+            var query = @"
+            query ($login: String!) {
+              repositoryOwner(login: $login){
+                __typename
+              }
+            }
+            ";
+
+            var variables = new { login = owner };
+
+            var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
+
+            dynamic jObject = JObject.Parse(responseBodyString);
+
+            if (jObject.data.repositoryOwner.__typename == "User")
+            {
+                return OwnerType.User;
+            }
+            else if (jObject.data.repositoryOwner.__typename == "Organization")
+            {
+                return OwnerType.Organization;
+            }
+            else
+            {
+                return OwnerType.Unknown;
+            }
+        }
+
         private ServiceModel.Repository MapFromGraphQlGitHubRepoBodyString(string responseBodyString)
         {
             var codeRepository = new ServiceModel.Repository();

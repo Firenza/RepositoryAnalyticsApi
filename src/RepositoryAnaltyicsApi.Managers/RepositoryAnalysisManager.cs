@@ -53,6 +53,8 @@ namespace RepositoryAnaltyicsApi.Managers
             string asOfDateRepositoryClosestCommitId = null;
             bool createNewSnapshot = false;
 
+            var parsedRepoUrl = ParseRepositoryUrl();
+
             // Figure out if a new snapshot is needed
             var existingRepositorySnapshot = await repositorySnapshotManager.ReadAsync(repositoryAnalysis.RepositoryId);
 
@@ -68,6 +70,9 @@ namespace RepositoryAnaltyicsApi.Managers
                 if (string.IsNullOrWhiteSpace(asOfDateRepositoryClosestCommitId))
                 {
                     // Make API call to get this
+                    var repositorySummary = await repositorySourceManager.ReadRepositoriesAsync(parsedRepoUrl.owner, 1, null, repositoryAnalysis.AsOf);
+                    asOfDateRepositoryClosestCommitId = repositorySummary.Results.First().ClosestCommitId;
+                    newSnapshotWindowStart = repositorySummary.Results.First().ClosestCommitPushedDate;
                 }
 
                 createNewSnapshot = existingSnapShotStartCommitId != asOfDateRepositoryClosestCommitId;
@@ -79,7 +84,9 @@ namespace RepositoryAnaltyicsApi.Managers
                 // We need to create a new snapshot
                 if (!newSnapshotWindowStart.HasValue)
                 {
-                    // Make API call to get this
+                    var repositorySummary = await repositorySourceManager.ReadRepositoriesAsync(parsedRepoUrl.owner, 1, null, repositoryAnalysis.AsOf);
+                    asOfDateRepositoryClosestCommitId = repositorySummary.Results.First().ClosestCommitId;
+                    newSnapshotWindowStart = repositorySummary.Results.First().ClosestCommitPushedDate;
                 }
 
                 // Set all the new snapshot info
@@ -93,8 +100,6 @@ namespace RepositoryAnaltyicsApi.Managers
                 newSnapshot.RepositoryName = existingRepositorySnapshot.RepositoryName;
                 //newSnapshot.Topics = repositorySnapshot.Topics;
                 //newSnapshot.Teams = repositorySnapshot.Teams;
-
-                var parsedRepoUrl = ParseRepositoryUrl();
 
                 newSnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, existingRepositorySnapshot.DefaultBranch);
                 newSnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(existingRepositorySnapshot, parsedRepoUrl.owner);

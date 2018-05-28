@@ -66,11 +66,22 @@ namespace RepositoryAnaltyicsApi.Managers
             return cacheEntry;
         }
 
-        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositoriesAsync(string organization, string user, int take, string endCursor, DateTime? asOf)
+        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositoriesAsync(string owner, int take, string endCursor, DateTime? asOf)
         {
-            var repositories = await repositorySourceRepository.ReadRepositorySummariesAsync(organization, user, take, endCursor, asOf);
+            var respositorySummaries = new CursorPagedResults<RepositorySummary>();
 
-            return repositories;
+            var ownerType = await ReadOwnerType(owner);
+
+            if (ownerType == OwnerType.Organization)
+            {
+                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(owner, null, take, endCursor, asOf);
+            }
+            else if (ownerType == OwnerType.User)
+            {
+                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(null, owner, take, endCursor, asOf);
+            }
+
+            return respositorySummaries;
         }
 
         public async Task<Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
@@ -116,11 +127,24 @@ namespace RepositoryAnaltyicsApi.Managers
             }
         }
 
+        public async Task<OwnerType> ReadOwnerType(string owner)
+        {
+            var cacheKey = $"ownerType|{owner}";
+
+            var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                logger.LogDebug($"Retrieving {cacheKey} from source");
+                entry.SlidingExpiration = TimeSpan.FromDays(1);
+                return await repositorySourceRepository.ReadOwnerType(owner);
+            }).ConfigureAwait(false);
+
+            return cacheEntry;
+        }
+
         private string GetOrganizationTeamsCacheKey(string organization)
         {
             return $"teams|{organization}";
         }
-
 
         private string GetFileContentCacheKey(string owner, string name, string fullFilePath)
         {
