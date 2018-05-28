@@ -100,11 +100,18 @@ namespace RepositoryAnalyticsApi
                 // For some reason when the MEF container is created it needs help resolving dependency references
                 AssemblyLoadContext.Default.Resolving += ResolveAssemblyDependency;
 
-                // Load any external extensions in the defined plugin directory
                 var externalPluginDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Plugins");
-                externalPluginDirectoryAssemblies = LoadAssembliesFromDirectory(externalPluginDirectory);
 
                 Log.Logger.Information($"Scanning directory {externalPluginDirectory} for external plugins");
+
+                // Load any external extensions in the defined plugin directory
+                externalPluginDirectoryAssemblies = LoadAssembliesFromDirectory(externalPluginDirectory);
+
+                if (!externalPluginDirectoryAssemblies.Any())
+                {
+                    Log.Logger.Information($"No external plugins found");
+                    return;
+                }
 
                 var externalAssemblyConfiguration = new ContainerConfiguration().WithAssemblies(externalPluginDirectoryAssemblies);
 
@@ -155,16 +162,19 @@ namespace RepositoryAnalyticsApi
             {
                 var assemblies = new List<Assembly>();
 
-                foreach (var file in Directory.GetFiles(directory, "*.dll"))
+                if (Directory.Exists(directory))
                 {
-                    try
+                    foreach (var file in Directory.GetFiles(directory, "*.dll"))
                     {
-                        var assembly = Assembly.LoadFile(file);
-                        assemblies.Add(assembly);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
+                        try
+                        {
+                            var assembly = Assembly.LoadFile(file);
+                            assemblies.Add(assembly);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
                     }
                 }
 
