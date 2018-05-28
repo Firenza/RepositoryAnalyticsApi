@@ -13,5 +13,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
         Task<string> ReadFileContentAsync(string owner, string name, string fullFilePath);
         Task<List<(string fullFilePath, string fileContent)>> GetMultipleFileContentsAsync(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths);
         Task<CursorPagedResults<RepositorySourceRepository>> ReadRepositoriesAsync(string organization, string user, int take, string endCursor);
+        Task<Dictionary<string, List<string>>> ReadTeamToRepositoriesMaps(string organization);
     }
 }

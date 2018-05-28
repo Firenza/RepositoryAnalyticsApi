@@ -31,11 +31,12 @@ namespace RepositoryAnaltyicsApi.Managers
             Repository repositorySourceRepository = null;
 
             var now = DateTime.Now;
+            bool repositoryAlreadyExists = true;
 
             if (repository == null)
             {
                 repository = new Repository();
-                repository.AnalysisCreatedOn = now;
+                repositoryAlreadyExists = false;
             }
 
             var parsedRepoUrl = ParseRepositoryUrl();
@@ -71,12 +72,13 @@ namespace RepositoryAnaltyicsApi.Managers
                 repository.Name = repositorySourceRepository.Name;
                 repository.Id = repositorySourceRepository.Id;
                 repository.Topics = repositorySourceRepository.Topics;
+                repository.Teams = repositorySourceRepository.Teams;
 
                 repository.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repository.DefaultBranch);
                 repository.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(repository, parsedRepoUrl.owner);
                 repository.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repository.Name);
 
-                if (repository.CreatedOn != repository.LastUpdatedOn)
+                if (repositoryAlreadyExists)
                 {
                     await repositoryManager.UpdateAsync(repository);
                 }

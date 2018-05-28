@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
@@ -14,7 +13,7 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
     {
         public async Task<RepositoryTypeAndImplementations> DeriveImplementationAsync(IEnumerable<RepositoryDependency> dependencies, Func<Task<List<RepositoryFile>>> readFilesAsync, IEnumerable<string> topics, string name, Func<string, Task<string>> readFileContentAsync)
         {
-            var nugetDependencies = dependencies?.Where(dependency => dependency.Source == "nuget");
+            var nugetDependencies = dependencies?.Where(dependency => dependency.Source == "NuGet");
 
             var aspNetCoreAllDependency = nugetDependencies.FirstOrDefault(dependency => dependency.Name == "Microsoft.AspNetCore.All");
 
@@ -30,10 +29,6 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                         Name = "ASP.NET Core",
                         Version = aspNetCoreAllDependency.Version,
                         MajorVersion = aspNetCoreAllDependency.Version.GetMajorVersion()
-                    },
-                    new RepositoryImplementation
-                    {
-                        Name = "Web API"
                     }
                 };
 

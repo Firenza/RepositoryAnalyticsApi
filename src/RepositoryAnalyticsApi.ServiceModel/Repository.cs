@@ -9,12 +9,12 @@ namespace RepositoryAnalyticsApi.ServiceModel
         public string Name { get; set; }
         public DateTime? CreatedOn { get; set; }
         public DateTime? LastUpdatedOn { get; set; }
-        public DateTime? AnalysisCreatedOn { get; set; }
         public DateTime? AnalysisLastUpdatedOn { get; set; }
         public string DefaultBranch { get; set; }
         public bool? HasIssues { get; set; }
         public bool? HasProjects { get; set; }
         public bool? HasPullRequests { get; set; }
+        public List<string> Teams { get; set; }
         public RepositoryDevOpsIntegrations DevOpsIntegrations { get; set; }
         public IEnumerable<string> Topics { get; set; }
         public IEnumerable<RepositoryDependency> Dependencies { get; set; }

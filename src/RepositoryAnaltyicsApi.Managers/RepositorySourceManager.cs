@@ -4,6 +4,7 @@ using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Managers
@@ -80,12 +81,46 @@ namespace RepositoryAnaltyicsApi.Managers
             {
                 logger.LogDebug($"retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromSeconds(10);
-                var repository = await this.repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName);
+                var repository = await repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName);
+                var teams = await ReadTeams(repositoryOwner);
+                repository.Teams = teams;
                 return repository;
             }).ConfigureAwait(false);
 
             return cacheEntry;
+
+            async Task<List<string>> ReadTeams(string repository)
+            {
+                var teamsCacheKey = GetOrganizationTeamsCacheKey(repositoryOwner);
+
+                var teamCacheEntry = await memoryCache.GetOrCreateAsync(teamsCacheKey, async entry =>
+                {
+                    logger.LogDebug($"retrieving {teamsCacheKey} from source");
+                    // Set this duration login enough that a scan of all the repositories will only result in one read of the data
+                    entry.SlidingExpiration = TimeSpan.FromHours(1);
+                    var teamToRepsoitoriesMap = await this.repositorySourceRepository.ReadTeamToRepositoriesMaps(repositoryOwner);
+                    return teamToRepsoitoriesMap;
+                }).ConfigureAwait(false);
+
+
+                var teams = teamCacheEntry.Where(kvp => kvp.Value.Contains(repositoryName))?.Select(kvp => kvp.Key);
+
+                if (teams != null && teams.Any())
+                {
+                    return teams.ToList();
+                }
+                else
+                {
+                    return null;
+                }
+            }
         }
+
+        private string GetOrganizationTeamsCacheKey(string organization)
+        {
+            return $"teams|{organization}";
+        }
+
 
         private string GetFileContentCacheKey(string owner, string name, string fullFilePath)
         {
