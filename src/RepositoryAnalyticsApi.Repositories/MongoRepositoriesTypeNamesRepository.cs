@@ -8,9 +8,9 @@ namespace RepositoryAnalyticsApi.Repositories
 {
     public class MongoRepositoriesTypeNamesRepository : IRepositoriesTypeNamesRepository
     {
-        private IMongoCollection<Repository> mongoCollection;
+        private IMongoCollection<RepositorySnapshot> mongoCollection;
 
-        public MongoRepositoriesTypeNamesRepository(IMongoCollection<Repository> mongoCollection)
+        public MongoRepositoriesTypeNamesRepository(IMongoCollection<RepositorySnapshot> mongoCollection)
         {
             this.mongoCollection = mongoCollection;
         }
@@ -19,7 +19,7 @@ namespace RepositoryAnalyticsApi.Repositories
         {
             var typeNames = new List<string>();
 
-            using (var cursor = await mongoCollection.DistinctAsync<string>("TypesAndImplementations.TypeName", FilterDefinition<Repository>.Empty))
+            using (var cursor = await mongoCollection.DistinctAsync<string>("TypesAndImplementations.TypeName", FilterDefinition<RepositorySnapshot>.Empty))
             {
                 while (await cursor.MoveNextAsync())
                 {

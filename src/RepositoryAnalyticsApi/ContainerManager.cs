@@ -48,8 +48,8 @@ namespace RepositoryAnalyticsApi
 
             IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
 
-            services.AddTransient<IRepositoriesManager, RepositoryManager>();
-            services.AddTransient<IRepositoriesRepository, MongoRepositoryRepository>();
+            services.AddTransient<IRepositorySnapshotManager, RepositoryManager>();
+            services.AddTransient<IRepositorySnapshotRepository, MongoRepositoryRepository>();
             services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
             services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
@@ -76,8 +76,8 @@ namespace RepositoryAnalyticsApi
             var db = client.GetDatabase(mongoDbDatabase);
 
             services.AddScoped((serviceProvider) => db);
-            services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.Repository>("repository"));
-            services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repository"));
+            services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositorySnapshot>("repositorySnapshot"));
+            services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repositorySnapshot"));
         }
 
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)

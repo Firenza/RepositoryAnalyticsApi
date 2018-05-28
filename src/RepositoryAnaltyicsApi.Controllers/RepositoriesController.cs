@@ -12,12 +12,12 @@ namespace RepositoryAnaltyicsApi.Controllers
     [Route("api/repoistories")]
     public class RepositoriesController : ControllerBase
     {
-        private IRepositoriesManager repositoriesManager;
+        private IRepositorySnapshotManager repositoriesManager;
         // Get any non digit portion at the start of the version number.  If there is one assume it's a range
         // specifier like >=
         private string rangeSpecifierRegex = @"^[^\d]+";
 
-        public RepositoriesController(IRepositoriesManager repositoriesManager)
+        public RepositoriesController(IRepositorySnapshotManager repositoriesManager)
         {
             this.repositoriesManager = repositoriesManager;
         }

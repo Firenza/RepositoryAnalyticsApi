@@ -32,7 +32,7 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// facilitate processing of all repositories under a given organization or user.
         /// </remarks>
         [HttpGet()]
-        public async Task<CursorPagedResults<RepositorySourceRepository>> Get([FromQuery] string user, [FromQuery] string organization, [FromQuery] int take, [FromQuery] string endCursor  )
+        public async Task<CursorPagedResults<RepositorySummary>> Get([FromQuery] string user, [FromQuery] string organization, [FromQuery] DateTime asOf, [FromQuery] int take, [FromQuery] string endCursor  )
         {
             var dependencies = await repositorySourceManager.ReadRepositoriesAsync(organization, user, take, endCursor);
 

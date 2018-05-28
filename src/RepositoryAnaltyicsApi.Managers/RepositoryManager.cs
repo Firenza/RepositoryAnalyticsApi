@@ -5,16 +5,16 @@ using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Managers
 {
-    public class RepositoryManager : IRepositoriesManager
+    public class RepositoryManager : IRepositorySnapshotManager
     {
-        private IRepositoriesRepository repositoryRepository;
+        private IRepositorySnapshotRepository repositoryRepository;
 
-        public RepositoryManager(IRepositoriesRepository repositoryRepository)
+        public RepositoryManager(IRepositorySnapshotRepository repositoryRepository)
         {
             this.repositoryRepository = repositoryRepository;
         }
 
-        public async Task CreateAsync(Repository repository)
+        public async Task CreateAsync(RepositorySnapshot repository)
         {
             await repositoryRepository.CreateAsync(repository).ConfigureAwait(false);
         }
@@ -24,17 +24,17 @@ namespace RepositoryAnaltyicsApi.Managers
             await repositoryRepository.DeleteAsync(id).ConfigureAwait(false);
         }
 
-        public async Task<Repository> ReadAsync(string id)
+        public async Task<RepositorySnapshot> ReadAsync(string id)
         {
             return await repositoryRepository.ReadAsync(id).ConfigureAwait(false);
         }
 
-        public async Task<List<Repository>> SearchAsync(RepositorySearch repositorySearch)
+        public async Task<List<RepositorySnapshot>> SearchAsync(RepositorySearch repositorySearch)
         {
             return await repositoryRepository.SearchAsync(repositorySearch);
         }
 
-        public async Task UpdateAsync(Repository repository)
+        public async Task UpdateAsync(RepositorySnapshot repository)
         {
             await repositoryRepository.UpdateAsync(repository).ConfigureAwait(false);
         }

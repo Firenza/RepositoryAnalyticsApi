@@ -90,6 +90,7 @@ namespace RepositoryAnalyticsApi.Repositories
             }
         }
 
+        // The GraphQL Api does not support the recursive reading of file content so using the V3 API
         public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name, string branch)
         {
             var treeResponse = await treesClient.GetRecursive(owner, name, branch);
@@ -154,7 +155,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
         }
 
-        public async Task<CursorPagedResults<RepositorySourceRepository>> ReadRepositoriesAsync(string organization, string user, int take, string endCursor)
+        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositorySummariesAsync(string organization, string user, int take, string endCursor)
         {
             string loginType = null;
             string login = null;
@@ -204,15 +205,15 @@ namespace RepositoryAnalyticsApi.Repositories
             var jObject = JObject.Parse(responseBodyString);
             dynamic repositories = jObject["data"][loginType]["repositories"];
 
-            var cursorPagedResults = new CursorPagedResults<RepositorySourceRepository>();
+            var cursorPagedResults = new CursorPagedResults<RepositorySummary>();
             cursorPagedResults.EndCursor = repositories.pageInfo.endCursor;
             cursorPagedResults.MoreToRead = repositories.pageInfo.hasNextPage;
 
-            var results = new List<RepositorySourceRepository>();
+            var results = new List<RepositorySummary>();
 
             foreach (var edge in repositories.edges)
             {
-                var repositorySourceRepository = new RepositorySourceRepository();
+                var repositorySourceRepository = new RepositorySummary();
                 repositorySourceRepository.CreatedAt = edge.node.createdAt;
                 repositorySourceRepository.UpdatedAt = edge.node.pushedAt;
                 repositorySourceRepository.Url = edge.node.url;
@@ -224,7 +225,6 @@ namespace RepositoryAnalyticsApi.Repositories
 
             return cursorPagedResults;
         }
-
 
         public async Task<Dictionary<string, List<string>>> ReadTeamToRepositoriesMaps(string organization)
         {
@@ -373,8 +373,6 @@ namespace RepositoryAnalyticsApi.Repositories
                 return (repositoryNames, nextAfterCursor);
             }
         }
-
-
 
         private ServiceModel.Repository MapFromGraphQlGitHubRepoBodyString(string responseBodyString)
         {
