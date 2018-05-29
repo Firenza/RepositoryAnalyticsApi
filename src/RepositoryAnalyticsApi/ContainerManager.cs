@@ -83,6 +83,7 @@ namespace RepositoryAnalyticsApi
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
         {
             var typeAndImplementationDerivers = new List<IDeriveRepositoryTypeAndImplementations>();
+            IDeriveRepositoryDevOpsIntegrations devOpsIntegrationDeriver = null;
 
             var internalExtensionAssembly = typeof(ExtensionAssembly).GetTypeInfo().Assembly;
 
@@ -120,30 +121,31 @@ namespace RepositoryAnalyticsApi
                 if (!externalPluginDirectoryAssemblies.Any())
                 {
                     Log.Logger.Information($"No external plugins found");
-                    return;
                 }
-
-                var externalAssemblyConfiguration = new ContainerConfiguration().WithAssemblies(externalPluginDirectoryAssemblies);
-
-                using (var externalAssemblyContainer = externalAssemblyConfiguration.CreateContainer())
+                else
                 {
-                    var loadedExternalTypeAndImplementationDerivers = externalAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
+                    var externalAssemblyConfiguration = new ContainerConfiguration().WithAssemblies(externalPluginDirectoryAssemblies);
 
-                    foreach (var externalTypeAndImplementationDeriver in loadedExternalTypeAndImplementationDerivers)
+                    using (var externalAssemblyContainer = externalAssemblyConfiguration.CreateContainer())
                     {
-                        Log.Logger.Information($"Loading external IDeriveRepositoryTypeAndImplementations {externalTypeAndImplementationDeriver.GetType().Name}");
+                        var loadedExternalTypeAndImplementationDerivers = externalAssemblyContainer.GetExports<IDeriveRepositoryTypeAndImplementations>();
+
+                        foreach (var externalTypeAndImplementationDeriver in loadedExternalTypeAndImplementationDerivers)
+                        {
+                            Log.Logger.Information($"Loading external IDeriveRepositoryTypeAndImplementations {externalTypeAndImplementationDeriver.GetType().Name}");
+                        }
+
+                        typeAndImplementationDerivers.AddRange(loadedExternalTypeAndImplementationDerivers);
+
+                        if (externalAssemblyContainer.TryGetExport<IDeriveRepositoryDevOpsIntegrations>(out var loadedExternalDevOpsImplementationDerivers))
+                        {
+                            Log.Logger.Information($"Loading external IDeriveRepositoryDevOpsIntegrations {loadedExternalDevOpsImplementationDerivers.GetType().Name}");
+
+                            devOpsIntegrationDeriver = loadedExternalDevOpsImplementationDerivers;
+                        }
                     }
-
-                    typeAndImplementationDerivers.AddRange(loadedExternalTypeAndImplementationDerivers);
-
-                    if (externalAssemblyContainer.TryGetExport<IDeriveRepositoryDevOpsIntegrations>(out var loadedExternalDevOpsImplementationDerivers))
-                    {
-                        Log.Logger.Information($"Loading external IDeriveRepositoryDevOpsIntegrations {loadedExternalDevOpsImplementationDerivers.GetType().Name}");
-
-                        services.AddTransient<IDeriveRepositoryDevOpsIntegrations>(serviceProvider => loadedExternalDevOpsImplementationDerivers);
-                    }
-
                 }
+                
             }
             catch (ReflectionTypeLoadException ex)
             {
@@ -160,6 +162,18 @@ namespace RepositoryAnalyticsApi
 
             // Now add any lists of extension types that we found in the container
             services.AddTransient((serviceProvider) => typeAndImplementationDerivers.AsEnumerable());
+
+            if (devOpsIntegrationDeriver != null)
+            {
+                services.AddTransient((serviceProvider) => devOpsIntegrationDeriver);
+            }
+            else
+            {
+                Log.Logger.Information("No external IDeriveRepositoryDevOpsIntegrations found, loading NoOp implementation");
+
+                services.AddTransient<IDeriveRepositoryDevOpsIntegrations>((serviceProvider) => new NoOpDevOpsIntegrationDeriver());
+            }
+
 
             Assembly ResolveAssemblyDependency(AssemblyLoadContext assemblyLoadContext, AssemblyName assemblyName)
             {
