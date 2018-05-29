@@ -84,6 +84,24 @@ namespace RepositoryAnaltyicsApi.Managers
             return respositorySummaries;
         }
 
+        public async Task<RepositorySummary> ReadRepositorySummaryAsync(string owner, string name, DateTime? asOf)
+        {
+            var respositorySummary = new RepositorySummary();
+
+            var ownerType = await ReadOwnerType(owner);
+
+            if (ownerType == OwnerType.Organization)
+            {
+                respositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(owner, null, name, asOf);
+            }
+            else if (ownerType == OwnerType.User)
+            {
+                respositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(null, owner, name, asOf);
+            }
+
+            return respositorySummary;
+        }
+
         public async Task<Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
         {
             var cacheKey = GetRepositroyCacheKey(repositoryOwner, repositoryName);
@@ -160,5 +178,7 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             return $"repository|{owner}|{name}";
         }
+
+   
     }
 }

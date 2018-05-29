@@ -70,9 +70,9 @@ namespace RepositoryAnaltyicsApi.Managers
                 if (string.IsNullOrWhiteSpace(asOfDateRepositoryClosestCommitId))
                 {
                     // Make API call to get this
-                    var repositorySummary = await repositorySourceManager.ReadRepositoriesAsync(parsedRepoUrl.owner, 1, null, repositoryAnalysis.AsOf);
-                    asOfDateRepositoryClosestCommitId = repositorySummary.Results.First().ClosestCommitId;
-                    newSnapshotWindowStart = repositorySummary.Results.First().ClosestCommitPushedDate;
+                    var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repositoryAnalysis.AsOf);
+                    asOfDateRepositoryClosestCommitId = repositorySummary.ClosestCommitId;
+                    newSnapshotWindowStart = repositorySummary.ClosestCommitPushedDate;
                 }
 
                 createNewSnapshot = existingSnapShotStartCommitId != asOfDateRepositoryClosestCommitId;
@@ -84,9 +84,9 @@ namespace RepositoryAnaltyicsApi.Managers
                 // We need to create a new snapshot
                 if (!newSnapshotWindowStart.HasValue)
                 {
-                    var repositorySummary = await repositorySourceManager.ReadRepositoriesAsync(parsedRepoUrl.owner, 1, null, repositoryAnalysis.AsOf);
-                    asOfDateRepositoryClosestCommitId = repositorySummary.Results.First().ClosestCommitId;
-                    newSnapshotWindowStart = repositorySummary.Results.First().ClosestCommitPushedDate;
+                    var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repositoryAnalysis.AsOf);
+                    asOfDateRepositoryClosestCommitId = repositorySummary.ClosestCommitId;
+                    newSnapshotWindowStart = repositorySummary.ClosestCommitPushedDate;
                 }
 
                 // Set all the new snapshot info

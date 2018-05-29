@@ -157,6 +157,79 @@ namespace RepositoryAnalyticsApi.Repositories
 
         }
 
+        public async Task<RepositorySummary> ReadRepositorySummaryAsync(string organization, string user, string name, DateTime? asOf)
+        {
+            string loginType = null;
+            string login = null;
+            string endCursorQuerySegment = string.Empty;
+
+            var query = @"
+            query ($login: String!, $name: String!, $branch: String!, $asOf: GitTimestamp) {
+              #LOGIN_TYPE#(login: $login) {
+                repository(name: $name) {
+                  commitHistory: object(expression: $branch) {
+                    ... on Commit {
+                      history(first: 1, until: $asOf) {
+                        nodes {
+                          message
+                          pushedDate
+                          id
+                        }
+                      }
+                    }
+                  }
+                  url
+                  createdAt
+                  pushedAt
+                }
+              }
+            }
+            ";
+
+            if (!string.IsNullOrWhiteSpace(user))
+            {
+                loginType = "user";
+                login = user;
+                query = query.Replace("#LOGIN_TYPE#", loginType);
+            }
+            else
+            {
+                loginType = "organization";
+                login = organization;
+                query = query.Replace("#LOGIN_TYPE#", "organization");
+            }
+
+            string asOfGitTimestamp = null;
+
+            if (asOf.HasValue)
+            {
+                asOfGitTimestamp = asOf.Value.ToString(DATE_TIME_ISO8601_FORMAT);
+            }
+
+            var variables = new { login = login, name = name, branch = "master", asOf = asOfGitTimestamp };
+
+            var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
+
+            var jObject = JObject.Parse(responseBodyString);
+            dynamic repository = jObject["data"][loginType]["repository"];
+
+            var repositorySummary = new RepositorySummary();
+            repositorySummary.CreatedAt = repository.createdAt;
+            repositorySummary.UpdatedAt = repository.pushedAt;
+            repositorySummary.Url = repository.url;
+
+            var closestCommit = repository.commitHistory.history.nodes[0];
+
+            // Forks will have commit id's but not pushed dates so do a null check
+            if (closestCommit.pushedDate != null)
+            {
+                repositorySummary.ClosestCommitPushedDate = repository.commitHistory.history.nodes[0].pushedDate;
+            }
+            repositorySummary.ClosestCommitId = closestCommit.id;
+
+            return repositorySummary;
+        }
+
         public async Task<CursorPagedResults<RepositorySummary>> ReadRepositorySummariesAsync(string organization, string user, int take, string endCursor, DateTime? asOf)
         {
             string loginType = null;
