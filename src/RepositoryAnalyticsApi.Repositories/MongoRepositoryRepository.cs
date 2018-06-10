@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.Repositories
 {
-    public class MongoRepositoryRepository : IRepositorySnapshotRepository
+    public class MongoRepositorySnapshotRepository : IRepositorySnapshotRepository
     {
         private IMongoCollection<RepositorySnapshot> mongoCollection;
 
-        public MongoRepositoryRepository(IMongoCollection<RepositorySnapshot> mongoCollection)
+        public MongoRepositorySnapshotRepository(IMongoCollection<RepositorySnapshot> mongoCollection)
         {
             this.mongoCollection = mongoCollection;
         }

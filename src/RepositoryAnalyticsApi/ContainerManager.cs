@@ -49,7 +49,7 @@ namespace RepositoryAnalyticsApi
             IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
 
             services.AddTransient<IRepositorySnapshotManager, RepositoryManager>();
-            services.AddTransient<IRepositorySnapshotRepository, MongoRepositoryRepository>();
+            services.AddTransient<IRepositorySnapshotRepository, MongoRepositorySnapshotRepository>();
             services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
             services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
