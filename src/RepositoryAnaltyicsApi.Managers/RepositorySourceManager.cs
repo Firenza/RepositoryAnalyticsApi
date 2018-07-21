@@ -102,49 +102,47 @@ namespace RepositoryAnaltyicsApi.Managers
             return respositorySummary;
         }
 
-        public async Task<Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
+        public async Task<RepositorySourceRepository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
         {
-            //var cacheKey = GetRepositroyCacheKey(repositoryOwner, repositoryName);
+            var cacheKey = GetRepositroyCacheKey(repositoryOwner, repositoryName);
 
-            //var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
-            //{
-            //    logger.LogDebug($"retrieving {cacheKey} from source");
-            //    entry.SlidingExpiration = TimeSpan.FromSeconds(10);
-            //    var repository = await repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName);
-            //    var teams = await ReadTeams(repositoryOwner);
-            //    repository.Teams = teams;
-            //    return repository;
-            //}).ConfigureAwait(false);
+            var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                logger.LogDebug($"retrieving {cacheKey} from source");
+                entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+                var repository = await repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName);
+                var teams = await ReadTeams(repositoryOwner);
+                repository.Teams = teams;
+                return repository;
+            }).ConfigureAwait(false);
 
-            //return cacheEntry;
+            return cacheEntry;
 
-            //async Task<List<string>> ReadTeams(string repository)
-            //{
-            //    var teamsCacheKey = GetOrganizationTeamsCacheKey(repositoryOwner);
+            async Task<List<string>> ReadTeams(string repository)
+            {
+                var teamsCacheKey = GetOrganizationTeamsCacheKey(repositoryOwner);
 
-            //    var teamCacheEntry = await memoryCache.GetOrCreateAsync(teamsCacheKey, async entry =>
-            //    {
-            //        logger.LogDebug($"retrieving {teamsCacheKey} from source");
-            //        // Set this duration login enough that a scan of all the repositories will only result in one read of the data
-            //        entry.SlidingExpiration = TimeSpan.FromHours(1);
-            //        var teamToRepsoitoriesMap = await this.repositorySourceRepository.ReadTeamToRepositoriesMaps(repositoryOwner);
-            //        return teamToRepsoitoriesMap;
-            //    }).ConfigureAwait(false);
+                var teamCacheEntry = await memoryCache.GetOrCreateAsync(teamsCacheKey, async entry =>
+                {
+                    logger.LogDebug($"retrieving {teamsCacheKey} from source");
+                    // Set this duration login enough that a scan of all the repositories will only result in one read of the data
+                    entry.SlidingExpiration = TimeSpan.FromHours(1);
+                    var teamToRepsoitoriesMap = await this.repositorySourceRepository.ReadTeamToRepositoriesMaps(repositoryOwner);
+                    return teamToRepsoitoriesMap;
+                }).ConfigureAwait(false);
 
 
-            //    var teams = teamCacheEntry.Where(kvp => kvp.Value.Contains(repositoryName))?.Select(kvp => kvp.Key);
+                var teams = teamCacheEntry.Where(kvp => kvp.Value.Contains(repositoryName))?.Select(kvp => kvp.Key);
 
-            //    if (teams != null && teams.Any())
-            //    {
-            //        return teams.ToList();
-            //    }
-            //    else
-            //    {
-            //        return null;
-            //    }
-            //}
-
-            return null;
+                if (teams != null && teams.Any())
+                {
+                    return teams.ToList();
+                }
+                else
+                {
+                    return null;
+                }
+            }
         }
 
         public async Task<OwnerType> ReadOwnerType(string owner)
@@ -180,7 +178,5 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             return $"repository|{owner}|{name}";
         }
-
-   
     }
 }
