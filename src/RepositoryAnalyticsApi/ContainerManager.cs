@@ -17,6 +17,7 @@ using System.Collections.Specialized;
 using System.Composition.Hosting;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.RegularExpressions;
@@ -44,7 +45,7 @@ namespace RepositoryAnalyticsApi
             var requestHeaders = new NameValueCollection();
             requestHeaders.Add("Authorization", $"Bearer {gitHubAccessToken}");
             requestHeaders.Add("User-Agent", "RepositoryAnalyticsApi");
-            var graphQLClient = new GraphQLClient(gitHubGraphQLApiUrl, requestHeaders);
+            var graphQLClient = new GraphQLClient(new HttpClient(), gitHubGraphQLApiUrl, requestHeaders);
 
             IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
 

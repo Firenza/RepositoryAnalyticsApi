@@ -115,7 +115,7 @@ namespace RepositoryAnalyticsApi.Repositories
             return repoFiles;
         }
 
-        public async Task<ServiceModel.Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
+        public async Task<RepositorySourceRepository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
         {
             var query = @"
             query ($repoName:String!, $repoOwner:String!){
@@ -149,11 +149,19 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var variables = new { repoOwner = repositoryOwner, repoName = repositoryName };
 
-            var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
+            var repository = await graphQLClient.QueryAsync<Model.Github.GraphQL.Repository>(query, variables).ConfigureAwait(false);
 
-            var repository = MapFromGraphQlGitHubRepoBodyString(responseBodyString);
-
-            return repository;
+            return new RepositorySourceRepository()
+            {
+                Name = repository.Name,
+                Url = repository.Url,
+                CreatedAt = repository.CreatedAt,
+                DefaultBranchName = repository.DefaultBranchRef.Name,
+                issueCount = repository.Issues.TotalCount.Value,
+                projectCount = repository.Projects.TotalCount.Value,
+                pullRequestCount = repository.PullRequests.TotalCount.Value,
+                PushedAt = repository.PushedAt
+            };
 
         }
 
@@ -190,14 +198,14 @@ namespace RepositoryAnalyticsApi.Repositories
             {
                 loginType = "user";
                 login = user;
-                query = query.Replace("#LOGIN_TYPE#", loginType);
             }
             else
             {
                 loginType = "organization";
                 login = organization;
-                query = query.Replace("#LOGIN_TYPE#", "organization");
             }
+
+            query = query.Replace("#LOGIN_TYPE#", loginType);
 
             string asOfGitTimestamp = null;
 
@@ -208,24 +216,27 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var variables = new { login = login, name = name, branch = "master", asOf = asOfGitTimestamp };
 
-            var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
+            Model.Github.GraphQL.Repository graphQLRepository = null;
 
-            var jObject = JObject.Parse(responseBodyString);
-            dynamic repository = jObject["data"][loginType]["repository"];
-
-            var repositorySummary = new RepositorySummary();
-            repositorySummary.CreatedAt = repository.createdAt;
-            repositorySummary.UpdatedAt = repository.pushedAt;
-            repositorySummary.Url = repository.url;
-
-            var closestCommit = repository.commitHistory.history.nodes[0];
-
-            // Forks will have commit id's but not pushed dates so do a null check
-            if (closestCommit.pushedDate != null)
+            if (loginType == "user")
             {
-                repositorySummary.ClosestCommitPushedDate = repository.commitHistory.history.nodes[0].pushedDate;
+                var graphQLUser = await graphQLClient.QueryAsync<Model.Github.GraphQL.User>(query, variables).ConfigureAwait(false);
+                graphQLRepository = graphQLUser.Repository;
             }
-            repositorySummary.ClosestCommitId = closestCommit.id;
+            else
+            {
+                var graphQLOrganization = await graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(query, variables).ConfigureAwait(false);
+                graphQLRepository = graphQLOrganization.Repository;
+            }
+
+            var repositorySummary = new RepositorySummary
+            {
+                CreatedAt = graphQLRepository.CreatedAt,
+                UpdatedAt = graphQLRepository.PushedAt.Value,
+                Url = graphQLRepository.Url,
+                ClosestCommitId = graphQLRepository.CommitHistory.History.Nodes.First().Id,
+                ClosestCommitPushedDate = graphQLRepository.CommitHistory.History.Nodes.First().PushedDate
+            };
 
             return repositorySummary;
         }
@@ -267,18 +278,19 @@ namespace RepositoryAnalyticsApi.Repositories
             }
             ";
 
+
             if (!string.IsNullOrWhiteSpace(user))
             {
                 loginType = "user";
                 login = user;
-                query = query.Replace("#LOGIN_TYPE#", loginType);
             }
             else
             {
                 loginType = "organization";
                 login = organization;
-                query = query.Replace("#LOGIN_TYPE#", "organization");
             }
+
+            query = query.Replace("#LOGIN_TYPE#", loginType);
 
             string asOfGitTimestamp = null;
 
@@ -289,32 +301,35 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var variables = new { login = login, take = take, branch = "master", asOf = asOfGitTimestamp };
 
-            var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
+            GraphQlNodesParent<Model.Github.GraphQL.Repository> graphQLRepositories = null;
 
-            var jObject = JObject.Parse(responseBodyString);
-            dynamic repositories = jObject["data"][loginType]["repositories"];
+            if (loginType == "user")
+            {
+                var graphQLUser = await graphQLClient.QueryAsync<Model.Github.GraphQL.User>(query, variables).ConfigureAwait(false);
+                graphQLRepositories = graphQLUser.Repositories;
+            }
+            else
+            {
+                var graphQLOrganization = await graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(query, variables).ConfigureAwait(false);
+                graphQLRepositories = graphQLOrganization.Repositories;
+            }
 
             var cursorPagedResults = new CursorPagedResults<RepositorySummary>();
-            cursorPagedResults.EndCursor = repositories.pageInfo.endCursor;
-            cursorPagedResults.MoreToRead = repositories.pageInfo.hasNextPage;
+            cursorPagedResults.EndCursor = graphQLRepositories.PageInfo.EndCursor;
+            cursorPagedResults.MoreToRead = graphQLRepositories.PageInfo.HasNextPage;
 
             var results = new List<RepositorySummary>();
 
-            foreach (var edge in repositories.edges)
+            foreach (var graphQLRepository in graphQLRepositories.Nodes)
             {
-                var repositorySummary = new RepositorySummary();
-                repositorySummary.CreatedAt = edge.node.createdAt;
-                repositorySummary.UpdatedAt = edge.node.pushedAt;
-                repositorySummary.Url = edge.node.url;
-
-                var closestCommit = edge.node.commitHistory.history.nodes[0];
-
-                // Forks will have commit id's but not pushed dates so do a null check
-                if (closestCommit.pushedDate != null)
+                var repositorySummary = new RepositorySummary
                 {
-                    repositorySummary.ClosestCommitPushedDate = edge.node.commitHistory.history.nodes[0].pushedDate;
-                }
-                repositorySummary.ClosestCommitId = closestCommit.id;
+                    CreatedAt = graphQLRepository.CreatedAt,
+                    UpdatedAt = graphQLRepository.PushedAt.Value,
+                    Url = graphQLRepository.Url,
+                    ClosestCommitId = graphQLRepository.CommitHistory.History.Nodes.First().Id,
+                    ClosestCommitPushedDate = graphQLRepository.CommitHistory.History.Nodes.First().PushedDate
+                };
 
                 results.Add(repositorySummary);
             }
@@ -328,92 +343,82 @@ namespace RepositoryAnalyticsApi.Repositories
         {
             var teamToRespositoriesMap = new Dictionary<string, List<string>>();
 
-            var endCursorQuerySegment = "";
             var moreTeamsToRead = true;
+            string teamAfterCursor = null;
 
             while (moreTeamsToRead)
             {
-                var allTeamsRepositoriesQuery = $@"
-                query ($login: String!) {{
-                  organization(login: $login) {{
-                    teams(first: 100, {endCursorQuerySegment} orderBy:{{field:NAME, direction:ASC}}) {{
-                      nodes {{
-                        name
-                        repositories(first: 100) {{
-                          nodes {{
+                var allTeamsRepositoriesQuery = @"
+                query ($login: String!, $afterCursor: String) {
+                  organization(login: $login) {
+                    teams(first:100, after: $afterCursor, orderBy:{field:NAME, direction:ASC}){
+                      nodes{
+                        name,
+                        repositories(first:100){
+                          nodes{
                             name
-                          }}
-                          pageInfo {{
-                            endCursor
+                          },
+                          pageInfo{
+                            endCursor,
                             hasNextPage
-                          }}
-                        }}
-                      }}
-                      pageInfo {{
-                        endCursor
+                          }
+                        }
+                      },
+                      pageInfo{
+                        endCursor,
                         hasNextPage
-                      }}
-                    }}
-                  }}
-                }}
+                      }
+                    }
+                  }
+                }
                ";
 
-                var allTeamsRepositoriesVariables = new { login = organization };
+                var allTeamsRepositoriesVariables = new { login = organization, afterCursor = teamAfterCursor };
 
-                var allTeamsRepositoriesResponseBodyString = await graphQLClient.QueryAsync(allTeamsRepositoriesQuery, allTeamsRepositoriesVariables);
+                var graphQLOrganization = await graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(allTeamsRepositoriesQuery, allTeamsRepositoriesVariables);
 
-                dynamic jObject = JObject.Parse(allTeamsRepositoriesResponseBodyString);
-
-                var numberOfTeams = jObject.data.organization.teams.nodes.Count;
-
-                for (int i = 0; i < numberOfTeams; i++)
+                if (graphQLOrganization.Teams.Nodes != null && graphQLOrganization.Teams.Nodes.Any())
                 {
-                    var teamNode = jObject.data.organization.teams.nodes[i];
-                    var teamName = teamNode.name.Value;
-
-                    var numberOfTeamRepositories = teamNode.repositories.nodes.Count;
-
-                    var teamRepositoryNames = new List<string>();
-
-                    for (int j = 0; j < numberOfTeamRepositories; j++)
+                    foreach (var team in graphQLOrganization.Teams.Nodes)
                     {
-                        var repositoryName = teamNode.repositories.nodes[j].name.Value;
-                        teamRepositoryNames.Add(repositoryName);
-                    }
+                        var teamRepositoryNames = new List<string>();
 
-                    // Now get the additional pages of repositories if we need to
-                    bool moreTeamRepositoriesToRead = teamNode.repositories.pageInfo.hasNextPage.Value;
-                    var afterCursor = teamNode.repositories.pageInfo.endCursor.Value;
-
-                    while (moreTeamRepositoriesToRead)
-                    {
-
-                        var result = await GetAdditionalTeamRepositoriesAsync(teamName, afterCursor);
-
-                        teamRepositoryNames.AddRange(result.TeamNames);
-
-                        if (result.AfterCursor != null)
+                        foreach (var teamRepository in team.Repositories.Nodes)
                         {
-                            moreTeamRepositoriesToRead = true;
-                            afterCursor = result.AfterCursor;
+                            teamRepositoryNames.Add(teamRepository.Name);
                         }
-                        else
-                        {
-                            moreTeamRepositoriesToRead = false;
-                        }
-                    }
 
-                    teamToRespositoriesMap.Add(teamName, teamRepositoryNames);
+                        // Now get the additional pages of repositories if we need to
+                        bool moreTeamRepositoriesToRead = team.Repositories.PageInfo.HasNextPage;
+                        var afterCursor = team.Repositories.PageInfo.EndCursor;
+
+                        while (moreTeamRepositoriesToRead)
+                        {
+                            var result = await GetAdditionalTeamRepositoriesAsync(team.Name, afterCursor);
+
+                            teamRepositoryNames.AddRange(result.TeamNames);
+
+                            if (result.AfterCursor != null)
+                            {
+                                moreTeamRepositoriesToRead = true;
+                                afterCursor = result.AfterCursor;
+                            }
+                            else
+                            {
+                                moreTeamRepositoriesToRead = false;
+                            }
+                        }
+
+                        teamToRespositoriesMap.Add(team.Name, teamRepositoryNames);
+                    }
                 }
 
-                moreTeamsToRead = jObject.data.organization.teams.pageInfo.hasNextPage.Value;
+                moreTeamsToRead = graphQLOrganization.Teams.PageInfo.HasNextPage;
 
                 if (moreTeamsToRead)
                 {
-                    var endCursor = jObject.data.organization.teams.pageInfo.endCursor.Value;
-                    endCursorQuerySegment = $"after: \"{endCursor}\" ,";
+                    teamAfterCursor = graphQLOrganization.Teams.PageInfo.EndCursor;
                 }
-
             }
 
             return teamToRespositoriesMap;
@@ -443,29 +448,20 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 var teamRepositoriesVariables = new { login = organization, teamName = teamName, repositoriesAfter = afterCursor };
 
-                var responseBodyString = await graphQLClient.QueryAsync(teamRepositoriesQuery, teamRepositoriesVariables).ConfigureAwait(false);
-
-                dynamic jObject2 = JObject.Parse(responseBodyString);
-
-                var teamNode = jObject2.data.organization.teams.nodes[0];
-
-                var numberofRepositories = teamNode.repositories.nodes.Count;
+                var graphQLOrganization = await graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(teamRepositoriesQuery, teamRepositoriesVariables).ConfigureAwait(false);
 
                 var repositoryNames = new List<string>();
-                string nextAfterCursor = null;
 
-                for (int i = 0; i < numberofRepositories; i++)
+                foreach (var repository in graphQLOrganization.Teams.Nodes.First().Repositories.Nodes)
                 {
-                    var repositoryName = teamNode.repositories.nodes[i].name.Value;
-
-                    repositoryNames.Add(repositoryName);
+                    repositoryNames.Add(repository.Name);
                 }
 
-                bool moreRepositoriesToRead = teamNode.repositories.pageInfo.hasNextPage.Value;
+                string nextAfterCursor = null;
 
-                if (moreRepositoriesToRead)
+                if (graphQLOrganization.Teams.Nodes.First().Repositories.PageInfo.HasNextPage)
                 {
-                    nextAfterCursor = teamNode.repositories.pageInfo.endCursor.Value;
+                    nextAfterCursor = graphQLOrganization.Teams.Nodes.First().Repositories.PageInfo.EndCursor;
                 }
 
                 return (repositoryNames, nextAfterCursor);
@@ -484,67 +480,11 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var variables = new { login = owner };
 
-            var responseBodyString = await graphQLClient.QueryAsync(query, variables).ConfigureAwait(false);
+            var repositoryOwner = await graphQLClient.QueryAsync<Model.Github.GraphQL.RepositoryOwner>(query, variables).ConfigureAwait(false);
 
-            dynamic jObject = JObject.Parse(responseBodyString);
+            var ownerType = (OwnerType)Enum.Parse(typeof(OwnerType), repositoryOwner.TypeName);
 
-            if (jObject.data.repositoryOwner.__typename == "User")
-            {
-                return OwnerType.User;
-            }
-            else if (jObject.data.repositoryOwner.__typename == "Organization")
-            {
-                return OwnerType.Organization;
-            }
-            else
-            {
-                return OwnerType.Unknown;
-            }
-        }
-
-        private ServiceModel.Repository MapFromGraphQlGitHubRepoBodyString(string responseBodyString)
-        {
-            //var codeRepository = new ServiceModel.Repository();
-
-            //dynamic jObject = JObject.Parse(responseBodyString);
-
-            //codeRepository.Id = jObject.data.repository.url;
-            //codeRepository.Name = jObject.data.repository.name;
-            //codeRepository.CreatedOn = jObject.data.repository.createdAt;
-            //codeRepository.LastUpdatedOn = jObject.data.repository.pushedAt;
-
-            //if (jObject.data.repository.defaultBranchRef != null)
-            //{
-            //    codeRepository.DefaultBranch = jObject.data.repository.defaultBranchRef.name;
-            //}
-
-            //var projectCount = jObject.data.repository.projects.totalCount;
-            //codeRepository.HasProjects = projectCount > 0;
-
-            //var issueCount = jObject.data.repository.issues.totalCount;
-            //codeRepository.HasIssues = issueCount > 0;
-
-            //var pullRequestCount = jObject.data.repository.pullRequests.totalCount;
-            //codeRepository.HasPullRequests = pullRequestCount > 0;
-
-            //var numberOfTopics = jObject.data.repository.repositoryTopics.nodes.Count;
-
-            //if (numberOfTopics > 0)
-            //{
-            //    var topics = new List<string>();
-
-            //    for (int i = 0; i < numberOfTopics; i++)
-            //    {
-            //        var topicName = jObject.data.repository.repositoryTopics.nodes[i].topic.name.Value;
-            //        topics.Add(topicName);
-            //    }
-
-            //    codeRepository.Topics = topics;
-            //}
-
-            //return codeRepository;
-
-            return null;
+            return ownerType;
         }
     }
 }

@@ -28,9 +28,9 @@ namespace RepositoryAnaltyicsApi.Managers
 
         public async Task CreateAsync(RepositoryAnalysis repositoryAnalysis)
         {
-          
 
-   
+            var parsedRepoUrl = ParseRepositoryUrl();
+
             if (!repositoryAnalysis.AsOf.HasValue)
             {
                 /* If we are doing an analysis on the present state of things, check to see if we already have a snapshot saved which
@@ -53,7 +53,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 }
                 else
                 {
-                    var parsedRepoUrl = ParseRepositoryUrl();
+                    
                     var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, null).ConfigureAwait(false);
 
                     repositoryLastUpdatedOn = repositorySummary.UpdatedAt;
@@ -72,6 +72,9 @@ namespace RepositoryAnaltyicsApi.Managers
                     // Do repository summary call to get the commit Id of the latest commit and the date that commit was pushed for the snapshot
                     // populate the snapshot date with the corresponding manager calls (E.G. ScrapeDependenciesAsync) 
                     // Do full repository read to get all the current state stuff (including calls to get derived data like devops integrations)
+                    var sourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name);
+
+                    //updatedRepository.CurrentState.Name = 
 
                 }
 
