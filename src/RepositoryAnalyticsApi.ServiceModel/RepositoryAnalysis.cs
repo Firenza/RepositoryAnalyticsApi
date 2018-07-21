@@ -8,21 +8,26 @@ namespace RepositoryAnalyticsApi.ServiceModel
         /// As of now this is the GitHub URL of the repostiory
         /// </summary>
         public string RepositoryId { get; set; }
-        
+
+        /// <summary>
+        /// The date the repoistory was last updated in GitHub.  Can be provided to save a GitHub API call to get this information.
+        /// </summary>
+        public DateTime? RepositoryLastUpdatedOn { get; set; }
+
         /// <summary>
         /// Refresh all data even if there have been no updates in the source
         /// </summary>
         public bool ForceCompleteRefresh { get; set; }
 
-        /// <summary>
-        /// The id of the commit that is closest to the AsOf time without being after it
-        /// </summary>
-        public string ClosestCommitId { get; set; }
+        ///// <summary>
+        ///// The id of the commit that is closest to the AsOf time without being after it
+        ///// </summary>
+        //public string ClosestCommitId { get; set; }
 
-        /// <summary>
-        /// The time of the commit that is closest to the AsOf time without being after it
-        /// </summary>
-        public DateTime? ClosestCommitPushedOn { get; set; }
+        ///// <summary>
+        ///// The time of the commit that is closest to the AsOf time without being after it
+        ///// </summary>
+        //public DateTime? ClosestCommitPushedOn { get; set; }
 
         /// <summary>
         /// The point in time at which to do the analysis.  If not populated the current time is used.

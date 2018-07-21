@@ -504,45 +504,47 @@ namespace RepositoryAnalyticsApi.Repositories
 
         private ServiceModel.Repository MapFromGraphQlGitHubRepoBodyString(string responseBodyString)
         {
-            var codeRepository = new ServiceModel.Repository();
+            //var codeRepository = new ServiceModel.Repository();
 
-            dynamic jObject = JObject.Parse(responseBodyString);
+            //dynamic jObject = JObject.Parse(responseBodyString);
 
-            codeRepository.Id = jObject.data.repository.url;
-            codeRepository.Name = jObject.data.repository.name;
-            codeRepository.CreatedOn = jObject.data.repository.createdAt;
-            codeRepository.LastUpdatedOn = jObject.data.repository.pushedAt;
+            //codeRepository.Id = jObject.data.repository.url;
+            //codeRepository.Name = jObject.data.repository.name;
+            //codeRepository.CreatedOn = jObject.data.repository.createdAt;
+            //codeRepository.LastUpdatedOn = jObject.data.repository.pushedAt;
 
-            if (jObject.data.repository.defaultBranchRef != null)
-            {
-                codeRepository.DefaultBranch = jObject.data.repository.defaultBranchRef.name;
-            }
+            //if (jObject.data.repository.defaultBranchRef != null)
+            //{
+            //    codeRepository.DefaultBranch = jObject.data.repository.defaultBranchRef.name;
+            //}
 
-            var projectCount = jObject.data.repository.projects.totalCount;
-            codeRepository.HasProjects = projectCount > 0;
+            //var projectCount = jObject.data.repository.projects.totalCount;
+            //codeRepository.HasProjects = projectCount > 0;
 
-            var issueCount = jObject.data.repository.issues.totalCount;
-            codeRepository.HasIssues = issueCount > 0;
+            //var issueCount = jObject.data.repository.issues.totalCount;
+            //codeRepository.HasIssues = issueCount > 0;
 
-            var pullRequestCount = jObject.data.repository.pullRequests.totalCount;
-            codeRepository.HasPullRequests = pullRequestCount > 0;
+            //var pullRequestCount = jObject.data.repository.pullRequests.totalCount;
+            //codeRepository.HasPullRequests = pullRequestCount > 0;
 
-            var numberOfTopics = jObject.data.repository.repositoryTopics.nodes.Count;
+            //var numberOfTopics = jObject.data.repository.repositoryTopics.nodes.Count;
 
-            if (numberOfTopics > 0)
-            {
-                var topics = new List<string>();
+            //if (numberOfTopics > 0)
+            //{
+            //    var topics = new List<string>();
 
-                for (int i = 0; i < numberOfTopics; i++)
-                {
-                    var topicName = jObject.data.repository.repositoryTopics.nodes[i].topic.name.Value;
-                    topics.Add(topicName);
-                }
+            //    for (int i = 0; i < numberOfTopics; i++)
+            //    {
+            //        var topicName = jObject.data.repository.repositoryTopics.nodes[i].topic.name.Value;
+            //        topics.Add(topicName);
+            //    }
 
-                codeRepository.Topics = topics;
-            }
+            //    codeRepository.Topics = topics;
+            //}
 
-            return codeRepository;
+            //return codeRepository;
+
+            return null;
         }
     }
 }

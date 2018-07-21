@@ -1,42 +1,70 @@
 ﻿using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Managers
 {
-    public class RepositoryManager : IRepositorySnapshotManager
+    public class RepositoryManager : IRepositoryManager
     {
-        private IRepositorySnapshotRepository repositoryRepository;
+        private IRepositorySnapshotRepository repositorySnapshotRepository;
+        private IRepositoryCurrentStateRepository repositoryCurrentStateRepository;
 
-        public RepositoryManager(IRepositorySnapshotRepository repositoryRepository)
+        public RepositoryManager(IRepositorySnapshotRepository repositorySnapshotRepository, IRepositoryCurrentStateRepository repositoryCurrentStateRepository)
         {
-            this.repositoryRepository = repositoryRepository;
+            this.repositorySnapshotRepository = repositorySnapshotRepository;
+            this.repositoryCurrentStateRepository = repositoryCurrentStateRepository;
         }
 
-        public async Task CreateAsync(RepositorySnapshot repository)
+        public async Task UpsertAsync(Repository repository)
         {
-            await repositoryRepository.CreateAsync(repository).ConfigureAwait(false);
+            //// Map the current state stuff and update it
+            //var repositoryCurrentState = new RepositoryCurrentState
+            //{
+            //    DefaultBranch = repository.DefaultBranch,
+            //    DevOpsIntegrations = repository.DevOpsIntegrations,
+            //    HasIssues = repository.HasIssues,
+            //    HasProjects = repository.HasProjects,
+            //    HasPullRequests = repository.HasPullRequests,
+            //    RepositoryCreatedOn = repository.CreatedOn,
+            //    RepositoryName = repository.Name,
+            //    Id = repository.Id,
+            //    Teams = repository.Teams,
+            //    Topics = repository.Topics
+            //};
+
+            await repositoryCurrentStateRepository.UpsertAsync(repository.CurrentState).ConfigureAwait(false);
+
+            //// Save the snapshot portion
+            //var repositorySnapshot = new RepositorySnapshot
+            //{
+            //    RepositoryCurrentStateId = repositoryCurrentState.Id,
+            //    TakenOn = DateTime.Now,
+            //    Dependencies = repository.Dependencies,
+            //    // Going to also need to pass in the window range / commit id info to this method to save the state
+            //    WindowStartCommitId = null,
+            //    WindowEndsOn = null,
+            //    WindowStartsOn = null,
+            //    Id = null
+            //};
+
+
+            // Should probs do an upsert here
+
+            await repositorySnapshotRepository.CreateAsync(repository.Snapshot).ConfigureAwait(false);
         }
 
-        public async Task DeleteAsync(string id)
+        public async Task<Repository> ReadAsync(string id, DateTime? asOf)
         {
-            await repositoryRepository.DeleteAsync(id).ConfigureAwait(false);
+            return null;
         }
 
-        public async Task<RepositorySnapshot> ReadAsync(string id)
+        public async Task<List<Repository>> SearchAsync(RepositorySearch repositorySearch)
         {
-            return await repositoryRepository.ReadAsync(id).ConfigureAwait(false);
+            return null;
+            //return await repositoryRepository.SearchAsync(repositorySearch);
         }
 
-        public async Task<List<RepositorySnapshot>> SearchAsync(RepositorySearch repositorySearch)
-        {
-            return await repositoryRepository.SearchAsync(repositorySearch);
-        }
-
-        public async Task UpdateAsync(RepositorySnapshot repository)
-        {
-            await repositoryRepository.UpdateAsync(repository).ConfigureAwait(false);
-        }
     }
 }
