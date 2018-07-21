@@ -157,9 +157,9 @@ namespace RepositoryAnalyticsApi.Repositories
                 Url = repository.Url,
                 CreatedAt = repository.CreatedAt,
                 DefaultBranchName = repository.DefaultBranchRef.Name,
-                issueCount = repository.Issues.TotalCount.Value,
-                projectCount = repository.Projects.TotalCount.Value,
-                pullRequestCount = repository.PullRequests.TotalCount.Value,
+                IssueCount = repository.Issues.TotalCount.Value,
+                ProjectCount = repository.Projects.TotalCount.Value,
+                PullRequestCount = repository.PullRequests.TotalCount.Value,
                 PushedAt = repository.PushedAt
             };
 

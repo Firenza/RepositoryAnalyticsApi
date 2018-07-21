@@ -14,9 +14,9 @@ namespace RepositoryAnalyticsApi.ServiceModel
         public DateTime? PushedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public string DefaultBranchName { get; set; }
-        public int projectCount { get; set; }
-        public int issueCount { get; set; }
-        public int pullRequestCount { get; set; }
+        public int ProjectCount { get; set; }
+        public int IssueCount { get; set; }
+        public int PullRequestCount { get; set; }
         public List<string> TopicNames { get; set; }
         public List<string> Teams { get; set; }
     }
