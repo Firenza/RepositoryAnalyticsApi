@@ -24,7 +24,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var query = $@"
             {{
-                aggregate: ""repository"",
+                aggregate: ""repositorySnapshot"",
                 pipeline:
                 [
                     {{ $match: {{ ""Dependencies.Name"" : ""{name}""}}}},
@@ -69,7 +69,7 @@ namespace RepositoryAnalyticsApi.Repositories
         {
             var query = $@"
             {{
-                aggregate: ""repository"",
+                aggregate: ""repositorySnapshot"",
                 pipeline:
                 [
                     {{ $match: {{ ""Dependencies.Name"" : /{name}/i}}}},
