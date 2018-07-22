@@ -15,24 +15,24 @@ namespace RepositoryAnaltyicsApi.Managers
             this.repositoryImplementationsRepository = repositoryImplementationsRepository;
         }
 
-        public async Task<List<IntervalCountAggregations>> SearchAsync(string typeName, DateTime? createdOnOrAfter, DateTime? createdOnOrBefore, int? intervals)
+        public async Task<List<IntervalCountAggregations>> SearchAsync(string typeName, DateTime? intervalStartTime, DateTime? intervalEndTime, int? intervals)
         {
             var intervalCountAggregations = new List<IntervalCountAggregations>();
 
             if (intervals.HasValue && intervals > 1)
             {
-                if (!createdOnOrBefore.HasValue)
+                if (!intervalEndTime.HasValue)
                 {
-                    createdOnOrBefore = DateTime.Now;
+                    intervalEndTime = DateTime.Now;
                 }
 
-                var intervalTimeSpan = (createdOnOrBefore.Value - createdOnOrAfter.Value) / intervals.Value;
+                var intervalTimeSpan = (intervalEndTime.Value - intervalStartTime.Value) / intervals.Value;
 
                 var searchTasks = new List<Task<IntervalCountAggregations>>();
 
                 for (int i = 0; i < intervals.Value; i++)
                 {
-                    DateTime? intervalCreatedOnOrAfter = createdOnOrAfter.Value.Add(intervalTimeSpan * i);
+                    DateTime? intervalCreatedOnOrAfter = intervalStartTime.Value.Add(intervalTimeSpan * i);
                     DateTime? intervalCreatedOnOrBefore = intervalCreatedOnOrAfter.Value.Add(intervalTimeSpan);
 
                     var searchTask = repositoryImplementationsRepository.SearchAsync(typeName, intervalCreatedOnOrAfter, intervalCreatedOnOrBefore);
@@ -49,7 +49,7 @@ namespace RepositoryAnaltyicsApi.Managers
             }
             else
             {
-                var intervalCountAggregation = await repositoryImplementationsRepository.SearchAsync(typeName, createdOnOrAfter, createdOnOrBefore);
+                var intervalCountAggregation = await repositoryImplementationsRepository.SearchAsync(typeName, intervalStartTime, intervalEndTime);
                 intervalCountAggregations.Add(intervalCountAggregation);
             }
 

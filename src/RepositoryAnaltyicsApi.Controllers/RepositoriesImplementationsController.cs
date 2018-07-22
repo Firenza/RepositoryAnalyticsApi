@@ -16,10 +16,21 @@ namespace RepositoryAnaltyicsApi.Controllers
             this.repositoryImplementationsManager = repositoryImplementationsManager;
         }
 
+
+
+
+        /// <summary>
+        /// Search for repository implementations
+        /// </summary>
+        /// <param name="repositoryTypeName"></param>
+        /// <param name="intervalStartTime">Interval start time</param>
+        /// <param name="intervalEndTime">Interval end time</param>
+        /// <param name="intervals"></param>
+        /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> GetAsync([FromRoute]string repositoryTypeName, [FromQuery]DateTime? createdOnOrAfter, [FromQuery]DateTime? createdOnOrBefore, [FromQuery]int? intervals)
+        public async Task<IActionResult> GetAsync([FromRoute]string repositoryTypeName, [FromQuery]DateTime? intervalStartTime, [FromQuery]DateTime? intervalEndTime, [FromQuery]int? intervals)
         {
-            var intervalCountAggregations =  await repositoryImplementationsManager.SearchAsync(repositoryTypeName, createdOnOrAfter, createdOnOrBefore, intervals);
+            var intervalCountAggregations =  await repositoryImplementationsManager.SearchAsync(repositoryTypeName, intervalStartTime, intervalEndTime, intervals);
 
             return new ObjectResult(intervalCountAggregations);
         }
