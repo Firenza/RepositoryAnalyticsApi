@@ -11,7 +11,7 @@ namespace RepositoryAnalyticsApi.Extensions
     {
         public Task<RepositoryDevOpsIntegrations> DeriveIntegrationsAsync(string repositoryName)
         {
-            return null;
+            return Task.FromResult<RepositoryDevOpsIntegrations>(null);
         }
     }
 }
