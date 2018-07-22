@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -12,14 +13,14 @@ namespace RepositoryAnaltyicsApi.Controllers
     [Route("api/repoistories")]
     public class RepositoriesController : ControllerBase
     {
-        private IRepositoriesManager repositoriesManager;
+        private IRepositoryManager repositoryManager;
         // Get any non digit portion at the start of the version number.  If there is one assume it's a range
         // specifier like >=
         private string rangeSpecifierRegex = @"^[^\d]+";
 
-        public RepositoriesController(IRepositoriesManager repositoriesManager)
+        public RepositoriesController(IRepositoryManager repositoryManager)
         {
-            this.repositoriesManager = repositoriesManager;
+            this.repositoryManager = repositoryManager;
         }
 
         /// <summary>
@@ -45,7 +46,12 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// </remarks>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> GetAsync([FromQuery]string typeName, [FromQuery]string implementationName, [FromQuery]List<string> dependencies, [FromQuery]bool? hasContinuousDelivery)
+        public async Task<IActionResult> GetAsync(
+            [FromQuery]string typeName, 
+            [FromQuery]string implementationName, 
+            [FromQuery]List<string> dependencies, 
+            [FromQuery]bool? hasContinuousDelivery,
+            [FromQuery]DateTime? asOf)
         {
             var parsedDependencies = new List<(string Name, string Version, RangeSpecifier RangeSpecifier)>();
 
@@ -106,12 +112,13 @@ namespace RepositoryAnaltyicsApi.Controllers
                 TypeName = typeName,
                 ImplementationName = implementationName,
                 HasContinuousDelivery = hasContinuousDelivery,
-                Dependencies = parsedDependencies
+                Dependencies = parsedDependencies,
+                AsOf = asOf
             };
 
-            var repositories = await repositoriesManager.SearchAsync(repositorySearch);
+            var repositoryNames = await repositoryManager.SearchAsync(repositorySearch);
 
-            return new ObjectResult(repositories);
+            return new ObjectResult(repositoryNames);
         }
     }
 }

@@ -2,19 +2,17 @@
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
     [Route("api/repositorysource/repositories")]
-    public class RepositorySourceRepositoriesController : ControllerBase
+    public class RepositorySummariesController : ControllerBase
     {
         private IRepositorySourceManager repositorySourceManager;
 
-        public RepositorySourceRepositoriesController(IRepositorySourceManager repositorySoruceManager)
+        public RepositorySummariesController(IRepositorySourceManager repositorySoruceManager)
         {
             this.repositorySourceManager = repositorySoruceManager;
         }
@@ -22,8 +20,7 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// <summary>
         /// Read repositories to analyze
         /// </summary>
-        /// <param name="user"></param>
-        /// <param name="organization"></param>
+        /// <param name="owner">The user or organization</param>
         /// <param name="take">Number of records to return</param>
         /// <param name="endCursor">Key denoting where the last request left off. This will be empty for the first request</param>
         /// <returns></returns>
@@ -32,11 +29,11 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// facilitate processing of all repositories under a given organization or user.
         /// </remarks>
         [HttpGet()]
-        public async Task<CursorPagedResults<RepositorySourceRepository>> Get([FromQuery] string user, [FromQuery] string organization, [FromQuery] int take, [FromQuery] string endCursor  )
+        public async Task<CursorPagedResults<RepositorySummary>> Get([FromQuery] string owner, [FromQuery] int take, [FromQuery] string endCursor  )
         {
-            var dependencies = await repositorySourceManager.ReadRepositoriesAsync(organization, user, take, endCursor);
+            var pagedRepositorySummaries = await repositorySourceManager.ReadRepositorySummariesAsync(owner, take, endCursor);
 
-            return dependencies;
+            return pagedRepositorySummaries;
         }
     }
 }

@@ -7,6 +7,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
 {
     public interface IRepositoryImplementationsManager
     {
-        Task<List<IntervalCountAggregations>> SearchAsync(string typeName, DateTime? createdOnOrAfter, DateTime? createdOnOrBefore, int? intervals);
+        Task<List<IntervalCountAggregations>> SearchAsync(string typeName, DateTime? intervalStartTime, DateTime? intervalEndTime, int? intervals);
     }
 }

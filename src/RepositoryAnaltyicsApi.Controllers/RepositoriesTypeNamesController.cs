@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RepositoryAnaltyicsApi.Interfaces;
+using System;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers
@@ -16,9 +17,9 @@ namespace RepositoryAnaltyicsApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAsync()
+        public async Task<IActionResult> GetAsync([FromQuery]DateTime? asOf)
         {
-            var typeNames = await repositoriesTypeNamesManager.ReadAsync();
+            var typeNames = await repositoriesTypeNamesManager.ReadAsync(asOf);
 
             return new ObjectResult(typeNames);
         }

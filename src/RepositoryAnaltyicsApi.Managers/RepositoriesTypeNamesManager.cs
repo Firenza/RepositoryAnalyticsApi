@@ -1,4 +1,5 @@
 ﻿using RepositoryAnaltyicsApi.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,9 +14,9 @@ namespace RepositoryAnaltyicsApi.Managers
             this.repositoriesTypeNamesRepository = repositoriesTypeNamesRepository;
         }
 
-        public async Task<List<string>> ReadAsync()
+        public async Task<List<string>> ReadAsync(DateTime? asOf)
         {
-            return await repositoriesTypeNamesRepository.ReadAsync();
+            return await repositoriesTypeNamesRepository.ReadAsync(asOf);
         }
     }
 }

@@ -31,12 +31,18 @@ namespace RepositoryAnalyticsApi.Repositories
 
             if (createdOnOrAfter.HasValue)
             {
-                matchStatements.Add(new BsonDocument().Add("CreatedOn", new BsonDocument().Add("$gte", new BsonDateTime(createdOnOrAfter.Value))));
+                matchStatements.Add(new BsonDocument().Add("WindowStartsOn", new BsonDocument().Add("$lte", new BsonDateTime(createdOnOrAfter.Value))));
             }
 
             if (createdOnOrBefore.HasValue)
             {
-                matchStatements.Add(new BsonDocument().Add("CreatedOn", new BsonDocument().Add("$lte", new BsonDateTime(createdOnOrBefore.Value))));
+                matchStatements.Add(new BsonDocument().Add("WindowEndsOn", new BsonDocument().Add("$gte", new BsonDateTime(createdOnOrBefore.Value))));
+            }
+
+            // If not interval window specified then just read from the most recent snapshots
+            if (!createdOnOrAfter.HasValue && !createdOnOrBefore.HasValue)
+            {
+                matchStatements.Add(new BsonDocument().Add("WindowEndsOn", BsonNull.Value));
             }
 
             PipelineDefinition<BsonDocument, BsonDocument> pipeline = new BsonDocument[]

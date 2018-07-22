@@ -22,15 +22,23 @@ namespace RepositoryAnaltyicsApi.Managers
             this.memoryCache = memoryCache;
         }
 
-        public async Task<List<(string fullFilePath, string fileContent)>> GetMultipleFileContentsAsync(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths)
+        public async Task<List<(string fullFilePath, string fileContent)>> GetMultipleFileContentsAsync(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths, DateTime? asOf = null)
         {
             logger.LogDebug("Retrieving file contents from source");
 
-            var filesContentInformation = await repositorySourceRepository.GetMultipleFileContentsAsync(repositoryOwner, repositoryName, branch, fullFilePaths).ConfigureAwait(false);
+            var gitRef = branch;
+
+            if (asOf.HasValue)
+            {
+                var repoSourceSnapshot = await ReadRepositorySourceSnapshotAsync(repositoryOwner, repositoryName, branch, asOf);
+                gitRef = repoSourceSnapshot.ClosestCommitTreeId;
+            }
+
+            var filesContentInformation = await repositorySourceRepository.GetMultipleFileContentsAsync(repositoryOwner, repositoryName, gitRef, fullFilePaths).ConfigureAwait(false);
 
             foreach (var fileContentInformation in filesContentInformation)
             {
-                var cacheKey = GetFileContentCacheKey(repositoryOwner, repositoryName, fileContentInformation.fullFilePath);
+                var cacheKey = GetFileContentCacheKey(repositoryOwner, repositoryName, fileContentInformation.fullFilePath, gitRef);
 
                 memoryCache.Set<string>(cacheKey, fileContentInformation.fileContent);
             }
@@ -38,52 +46,170 @@ namespace RepositoryAnaltyicsApi.Managers
             return filesContentInformation;
         }
 
-        public async Task<string> ReadFileContentAsync(string owner, string name, string fullFilePath)
+        public async Task<string> ReadFileContentAsync(string owner, string name, string branch, string fullFilePath, DateTime? asOf = null)
         {
-            var cacheKey = GetFileContentCacheKey(owner, name, fullFilePath);
+            var gitRef = branch;
+
+            if (asOf.HasValue)
+            {
+                var repoSourceSnapshot = await ReadRepositorySourceSnapshotAsync(owner, name, branch, asOf);
+                gitRef = repoSourceSnapshot.ClosestCommitTreeId;
+            }
+
+            var cacheKey = GetFileContentCacheKey(owner, name, fullFilePath, gitRef);
 
             var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
             {
                 logger.LogDebug($"Retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromSeconds(10);
-                return await repositorySourceRepository.ReadFileContentAsync(owner, name, fullFilePath);
+
+                return await repositorySourceRepository.ReadFileContentAsync(owner, name, fullFilePath, gitRef);
             }).ConfigureAwait(false);
 
             return cacheEntry;
         }
 
-        public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name, string branch)
+        public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name, string branch, DateTime? asOf)
         {
-            var cacheKey = GetFileListCacheKey(owner, name, branch);
+            var gitRef = branch;
 
-            var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey,  async entry =>
+            if (asOf.HasValue)
             {
-                logger.LogDebug($"retrieving {cacheKey} from source");
-                entry.SlidingExpiration = TimeSpan.FromSeconds(10);
-                return await repositorySourceRepository.ReadFilesAsync(owner, name, branch);
-            });
+                var repoSourceSnapshot = await ReadRepositorySourceSnapshotAsync(owner, name, branch, asOf);
+                gitRef = repoSourceSnapshot.ClosestCommitTreeId;
+            }
 
-            return cacheEntry;
-        }
-
-        public async Task<CursorPagedResults<RepositorySourceRepository>> ReadRepositoriesAsync(string organization, string user, int take, string endCursor)
-        {
-            var repositories = await repositorySourceRepository.ReadRepositoriesAsync(organization, user, take, endCursor);
-
-            return repositories;
-        }
-
-        public async Task<Repository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
-        {
-            var cacheKey = GetRepositroyCacheKey(repositoryOwner, repositoryName);
+            var cacheKey = GetFileListCacheKey(owner, name, gitRef);
 
             var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
             {
                 logger.LogDebug($"retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+
+                return await repositorySourceRepository.ReadFilesAsync(owner, name, gitRef);
+            });
+
+            return cacheEntry;
+        }
+
+        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositorySummariesAsync(string owner, int take, string endCursor)
+        {
+            var respositorySummaries = new CursorPagedResults<RepositorySummary>();
+
+            var ownerType = await ReadOwnerType(owner);
+
+            if (ownerType == OwnerType.Organization)
+            {
+                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(owner, null, take, endCursor);
+            }
+            else if (ownerType == OwnerType.User)
+            {
+                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(null, owner, take, endCursor);
+            }
+
+            return respositorySummaries;
+        }
+
+        public async Task<RepositorySummary> ReadRepositorySummaryAsync(string owner, string name)
+        {
+            var respositorySummary = new RepositorySummary();
+
+            var ownerType = await ReadOwnerType(owner);
+
+            var cacheKey = GetRepositorySummaryCacheKey(owner, name);
+
+            if (ownerType == OwnerType.Organization)
+            {
+                var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+                {
+                    logger.LogDebug($"retrieving {cacheKey} from source");
+                    entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+
+                    respositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(owner, null, name);
+
+                    return respositorySummary;
+                }).ConfigureAwait(false);
+
+                return cacheEntry;
+            }
+            else if (ownerType == OwnerType.User)
+            {
+                var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+                {
+                    logger.LogDebug($"retrieving {cacheKey} from source");
+                    entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+
+                    respositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(null, owner, name);
+
+                    return respositorySummary;
+                }).ConfigureAwait(false);
+
+                return cacheEntry;
+            }
+
+            return respositorySummary;
+        }
+
+        public async Task<RepositorySourceSnapshot> ReadRepositorySourceSnapshotAsync(string owner, string name, string branch, DateTime? asOf)
+        {
+            var repositorySourceSnapshot = new RepositorySourceSnapshot();
+
+            var ownerType = await ReadOwnerType(owner);
+
+            var cacheKey = GetRepositorySourceSnapshotCacheKey(owner, name, branch, asOf);
+
+            if (ownerType == OwnerType.Organization)
+            {
+                var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+                {
+                    logger.LogDebug($"retrieving {cacheKey} from source");
+                    entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+
+                    repositorySourceSnapshot = await repositorySourceRepository.ReadRepositorySourceSnapshotAsync(owner, null, name, branch, asOf);
+
+                    return repositorySourceSnapshot;
+                }).ConfigureAwait(false);
+
+                return cacheEntry;
+            }
+            else if (ownerType == OwnerType.User)
+            {
+                var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+                {
+                    logger.LogDebug($"retrieving {cacheKey} from source");
+                    entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+
+                    repositorySourceSnapshot = await repositorySourceRepository.ReadRepositorySourceSnapshotAsync(null, owner, name, branch, asOf);
+
+                    return repositorySourceSnapshot;
+                }).ConfigureAwait(false);
+
+                return cacheEntry;
+            }
+
+            return repositorySourceSnapshot;
+        }
+
+
+        public async Task<RepositorySourceRepository> ReadRepositoryAsync(string repositoryOwner, string repositoryName)
+        {
+            var cacheKey = GetRepositroyCacheKey(repositoryOwner, repositoryName);
+
+            var ownerType = await ReadOwnerType(repositoryOwner);
+
+            var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                logger.LogDebug($"retrieving {cacheKey} from source");
+                entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+
                 var repository = await repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName);
-                var teams = await ReadTeams(repositoryOwner);
-                repository.Teams = teams;
+
+                if (ownerType == OwnerType.Organization)
+                {
+                    var teams = await ReadTeams(repositoryOwner);
+                    repository.Teams = teams;
+                }
+
                 return repository;
             }).ConfigureAwait(false);
 
@@ -98,7 +224,9 @@ namespace RepositoryAnaltyicsApi.Managers
                     logger.LogDebug($"retrieving {teamsCacheKey} from source");
                     // Set this duration login enough that a scan of all the repositories will only result in one read of the data
                     entry.SlidingExpiration = TimeSpan.FromHours(1);
+
                     var teamToRepsoitoriesMap = await this.repositorySourceRepository.ReadTeamToRepositoriesMaps(repositoryOwner);
+
                     return teamToRepsoitoriesMap;
                 }).ConfigureAwait(false);
 
@@ -116,25 +244,59 @@ namespace RepositoryAnaltyicsApi.Managers
             }
         }
 
+
+        public async Task<OwnerType> ReadOwnerType(string owner)
+        {
+            var cacheKey = $"ownerType|{owner}";
+
+            var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                logger.LogDebug($"Retrieving {cacheKey} from source");
+                entry.SlidingExpiration = TimeSpan.FromDays(1);
+
+                return await repositorySourceRepository.ReadOwnerType(owner);
+            }).ConfigureAwait(false);
+
+            return cacheEntry;
+        }
+
         private string GetOrganizationTeamsCacheKey(string organization)
         {
             return $"teams|{organization}";
         }
 
-
-        private string GetFileContentCacheKey(string owner, string name, string fullFilePath)
+        private string GetFileContentCacheKey(string owner, string name, string fullFilePath, string gitRef)
         {
-            return $"fileContent|{owner}|{name}|{fullFilePath}";
+            return $"fileContent|{owner}|{name}|{fullFilePath}|{gitRef}";
         }
 
-        private string GetFileListCacheKey(string owner, string name, string fullFilePath)
+        private string GetFileListCacheKey(string owner, string name, string gitRef)
         {
-            return $"fileList|{owner}|{name}|{fullFilePath}";
+            return $"fileList|{owner}|{name}|{gitRef}";
         }
 
         private string GetRepositroyCacheKey(string owner, string name)
         {
             return $"repository|{owner}|{name}";
         }
+
+        private string GetRepositorySummaryCacheKey(string owner, string name)
+        {
+            return $"repositorySummary|{owner}|{name}";
+        }
+
+        private string GetRepositorySourceSnapshotCacheKey(string owner, string name, string branch, DateTime? asOf)
+        {
+            if (asOf.HasValue)
+            {
+                return $"repositorySourceSnapshot|{owner}|{name}|{branch}|{asOf.Value.Ticks}";
+            }
+            else
+            {
+                return $"repositorySourceSnapshot|{owner}|{name}|{branch}";
+            }
+
+        }
+
     }
 }

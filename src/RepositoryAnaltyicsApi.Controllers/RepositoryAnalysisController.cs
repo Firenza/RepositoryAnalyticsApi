@@ -7,6 +7,7 @@ namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
     [Route("api/[controller]")]
+    [ValidateModel]
     public class RepositoryAnalysisController : ControllerBase
     {
         private IRepositoryAnalysisManager repositoryAnalysisManager;
