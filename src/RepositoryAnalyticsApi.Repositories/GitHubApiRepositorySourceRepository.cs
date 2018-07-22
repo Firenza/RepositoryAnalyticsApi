@@ -92,7 +92,7 @@ namespace RepositoryAnalyticsApi.Repositories
             }
         }
 
-        // The GraphQL Api does not support the recursive reading of file content so using the V3 API
+        // The GraphQL Api does not support the recursive reading of files so using the V3 API
         public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name, string branch)
         {
             var treeResponse = await treesClient.GetRecursive(owner, name, branch);
