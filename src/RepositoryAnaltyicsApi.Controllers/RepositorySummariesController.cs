@@ -8,11 +8,11 @@ namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
     [Route("api/repositorysource/repositories")]
-    public class RepositorySourceRepositoriesController : ControllerBase
+    public class RepositorySummariesController : ControllerBase
     {
         private IRepositorySourceManager repositorySourceManager;
 
-        public RepositorySourceRepositoriesController(IRepositorySourceManager repositorySoruceManager)
+        public RepositorySummariesController(IRepositorySourceManager repositorySoruceManager)
         {
             this.repositorySourceManager = repositorySoruceManager;
         }
@@ -31,9 +31,9 @@ namespace RepositoryAnaltyicsApi.Controllers
         [HttpGet()]
         public async Task<CursorPagedResults<RepositorySummary>> Get([FromQuery] string owner, [FromQuery] int take, [FromQuery] string endCursor  )
         {
-            var dependencies = await repositorySourceManager.ReadRepositorySummariesAsync(owner, take, endCursor);
+            var pagedRepositorySummaries = await repositorySourceManager.ReadRepositorySummariesAsync(owner, take, endCursor);
 
-            return dependencies;
+            return pagedRepositorySummaries;
         }
     }
 }
