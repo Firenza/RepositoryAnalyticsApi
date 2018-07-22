@@ -34,7 +34,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 gitRef = repoSummary.ClosestCommitTreeId;
             }
 
-            var filesContentInformation = await repositorySourceRepository.GetMultipleFileContentsAsync(repositoryOwner, repositoryName, branch, fullFilePaths).ConfigureAwait(false);
+            var filesContentInformation = await repositorySourceRepository.GetMultipleFileContentsAsync(repositoryOwner, repositoryName, gitRef, fullFilePaths).ConfigureAwait(false);
 
             foreach (var fileContentInformation in filesContentInformation)
             {
@@ -62,6 +62,7 @@ namespace RepositoryAnaltyicsApi.Managers
             {
                 logger.LogDebug($"Retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+
                 return await repositorySourceRepository.ReadFileContentAsync(owner, name, fullFilePath, gitRef);
             }).ConfigureAwait(false);
 
@@ -81,11 +82,12 @@ namespace RepositoryAnaltyicsApi.Managers
             var cacheKey = GetFileListCacheKey(owner, name, gitRef);
 
             var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
-           {
+            {
                logger.LogDebug($"retrieving {cacheKey} from source");
                entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+
                return await repositorySourceRepository.ReadFilesAsync(owner, name, gitRef);
-           });
+            });
 
             return cacheEntry;
         }
@@ -158,6 +160,7 @@ namespace RepositoryAnaltyicsApi.Managers
             {
                 logger.LogDebug($"retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+
                 var repository = await repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName);
 
                 if (ownerType == OwnerType.Organization)
@@ -180,7 +183,9 @@ namespace RepositoryAnaltyicsApi.Managers
                     logger.LogDebug($"retrieving {teamsCacheKey} from source");
                     // Set this duration login enough that a scan of all the repositories will only result in one read of the data
                     entry.SlidingExpiration = TimeSpan.FromHours(1);
+
                     var teamToRepsoitoriesMap = await this.repositorySourceRepository.ReadTeamToRepositoriesMaps(repositoryOwner);
+
                     return teamToRepsoitoriesMap;
                 }).ConfigureAwait(false);
 
@@ -206,6 +211,7 @@ namespace RepositoryAnaltyicsApi.Managers
             {
                 logger.LogDebug($"Retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromDays(1);
+
                 return await repositorySourceRepository.ReadOwnerType(owner);
             }).ConfigureAwait(false);
 

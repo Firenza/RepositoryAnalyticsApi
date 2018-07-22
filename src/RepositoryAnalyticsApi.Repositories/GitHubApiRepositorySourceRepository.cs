@@ -41,7 +41,7 @@ namespace RepositoryAnalyticsApi.Repositories
             }
         }
 
-        public async Task<List<(string fullFilePath, string fileContent)>> GetMultipleFileContentsAsync(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths)
+        public async Task<List<(string fullFilePath, string fileContent)>> GetMultipleFileContentsAsync(string repositoryOwner, string repositoryName, string gitRef, List<string> fullFilePaths)
         {
             var tupleList = new List<(string fullFilePath, string fileContent)>();
 
@@ -52,7 +52,7 @@ namespace RepositoryAnalyticsApi.Repositories
             // aliases on these nodes
             for (int i = 0; i < fullFilePaths.Count; i++)
             {
-                var fileContentRequestJson = GetFileContentRequestJson(i + 1, branch, fullFilePaths[i]);
+                var fileContentRequestJson = GetFileContentRequestJson(i + 1, fullFilePaths[i]);
                 fileContentRequestBuilder.Append(fileContentRequestJson);
             }
 
@@ -80,10 +80,10 @@ namespace RepositoryAnalyticsApi.Repositories
 
             return tupleList;
 
-            string GetFileContentRequestJson(int index, string branchName, string fullFilePath)
+            string GetFileContentRequestJson(int index, string fullFilePath)
             {
                 return $@"
-                file{index}: object(expression: ""{branch}:{fullFilePath}"") {{
+                file{index}: object(expression: ""{gitRef}:{fullFilePath}"") {{
                  ...on Blob {{
                      text
                     }}

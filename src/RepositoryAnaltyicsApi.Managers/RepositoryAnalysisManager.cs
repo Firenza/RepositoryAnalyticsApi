@@ -31,7 +31,8 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var parsedRepoUrl = ParseRepositoryUrl();
 
-            var files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
+            //var files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
+            //var dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
 
             if (!repositoryAnalysis.AsOf.HasValue)
             {
@@ -84,8 +85,20 @@ namespace RepositoryAnaltyicsApi.Managers
                     repositoryCurrentState.Teams = sourceRepository.Teams;
                     repositoryCurrentState.Topics = sourceRepository.TopicNames;
                     repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name);
-    
 
+                    var repositorySnapshot = new RepositorySnapshot();
+                    // Have to set the windows in the manager
+                    repositorySnapshot.RepositoryCurrentStateId = repositoryCurrentState.Id;
+                    repositorySnapshot.TakenOn = DateTime.Now;
+                    repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
+
+                    var updatedRepository =  new Repository
+                    {
+                        CurrentState = repositoryCurrentState,
+                        Snapshot = repositorySnapshot
+                    };
+
+                    await repositoryManager.UpsertAsync(updatedRepository);
                 }
 
             }
