@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Events;
 using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnaltyicsApi.Managers;
@@ -74,6 +75,18 @@ namespace RepositoryAnalyticsApi
             var mongoClientSettings = new MongoClientSettings();
             mongoClientSettings.Server = new MongoServerAddress("localhost", 27017);
             mongoClientSettings.ConnectTimeout = new TimeSpan(0, 0, 0, 2, 0);
+            // Log all query text for debugging purposes
+            var commandNamesToIgnore = new List<string> { "isMaster", "buildInfo", "getLastError" };
+            mongoClientSettings.ClusterConfigurator = cb =>
+            {
+                cb.Subscribe<CommandStartedEvent>(e =>
+                {
+                    if (!commandNamesToIgnore.Contains(e.CommandName))
+                    {
+                        Log.Logger.Information($"{e.CommandName} - {e.Command.ToJson()}");
+                    }
+                });
+            };
 
             // Add in mongo dependencies
             var client = new MongoClient(mongoClientSettings);
