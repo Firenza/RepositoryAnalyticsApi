@@ -17,8 +17,6 @@ namespace RepositoryAnalyticsApi.Repositories
         public MongoRepositorySnapshotRepository(IMongoCollection<RepositorySnapshot> mongoCollection)
         {
             this.mongoCollection = mongoCollection;
-
-     
         }
 
         public async Task UpsertAsync(RepositorySnapshot snapshot)

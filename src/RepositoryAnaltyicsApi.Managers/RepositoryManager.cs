@@ -28,11 +28,11 @@ namespace RepositoryAnaltyicsApi.Managers
             // Get the commit related information for the repo at the specified point in time
             // Need this to properly set the window time range for which the snapshot information we are 
             // saving is valid for 
-            var repoSummary = await repositorySourceManager.ReadRepositorySummaryAsync(repository.CurrentState.Owner, repository.CurrentState.Name, repository.CurrentState.DefaultBranch, asOf);
+            var repoSourceSnapshot = await repositorySourceManager.ReadRepositorySourceSnapshotAsync(repository.CurrentState.Owner, repository.CurrentState.Name, repository.CurrentState.DefaultBranch, asOf);
 
-            repository.Snapshot.WindowStartCommitId = repoSummary.ClosestCommitId;
+            repository.Snapshot.WindowStartCommitId = repoSourceSnapshot.ClosestCommitId;
             // Sometimes the pushed date is null, E.G. When a repository is renamed and the commit occured prior to the rename
-            repository.Snapshot.WindowStartsOn = repoSummary.ClosestCommitPushedDate ?? repoSummary.ClosestCommitCommittedDate;
+            repository.Snapshot.WindowStartsOn = repoSourceSnapshot.ClosestCommitPushedDate ?? repoSourceSnapshot.ClosestCommitCommittedDate;
 
             // Do we really need to read all existing repository snapshots here?  Could probably get away with just reading
             // the first one before the asOf date and the first one after the asOf date but that can be left as a future

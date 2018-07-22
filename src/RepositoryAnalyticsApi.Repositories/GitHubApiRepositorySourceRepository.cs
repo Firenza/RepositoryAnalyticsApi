@@ -175,21 +175,6 @@ namespace RepositoryAnalyticsApi.Repositories
             query ($login: String!, $name: String!, $branch: String!, $asOf: GitTimestamp) {
               #LOGIN_TYPE#(login: $login) {
                 repository(name: $name) {
-                  commitHistory: object(expression: $branch) {
-                    ... on Commit {
-                      history(first: 1, until: $asOf) {
-                        nodes {
-                          tree {
-                            oid 
-                          }
-                          message
-                          pushedDate
-                          committedDate
-                          id
-                        }
-                      }
-                    }
-                  }
                   url
                   createdAt
                   pushedAt
@@ -238,10 +223,6 @@ namespace RepositoryAnalyticsApi.Repositories
                 CreatedAt = graphQLRepository.CreatedAt,
                 UpdatedAt = graphQLRepository.PushedAt.Value,
                 Url = graphQLRepository.Url,
-                ClosestCommitId = graphQLRepository.CommitHistory.History.Nodes.First().Id,
-                ClosestCommitPushedDate = graphQLRepository.CommitHistory.History.Nodes.First().PushedDate,
-                ClosestCommitCommittedDate = graphQLRepository.CommitHistory.History.Nodes.First().CommittedDate,
-                ClosestCommitTreeId = graphQLRepository.CommitHistory.History.Nodes.First().Tree.Oid
             };
 
             return repositorySummary;
@@ -259,17 +240,6 @@ namespace RepositoryAnalyticsApi.Repositories
                 repositories(first: $take, after: $after, orderBy: {field: PUSHED_AT, direction: DESC}) {
                   edges {
                     node {
-                      commitHistory: object(expression: $branch) {
-                        ... on Commit {
-                          history(first: 1, until: $asOf) {
-                            nodes {
-                              message
-                              pushedDate
-                              id
-                            }
-                          }
-                        }
-                      }
                       url
                       createdAt
                       pushedAt
@@ -332,10 +302,7 @@ namespace RepositoryAnalyticsApi.Repositories
                 {
                     CreatedAt = graphQLRepository.CreatedAt,
                     UpdatedAt = graphQLRepository.PushedAt.Value,
-                    Url = graphQLRepository.Url,
-                    ClosestCommitId = graphQLRepository.CommitHistory.History.Nodes.First().Id,
-                    ClosestCommitPushedDate = graphQLRepository.CommitHistory.History.Nodes.First().PushedDate,
-                    ClosestCommitCommittedDate = graphQLRepository.CommitHistory.History.Nodes.First().CommittedDate
+                    Url = graphQLRepository.Url
                 };
 
                 results.Add(repositorySummary);
@@ -344,6 +311,82 @@ namespace RepositoryAnalyticsApi.Repositories
             cursorPagedResults.Results = results;
 
             return cursorPagedResults;
+        }
+
+        public async Task<RepositorySourceSnapshot> ReadRepositorySourceSnapshotAsync(string organization, string user, string name, string branch, DateTime? asOf)
+        {
+            string loginType = null;
+            string login = null;
+            string endCursorQuerySegment = string.Empty;
+
+            var query = @"
+            query ($login: String!, $name: String!, $branch: String!, $asOf: GitTimestamp) {
+              #LOGIN_TYPE#(login: $login) {
+                repository(name: $name) {
+                  commitHistory: object(expression: $branch) {
+                    ... on Commit {
+                      history(first: 1, until: $asOf) {
+                        nodes {
+                          tree {
+                            oid 
+                          }
+                          message
+                          pushedDate
+                          committedDate
+                          id
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            ";
+
+            if (!string.IsNullOrWhiteSpace(user))
+            {
+                loginType = "user";
+                login = user;
+            }
+            else
+            {
+                loginType = "organization";
+                login = organization;
+            }
+
+            query = query.Replace("#LOGIN_TYPE#", loginType);
+
+            string asOfGitTimestamp = null;
+
+            if (asOf.HasValue)
+            {
+                asOfGitTimestamp = asOf.Value.ToString(DATE_TIME_ISO8601_FORMAT);
+            }
+
+            var variables = new { login = login, name = name, branch = branch, asOf = asOfGitTimestamp };
+
+            Model.Github.GraphQL.Repository graphQLRepository = null;
+
+            if (loginType == "user")
+            {
+                var graphQLUser = await graphQLClient.QueryAsync<Model.Github.GraphQL.User>(query, variables).ConfigureAwait(false);
+                graphQLRepository = graphQLUser.Repository;
+            }
+            else
+            {
+                var graphQLOrganization = await graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(query, variables).ConfigureAwait(false);
+                graphQLRepository = graphQLOrganization.Repository;
+            }
+
+            var repositorySummary = new RepositorySourceSnapshot
+            {
+                ClosestCommitId = graphQLRepository.CommitHistory.History.Nodes.First().Id,
+                ClosestCommitPushedDate = graphQLRepository.CommitHistory.History.Nodes.First().PushedDate,
+                ClosestCommitCommittedDate = graphQLRepository.CommitHistory.History.Nodes.First().CommittedDate,
+                ClosestCommitTreeId = graphQLRepository.CommitHistory.History.Nodes.First().Tree.Oid
+            };
+
+            return repositorySummary;
         }
 
         public async Task<Dictionary<string, List<string>>> ReadTeamToRepositoriesMaps(string organization)
