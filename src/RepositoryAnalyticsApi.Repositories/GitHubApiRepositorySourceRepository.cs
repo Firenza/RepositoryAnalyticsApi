@@ -184,6 +184,7 @@ namespace RepositoryAnalyticsApi.Repositories
                           }
                           message
                           pushedDate
+                          committedDate
                           id
                         }
                       }
@@ -239,6 +240,7 @@ namespace RepositoryAnalyticsApi.Repositories
                 Url = graphQLRepository.Url,
                 ClosestCommitId = graphQLRepository.CommitHistory.History.Nodes.First().Id,
                 ClosestCommitPushedDate = graphQLRepository.CommitHistory.History.Nodes.First().PushedDate,
+                ClosestCommitCommittedDate = graphQLRepository.CommitHistory.History.Nodes.First().CommittedDate,
                 ClosestCommitTreeId = graphQLRepository.CommitHistory.History.Nodes.First().Tree.Oid
             };
 
@@ -332,7 +334,8 @@ namespace RepositoryAnalyticsApi.Repositories
                     UpdatedAt = graphQLRepository.PushedAt.Value,
                     Url = graphQLRepository.Url,
                     ClosestCommitId = graphQLRepository.CommitHistory.History.Nodes.First().Id,
-                    ClosestCommitPushedDate = graphQLRepository.CommitHistory.History.Nodes.First().PushedDate
+                    ClosestCommitPushedDate = graphQLRepository.CommitHistory.History.Nodes.First().PushedDate,
+                    ClosestCommitCommittedDate = graphQLRepository.CommitHistory.History.Nodes.First().CommittedDate
                 };
 
                 results.Add(repositorySummary);

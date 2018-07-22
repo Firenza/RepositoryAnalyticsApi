@@ -31,165 +31,60 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var parsedRepoUrl = ParseRepositoryUrl();
 
-            //var files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
-            //var dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
 
-            if (!repositoryAnalysis.AsOf.HasValue)
+            DateTime? repositoryLastUpdatedOn = null;
+
+            if (repositoryAnalysis.RepositoryLastUpdatedOn.HasValue)
             {
-                
-
-
-                /* If we are doing an analysis on the present state of things, check to see if we already have a snapshot saved which
-               * reflects the current state of the repository.  
-               * 
-               * 1) Read in the latest Repository information we have stored
-               * 2) Read in the last time the repository was updated in GitHub (if not already available)
-               * 3) If the start window time for the most recent snapshot matches the last time the repository was updated then do nothing
-               * 4) If .... Is older than the last time the repository was updated then we need to take a new snapshot
-               *
-               * Would be better to use a commit ID instead of a datetime as the datetimes will always be based on a commit anyway.  Could just update the read source repo
-               * graphql call to return the last commit id and the orchestrator could send that in ont his request
-              */
-                
-                DateTime? repositoryLastUpdatedOn = null;
-
-                if (repositoryAnalysis.RepositoryLastUpdatedOn.HasValue)
-                {
-                    repositoryLastUpdatedOn = repositoryAnalysis.RepositoryLastUpdatedOn.Value;
-                }
-                else
-                {
-                    var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", null).ConfigureAwait(false);
-
-                    repositoryLastUpdatedOn = repositorySummary.UpdatedAt;
-                }
-
-                var repository = await repositoryManager.ReadAsync(repositoryAnalysis.RepositoryId, null).ConfigureAwait(false);
-
-                if (repository == null || repositoryLastUpdatedOn > repository.CurrentState.RepositoryLastUpdatedOn)
-                {
-           
-                    // Do repository summary call to get the commit Id of the latest commit and the date that commit was pushed for the snapshot
-                    // populate the snapshot date with the corresponding manager calls (E.G. ScrapeDependenciesAsync) 
-                    // Do full repository read to get all the current state stuff (including calls to get derived data like devops integrations)
-                    var sourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name);
-
-                    var repositoryCurrentState = new RepositoryCurrentState();
-                    repositoryCurrentState.CurrentStateId = $"{parsedRepoUrl.Host}|{parsedRepoUrl.Owner}|{parsedRepoUrl.Name}";
-                    repositoryCurrentState.Name = sourceRepository.Name;
-                    repositoryCurrentState.Owner = parsedRepoUrl.Owner;
-                    repositoryCurrentState.DefaultBranch = sourceRepository.DefaultBranchName;
-                    repositoryCurrentState.HasIssues = sourceRepository.IssueCount > 0;
-                    repositoryCurrentState.HasProjects = sourceRepository.ProjectCount > 0;
-                    repositoryCurrentState.HasPullRequests = sourceRepository.PullRequestCount > 0;
-                    repositoryCurrentState.RepositoryCreatedOn = sourceRepository.CreatedAt;
-                    repositoryCurrentState.RepositoryLastUpdatedOn = sourceRepository.PushedAt;
-
-                    repositoryCurrentState.Teams = sourceRepository.Teams;
-                    repositoryCurrentState.Topics = sourceRepository.TopicNames;
-                    repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name);
-
-                    var repositorySnapshot = new RepositorySnapshot();
-                    // Have to set the windows in the manager
-                    repositorySnapshot.RepositoryCurrentStateId = repositoryCurrentState.Id;
-                    repositorySnapshot.TakenOn = DateTime.Now;
-                    repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
-                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositorySnapshot.Dependencies, repositoryCurrentState.Topics, repositoryAnalysis.AsOf);
-
-                    var updatedRepository =  new Repository
-                    {
-                        CurrentState = repositoryCurrentState,
-                        Snapshot = repositorySnapshot
-                    };
-
-                    await repositoryManager.UpsertAsync(updatedRepository, repositoryAnalysis.AsOf);
-                }
-
+                repositoryLastUpdatedOn = repositoryAnalysis.RepositoryLastUpdatedOn.Value;
             }
             else
             {
-                /* If we are doing a snapshop of the past we will do the following
-                * 
-                * 1) Read in the snapshot that has a window matching the specified AsOf time (S1)
-                * 2) Get the commit Id corresponding to the closest commit before the AsOf time (C5)
-                * 3) Compare commitId's from 1) and 2) and if they are the same then do nothing
-                * 4) Compare .... are different (C2 != C5) then create a new snapshot with a time window of the 2) commitId date time and the end window time of the matched snapshot
-                * 5) Update existing snapshot by moving the end date of the matched snapshot back in time to be one tick before the 2) commit ID date time
-                * 
-                */
+                var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", null).ConfigureAwait(false);
 
+                repositoryLastUpdatedOn = repositorySummary.UpdatedAt;
             }
 
+            var repository = await repositoryManager.ReadAsync(repositoryAnalysis.RepositoryId, null).ConfigureAwait(false);
 
+            if (repository == null || repositoryLastUpdatedOn > repository.CurrentState.RepositoryLastUpdatedOn)
+            {
 
-            //DateTime? newSnapshotWindowStart = repositoryAnalysis.ClosestCommitPushedOn;
-            //string asOfDateRepositoryClosestCommitId = null;
-            //bool createNewSnapshot = false;
+                // Do repository summary call to get the commit Id of the latest commit and the date that commit was pushed for the snapshot
+                // populate the snapshot date with the corresponding manager calls (E.G. ScrapeDependenciesAsync) 
+                // Do full repository read to get all the current state stuff (including calls to get derived data like devops integrations)
+                var sourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name);
 
-            ////var parsedRepoUrl = ParseRepositoryUrl();
+                var repositoryCurrentState = new RepositoryCurrentState();
+                repositoryCurrentState.Id = $"{parsedRepoUrl.Host}|{parsedRepoUrl.Owner}|{parsedRepoUrl.Name}";
+                repositoryCurrentState.Name = sourceRepository.Name;
+                repositoryCurrentState.Owner = parsedRepoUrl.Owner;
+                repositoryCurrentState.DefaultBranch = sourceRepository.DefaultBranchName;
+                repositoryCurrentState.HasIssues = sourceRepository.IssueCount > 0;
+                repositoryCurrentState.HasProjects = sourceRepository.ProjectCount > 0;
+                repositoryCurrentState.HasPullRequests = sourceRepository.PullRequestCount > 0;
+                repositoryCurrentState.RepositoryCreatedOn = sourceRepository.CreatedAt;
+                repositoryCurrentState.RepositoryLastUpdatedOn = sourceRepository.PushedAt;
 
-            //// Figure out if a new snapshot is needed
-            //var existingRepositorySnapshot = await repositoryManager.ReadAsync(repositoryAnalysis.RepositoryId);
+                repositoryCurrentState.Teams = sourceRepository.Teams;
+                repositoryCurrentState.Topics = sourceRepository.TopicNames;
+                repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name);
 
-            //if (existingRepositorySnapshot == null)
-            //{
-            //    createNewSnapshot = true;
-            //}
-            //else
-            //{
-            //    var existingSnapShotStartCommitId = existingRepositorySnapshot.WindowStartCommitId;
-            //    asOfDateRepositoryClosestCommitId = repositoryAnalysis.ClosestCommitId;
+                var repositorySnapshot = new RepositorySnapshot();
+                // Have to set the windows in the manager
+                repositorySnapshot.RepositoryCurrentStateId = repositoryCurrentState.Id;
+                repositorySnapshot.TakenOn = DateTime.Now;
+                repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
+                repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositorySnapshot.Dependencies, repositoryCurrentState.Topics, repositoryAnalysis.AsOf);
 
-            //    if (string.IsNullOrWhiteSpace(asOfDateRepositoryClosestCommitId))
-            //    {
-            //        // Make API call to get this
-            //        var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, repositoryAnalysis.AsOf);
-            //        asOfDateRepositoryClosestCommitId = repositorySummary.ClosestCommitId;
-            //        newSnapshotWindowStart = repositorySummary.ClosestCommitPushedDate;
-            //    }
+                var updatedRepository = new Repository
+                {
+                    CurrentState = repositoryCurrentState,
+                    Snapshot = repositorySnapshot
+                };
 
-            //    createNewSnapshot = existingSnapShotStartCommitId != asOfDateRepositoryClosestCommitId;
-            //}
-           
-
-            //if (createNewSnapshot)
-            //{
-            //    // We need to create a new snapshot
-            //    if (!newSnapshotWindowStart.HasValue)
-            //    {
-            //        var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.owner, parsedRepoUrl.name, repositoryAnalysis.AsOf);
-            //        asOfDateRepositoryClosestCommitId = repositorySummary.ClosestCommitId;
-            //        newSnapshotWindowStart = repositorySummary.ClosestCommitPushedDate;
-            //    }
-
-            //    // Set all the new snapshot info
-            //    var newSnapshot = new RepositorySnapshot();
-
-            //    newSnapshot.TakenOn = DateTime.Now;
-            //    newSnapshot.WindowStartCommitId = asOfDateRepositoryClosestCommitId;
-            //    newSnapshot.WindowStartsOn = newSnapshotWindowStart;
-            //    newSnapshot.WindowEndsOn = existingRepositorySnapshot?.WindowEndsOn;
-            //    newSnapshot.DefaultBranch = existingRepositorySnapshot.DefaultBranch;
-            //    newSnapshot.RepositoryName = existingRepositorySnapshot.RepositoryName;
-            //    //newSnapshot.Topics = repositorySnapshot.Topics;
-            //    //newSnapshot.Teams = repositorySnapshot.Teams;
-
-            //    newSnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, existingRepositorySnapshot.DefaultBranch);
-            //    newSnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(existingRepositorySnapshot, parsedRepoUrl.owner);
-            //    newSnapshot.DevOpsIntegrations = await ScrapeDevOpsIntegrations(existingRepositorySnapshot.RepositoryName);
-
-            //    // Create the new snapshot
-            //    await repositoryManager.CreateAsync(newSnapshot);
-
-            //    if (existingRepositorySnapshot != null)
-            //    {
-            //        // Update the existing snapshot to end right before the new one starts
-            //        existingRepositorySnapshot.WindowEndsOn = newSnapshotWindowStart.Value.AddTicks(-1);
-
-            //        await repositoryManager.UpdateAsync(existingRepositorySnapshot);
-            //    }
-            //}
-
+                await repositoryManager.UpsertAsync(updatedRepository, repositoryAnalysis.AsOf);
+            }
 
             (string Owner, string Name, string Host) ParseRepositoryUrl()
             {
@@ -200,73 +95,6 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 return (owner, name, host);
             }
-
-            //var now = DateTime.Now;
-            //bool repositorySnapshotAlreadyExists = true;
-
-            //if (existingRepositorySnapshot == null)
-            //{
-            //    existingRepositorySnapshot = new RepositorySnapshot();
-            //    repositorySnapshotAlreadyExists = false;
-            //}
-
-            //var parsedRepoUrl = ParseRepositoryUrl();
-
-            //var repositoryNeedsUpdating = false;
-
-            //if (repositoryAnalysis.ForceCompleteRefresh)
-            //{
-            //    repositoryNeedsUpdating = true;
-            //}
-            //else if (repositoryAnalysis.SourceRepositoryLastUpdatedOn.HasValue)
-            //{
-            //    repositoryNeedsUpdating = existingRepositorySnapshot.TakenOn < repositoryAnalysis.SourceRepositoryLastUpdatedOn.Value;
-            //}
-            //else
-            //{
-            //    repositorySnapshot = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.owner, parsedRepoUrl.name);
-
-            //    repositoryNeedsUpdating = existingRepositorySnapshot.TakenOn < repositorySnapshot.LastUpdatedOn;
-            //}
-
-            //if (repositoryNeedsUpdating)
-            //{
-            //    if (repositorySnapshot == null)
-            //    {
-            //        repositorySnapshot = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.owner, parsedRepoUrl.name);
-            //    }
-
-            //    existingRepositorySnapshot.TakenOn = now;
-            //    existingRepositorySnapshot.RepositoryCreatedOn = repositorySnapshot.RepositoryCreatedOn;
-            //    existingRepositorySnapshot.LastUpdatedOn = repositorySnapshot.LastUpdatedOn;
-            //    existingRepositorySnapshot.DefaultBranch = repositorySnapshot.DefaultBranch;
-            //    existingRepositorySnapshot.Repository = repositorySnapshot.Repository;
-            //    existingRepositorySnapshot.Id = repositorySnapshot.Id;
-            //    existingRepositorySnapshot.Topics = repositorySnapshot.Topics;
-            //    existingRepositorySnapshot.Teams = repositorySnapshot.Teams;
-
-            //    existingRepositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.owner, parsedRepoUrl.name, existingRepositorySnapshot.DefaultBranch);
-            //    existingRepositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(existingRepositorySnapshot, parsedRepoUrl.owner);
-            //    existingRepositorySnapshot.DevOpsIntegrations = await ScrapeDevOpsIntegrations(existingRepositorySnapshot.Repository);
-
-            //    if (repositorySnapshotAlreadyExists)
-            //    {
-            //        await repositorySnapshotManager.UpdateAsync(existingRepositorySnapshot);
-            //    }
-            //    else
-            //    {
-            //        await repositorySnapshotManager.CreateAsync(existingRepositorySnapshot);
-            //    }
-            //}
-
-            //(string owner, string name) ParseRepositoryUrl()
-            //{
-            //    var repositoryUri = new Uri(repositoryAnalysis.RepositoryId);
-            //    var owner = repositoryUri.Segments[1].TrimEnd('/');
-            //    var name = repositoryUri.Segments[2].TrimEnd('/');
-
-            //    return (owner, name);
-            //}
         }
 
         private async Task<RepositoryDevOpsIntegrations> ScrapeDevOpsIntegrations(string repositoryName)

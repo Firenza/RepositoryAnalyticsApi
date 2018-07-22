@@ -1,8 +1,9 @@
 ﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Driver;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,29 +17,52 @@ namespace RepositoryAnalyticsApi.Repositories
         public MongoRepositorySnapshotRepository(IMongoCollection<RepositorySnapshot> mongoCollection)
         {
             this.mongoCollection = mongoCollection;
+
+     
         }
 
-        public async Task CreateAsync(RepositorySnapshot repository)
+        public async Task UpsertAsync(RepositorySnapshot snapshot)
         {
-            await mongoCollection.InsertOneAsync(repository);
+            var filter = Builders<RepositorySnapshot>.Filter.And(
+                Builders<RepositorySnapshot>.Filter.Eq(repo => repo.RepositoryCurrentStateId, snapshot.RepositoryCurrentStateId),
+                Builders<RepositorySnapshot>.Filter.Eq(repo => repo.WindowStartCommitId, snapshot.WindowStartCommitId)
+            );
+
+            await mongoCollection.ReplaceOneAsync(filter, snapshot, new UpdateOptions { IsUpsert = true });
         }
 
         public async Task DeleteAsync(string id)
         {
-            await mongoCollection.DeleteOneAsync(repostiory => repostiory.Id == id);
+            await mongoCollection.DeleteOneAsync(repostiory => repostiory.WindowStartCommitId == id);
         }
 
         public async Task<RepositorySnapshot> ReadAsync(string id)
         {
-            var cursor = await mongoCollection.FindAsync(reposity => reposity.Id == id);
+            var cursor = await mongoCollection.FindAsync(reposity => reposity.WindowStartCommitId == id);
             var repository = await cursor.FirstOrDefaultAsync();
 
             return repository;
         }
 
-        public async Task UpdateAsync(RepositorySnapshot repository)
+        public async Task<List<RepositorySnapshot>> ReadAllForParent(string repositoryCurrentStateId)
         {
-            await mongoCollection.ReplaceOneAsync(repo => repo.Id == repository.Id, repository);
+            var snapshots = new List<RepositorySnapshot>();
+
+            var filter = Builders<RepositorySnapshot>.Filter.Eq(repo => repo.RepositoryCurrentStateId, repositoryCurrentStateId);
+
+            using (var cursor = await mongoCollection.FindAsync<RepositorySnapshot>(filter))
+            {
+                while (await cursor.MoveNextAsync())
+                {
+                    var batch = cursor.Current;
+                    foreach (RepositorySnapshot repository in batch)
+                    {
+                        snapshots.Add(repository);
+                    }
+                }
+            }
+
+            return snapshots;
         }
 
         public async Task<List<RepositorySnapshot>> SearchAsync(RepositorySearch repositorySearch)

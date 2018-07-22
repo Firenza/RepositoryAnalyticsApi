@@ -6,7 +6,8 @@ namespace RepositoryAnalyticsApi.Repositories.Model.Github.GraphQL
     {
         public string Id { get; set; }
         public string Message { get; set; }
-        public DateTime PushedDate { get; set; }
+        public DateTime? PushedDate { get; set; }
+        public DateTime CommittedDate { get; set; }
         public Tree Tree { get; set; }
     }
 }

@@ -6,10 +6,10 @@ namespace RepositoryAnaltyicsApi.Interfaces
 {
     public interface IRepositorySnapshotRepository
     {
-        Task CreateAsync(RepositorySnapshot repository);
+        Task UpsertAsync(RepositorySnapshot snapshot);
         Task<RepositorySnapshot> ReadAsync(string id);
-        Task UpdateAsync(RepositorySnapshot repository);
         Task DeleteAsync(string id);
+        Task<List<RepositorySnapshot>> ReadAllForParent(string repositoryCurrentStateId);
         Task<List<RepositorySnapshot>> SearchAsync(RepositorySearch repositorySearch);
     }
 }

@@ -8,7 +8,6 @@ namespace RepositoryAnalyticsApi.ServiceModel
     /// </summary>
     public class RepositorySnapshot
     {
-        public string Id { get; set; }
         public string RepositoryCurrentStateId { get; set; }
 
         /// <summary>

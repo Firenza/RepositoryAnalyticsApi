@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
@@ -10,6 +11,7 @@ using RepositoryAnaltyicsApi.Managers.Dependencies;
 using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.Extensions;
 using RepositoryAnalyticsApi.Repositories;
+using RepositoryAnalyticsApi.ServiceModel;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -78,9 +80,17 @@ namespace RepositoryAnalyticsApi
             var db = client.GetDatabase(mongoDbDatabase);
 
             services.AddScoped((serviceProvider) => db);
+
+            BsonClassMap.RegisterClassMap<RepositorySnapshot>(map =>
+            {
+                map.AutoMap();
+                map.SetIgnoreExtraElements(true);
+            });
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositorySnapshot>("repositorySnapshot"));
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositoryCurrentState>("repositoryCurrentState"));
             services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repositorySnapshot"));
+
+         
         }
 
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
