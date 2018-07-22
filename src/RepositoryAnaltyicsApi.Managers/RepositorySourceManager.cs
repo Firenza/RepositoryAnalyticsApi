@@ -106,13 +106,20 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             var cacheKey = GetRepositroyCacheKey(repositoryOwner, repositoryName);
 
+            var ownerType = await ReadOwnerType(repositoryOwner);
+
             var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
             {
                 logger.LogDebug($"retrieving {cacheKey} from source");
                 entry.SlidingExpiration = TimeSpan.FromSeconds(10);
                 var repository = await repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName);
-                var teams = await ReadTeams(repositoryOwner);
-                repository.Teams = teams;
+
+                if (ownerType == OwnerType.Organization)
+                {
+                    var teams = await ReadTeams(repositoryOwner);
+                    repository.Teams = teams;
+                }
+           
                 return repository;
             }).ConfigureAwait(false);
 
