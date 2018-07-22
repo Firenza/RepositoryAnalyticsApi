@@ -165,14 +165,14 @@ namespace RepositoryAnalyticsApi.Repositories
 
         }
 
-        public async Task<RepositorySummary> ReadRepositorySummaryAsync(string organization, string user, string name, string branch, DateTime? asOf)
+        public async Task<RepositorySummary> ReadRepositorySummaryAsync(string organization, string user, string name)
         {
             string loginType = null;
             string login = null;
             string endCursorQuerySegment = string.Empty;
 
             var query = @"
-            query ($login: String!, $name: String!, $branch: String!, $asOf: GitTimestamp) {
+            query ($login: String!, $name: String!) {
               #LOGIN_TYPE#(login: $login) {
                 repository(name: $name) {
                   url
@@ -196,14 +196,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             query = query.Replace("#LOGIN_TYPE#", loginType);
 
-            string asOfGitTimestamp = null;
-
-            if (asOf.HasValue)
-            {
-                asOfGitTimestamp = asOf.Value.ToString(DATE_TIME_ISO8601_FORMAT);
-            }
-
-            var variables = new { login = login, name = name, branch = branch, asOf = asOfGitTimestamp };
+            var variables = new { login = login, name = name};
 
             Model.Github.GraphQL.Repository graphQLRepository = null;
 
@@ -228,14 +221,13 @@ namespace RepositoryAnalyticsApi.Repositories
             return repositorySummary;
         }
 
-        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositorySummariesAsync(string organization, string user, int take, string endCursor, DateTime? asOf)
+        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositorySummariesAsync(string organization, string user, int take, string endCursor)
         {
             string loginType = null;
             string login = null;
-            string endCursorQuerySegment = string.Empty;
 
             var query = @"
-            query ($login: String!, $branch: String!, $take: Int, $after: String, $asOf: GitTimestamp) {
+            query ($login: String!, $take: Int, $after: String) {
               #LOGIN_TYPE#(login: $login) {
                 repositories(first: $take, after: $after, orderBy: {field: PUSHED_AT, direction: DESC}) {
                   edges {
@@ -268,14 +260,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             query = query.Replace("#LOGIN_TYPE#", loginType);
 
-            string asOfGitTimestamp = null;
-
-            if (asOf.HasValue)
-            {
-                asOfGitTimestamp = asOf.Value.ToString(DATE_TIME_ISO8601_FORMAT);
-            }
-
-            var variables = new { login = login, take = take, branch = "master", asOf = asOfGitTimestamp };
+            var variables = new { login = login, take = take, branch = "master", after = endCursor};
 
             GraphQlNodesParent<Model.Github.GraphQL.Repository> graphQLRepositories = null;
 

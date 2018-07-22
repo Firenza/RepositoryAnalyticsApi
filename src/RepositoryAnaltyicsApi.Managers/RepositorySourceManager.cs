@@ -83,16 +83,16 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var cacheEntry = await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
             {
-               logger.LogDebug($"retrieving {cacheKey} from source");
-               entry.SlidingExpiration = TimeSpan.FromSeconds(10);
+                logger.LogDebug($"retrieving {cacheKey} from source");
+                entry.SlidingExpiration = TimeSpan.FromSeconds(10);
 
-               return await repositorySourceRepository.ReadFilesAsync(owner, name, gitRef);
+                return await repositorySourceRepository.ReadFilesAsync(owner, name, gitRef);
             });
 
             return cacheEntry;
         }
 
-        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositoriesAsync(string owner, int take, string endCursor, DateTime? asOf)
+        public async Task<CursorPagedResults<RepositorySummary>> ReadRepositorySummariesAsync(string owner, int take, string endCursor)
         {
             var respositorySummaries = new CursorPagedResults<RepositorySummary>();
 
@@ -100,23 +100,23 @@ namespace RepositoryAnaltyicsApi.Managers
 
             if (ownerType == OwnerType.Organization)
             {
-                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(owner, null, take, endCursor, asOf);
+                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(owner, null, take, endCursor);
             }
             else if (ownerType == OwnerType.User)
             {
-                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(null, owner, take, endCursor, asOf);
+                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(null, owner, take, endCursor);
             }
 
             return respositorySummaries;
         }
 
-        public async Task<RepositorySummary> ReadRepositorySummaryAsync(string owner, string name, string branch, DateTime? asOf)
+        public async Task<RepositorySummary> ReadRepositorySummaryAsync(string owner, string name)
         {
             var respositorySummary = new RepositorySummary();
 
             var ownerType = await ReadOwnerType(owner);
 
-            var cacheKey = GetRepositorySummaryCacheKey(owner, name, branch, asOf);
+            var cacheKey = GetRepositorySummaryCacheKey(owner, name);
 
             if (ownerType == OwnerType.Organization)
             {
@@ -125,7 +125,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     logger.LogDebug($"retrieving {cacheKey} from source");
                     entry.SlidingExpiration = TimeSpan.FromSeconds(10);
 
-                    respositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(owner, null, name, branch, asOf);
+                    respositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(owner, null, name);
 
                     return respositorySummary;
                 }).ConfigureAwait(false);
@@ -139,7 +139,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     logger.LogDebug($"retrieving {cacheKey} from source");
                     entry.SlidingExpiration = TimeSpan.FromSeconds(10);
 
-                    respositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(null, owner, name, branch, asOf);
+                    respositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(null, owner, name);
 
                     return respositorySummary;
                 }).ConfigureAwait(false);
@@ -244,7 +244,7 @@ namespace RepositoryAnaltyicsApi.Managers
             }
         }
 
-  
+
         public async Task<OwnerType> ReadOwnerType(string owner)
         {
             var cacheKey = $"ownerType|{owner}";
@@ -280,17 +280,9 @@ namespace RepositoryAnaltyicsApi.Managers
             return $"repository|{owner}|{name}";
         }
 
-        private string GetRepositorySummaryCacheKey(string owner, string name, string branch, DateTime? asOf)
+        private string GetRepositorySummaryCacheKey(string owner, string name)
         {
-            if (asOf.HasValue)
-            {
-                return $"repositorySummary|{owner}|{name}|{branch}|{asOf.Value.Ticks}";
-            }
-            else
-            {
-                return $"repositorySummary|{owner}|{name}|{branch}";
-            }
-            
+            return $"repositorySummary|{owner}|{name}";
         }
 
         private string GetRepositorySourceSnapshotCacheKey(string owner, string name, string branch, DateTime? asOf)

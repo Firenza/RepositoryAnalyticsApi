@@ -40,7 +40,7 @@ namespace RepositoryAnaltyicsApi.Managers
             }
             else
             {
-                var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", null).ConfigureAwait(false);
+                var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name).ConfigureAwait(false);
 
                 repositoryLastUpdatedOn = repositorySummary.UpdatedAt;
             }
