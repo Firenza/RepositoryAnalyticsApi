@@ -20,11 +20,11 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
 
         public Regex SourceFileRegex => new Regex(@"package\.json");
 
-        public async Task<List<RepositoryDependency>> ReadAsync(string owner, string name, string branch)
+        public async Task<List<RepositoryDependency>> ReadAsync(string owner, string name, string branch, DateTime? asOf)
         {
             var dependencies = new List<RepositoryDependency>();
 
-            var files = await repositorySourceManager.ReadFilesAsync(owner, name, branch).ConfigureAwait(false);
+            var files = await repositorySourceManager.ReadFilesAsync(owner, name, branch, asOf).ConfigureAwait(false);
 
             var packageJsonFiles = files.Where(file => file.Name == "package.json");
 
@@ -32,7 +32,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             {
                 foreach (var packageJsonFile in packageJsonFiles)
                 {
-                    var packageJsonContent = await repositorySourceManager.ReadFileContentAsync(owner, name, packageJsonFile.FullPath).ConfigureAwait(false);
+                    var packageJsonContent = await repositorySourceManager.ReadFileContentAsync(owner, name, branch, packageJsonFile.FullPath, asOf).ConfigureAwait(false);
 
                     JObject jObject = null;
                     try

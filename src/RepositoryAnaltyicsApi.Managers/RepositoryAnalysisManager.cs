@@ -31,8 +31,13 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var parsedRepoUrl = ParseRepositoryUrl();
 
+            var files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
+
             if (!repositoryAnalysis.AsOf.HasValue)
             {
+                
+
+
                 /* If we are doing an analysis on the present state of things, check to see if we already have a snapshot saved which
                * reflects the current state of the repository.  
                * 
@@ -53,7 +58,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 }
                 else
                 {
-                    var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, null).ConfigureAwait(false);
+                    var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", null).ConfigureAwait(false);
 
                     repositoryLastUpdatedOn = repositorySummary.UpdatedAt;
                 }
@@ -261,13 +266,15 @@ namespace RepositoryAnaltyicsApi.Managers
         }
 
 
-        private async Task<List<RepositoryDependency>> ScrapeDependenciesAsync(string owner, string name, string defaultBranch)
+        private async Task<List<RepositoryDependency>> ScrapeDependenciesAsync(string owner, string name, string defaultBranch, DateTime? asOf = null)
         {
             var allDependencies = new List<RepositoryDependency>();
 
             var sourceFileRegexes = dependencyScraperManagers.Select(dependencyManager => dependencyManager.SourceFileRegex);
-            var sourceFiles = await repositorySourceManager.ReadFilesAsync(owner, name, defaultBranch);
+            var sourceFiles = await repositorySourceManager.ReadFilesAsync(owner, name, defaultBranch, asOf);
 
+            // Get the files that all the dependency scrapers need so we can read them all in one shot and have them
+            // cached for each dependency scraper
             var sourceFilesToRead = new List<string>();
             foreach (var sourceFile in sourceFiles)
             {
@@ -282,12 +289,12 @@ namespace RepositoryAnaltyicsApi.Managers
 
             if (sourceFilesToRead.Any())
             {
-                // Read in the file content in bulk to get the files cached for the dependency managers to read
-                await repositorySourceManager.GetMultipleFileContentsAsync(owner, name, defaultBranch, sourceFilesToRead).ConfigureAwait(false);
+                // Get all the file contents that will be needed read and in cache
+                await repositorySourceManager.GetMultipleFileContentsAsync(owner, name, defaultBranch, sourceFilesToRead, asOf).ConfigureAwait(false);
 
                 foreach (var dependencyManager in dependencyScraperManagers)
                 {
-                    var dependencies = await dependencyManager.ReadAsync(owner, name, defaultBranch).ConfigureAwait(false);
+                    var dependencies = await dependencyManager.ReadAsync(owner, name, defaultBranch, asOf).ConfigureAwait(false);
                     allDependencies.AddRange(dependencies);
                 }
             }

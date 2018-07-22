@@ -27,9 +27,9 @@ namespace RepositoryAnalyticsApi.Repositories
             this.graphQLClient = graphQLClient;
         }
 
-        public async Task<string> ReadFileContentAsync(string owner, string name, string fullFilePath)
+        public async Task<string> ReadFileContentAsync(string owner, string name, string fullFilePath, string gitRef)
         {
-            var repositoryContent = await gitHubClient.Repository.Content.GetAllContents(owner, name, fullFilePath);
+            var repositoryContent = await gitHubClient.Repository.Content.GetAllContentsByRef(owner, name, fullFilePath, gitRef);
 
             if (repositoryContent != null && repositoryContent.Any())
             {
@@ -93,9 +93,9 @@ namespace RepositoryAnalyticsApi.Repositories
         }
 
         // The GraphQL Api does not support the recursive reading of files so using the V3 API
-        public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name, string branch)
+        public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name, string gitRef)
         {
-            var treeResponse = await treesClient.GetRecursive(owner, name, branch);
+            var treeResponse = await treesClient.GetRecursive(owner, name, gitRef);
             var treeItems = treeResponse.Tree;
 
             var repoFiles = new List<RepositoryFile>();
@@ -165,7 +165,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
         }
 
-        public async Task<RepositorySummary> ReadRepositorySummaryAsync(string organization, string user, string name, DateTime? asOf)
+        public async Task<RepositorySummary> ReadRepositorySummaryAsync(string organization, string user, string name, string branch, DateTime? asOf)
         {
             string loginType = null;
             string login = null;
@@ -179,6 +179,9 @@ namespace RepositoryAnalyticsApi.Repositories
                     ... on Commit {
                       history(first: 1, until: $asOf) {
                         nodes {
+                          tree {
+                            oid 
+                          }
                           message
                           pushedDate
                           id
@@ -214,7 +217,7 @@ namespace RepositoryAnalyticsApi.Repositories
                 asOfGitTimestamp = asOf.Value.ToString(DATE_TIME_ISO8601_FORMAT);
             }
 
-            var variables = new { login = login, name = name, branch = "master", asOf = asOfGitTimestamp };
+            var variables = new { login = login, name = name, branch = branch, asOf = asOfGitTimestamp };
 
             Model.Github.GraphQL.Repository graphQLRepository = null;
 
@@ -235,7 +238,8 @@ namespace RepositoryAnalyticsApi.Repositories
                 UpdatedAt = graphQLRepository.PushedAt.Value,
                 Url = graphQLRepository.Url,
                 ClosestCommitId = graphQLRepository.CommitHistory.History.Nodes.First().Id,
-                ClosestCommitPushedDate = graphQLRepository.CommitHistory.History.Nodes.First().PushedDate
+                ClosestCommitPushedDate = graphQLRepository.CommitHistory.History.Nodes.First().PushedDate,
+                ClosestCommitTreeId = graphQLRepository.CommitHistory.History.Nodes.First().Tree.Oid
             };
 
             return repositorySummary;

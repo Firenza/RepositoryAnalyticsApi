@@ -21,11 +21,11 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
 
         public Regex SourceFileRegex => new Regex(@"\.csproj|\.vbproj");
 
-        public async Task<List<RepositoryDependency>> ReadAsync(string owner, string name, string branch)
+        public async Task<List<RepositoryDependency>> ReadAsync(string owner, string name, string branch, DateTime? asOf)
         {
             var dependencies = new List<RepositoryDependency>();
 
-            var files = await repositorySourceManager.ReadFilesAsync(owner, name, branch).ConfigureAwait(false);
+            var files = await repositorySourceManager.ReadFilesAsync(owner, name, branch, asOf).ConfigureAwait(false);
 
             var dotNetProjectFiles = files.Where(file => file.Name.EndsWith(".csproj") || file.Name.EndsWith(".vbproj"));
 
@@ -33,7 +33,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
             {
                 foreach (var dotNetProjectFile in dotNetProjectFiles)
                 {
-                    var projectFileContent = await this.repositorySourceManager.ReadFileContentAsync(owner, name, dotNetProjectFile.FullPath).ConfigureAwait(false);
+                    var projectFileContent = await this.repositorySourceManager.ReadFileContentAsync(owner, name, branch, dotNetProjectFile.FullPath, asOf).ConfigureAwait(false);
 
                     string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
                     if (projectFileContent.StartsWith(byteOrderMarkUtf8))
