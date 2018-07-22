@@ -19,16 +19,6 @@ namespace RepositoryAnalyticsApi.ServiceModel
         /// </summary>
         public bool ForceCompleteRefresh { get; set; }
 
-        ///// <summary>
-        ///// The id of the commit that is closest to the AsOf time without being after it
-        ///// </summary>
-        //public string ClosestCommitId { get; set; }
-
-        ///// <summary>
-        ///// The time of the commit that is closest to the AsOf time without being after it
-        ///// </summary>
-        //public DateTime? ClosestCommitPushedOn { get; set; }
-
         /// <summary>
         /// The point in time at which to do the analysis.  If not populated the current time is used.
         /// </summary>
