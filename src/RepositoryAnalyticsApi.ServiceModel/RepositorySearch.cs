@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 namespace RepositoryAnalyticsApi.ServiceModel
 {
     public class RepositorySearch
@@ -7,5 +8,6 @@ namespace RepositoryAnalyticsApi.ServiceModel
         public string ImplementationName { get; set; }
         public List<(string Name, string Version, RangeSpecifier RangeSpecifier)> Dependencies { get; set; }
         public bool? HasContinuousDelivery { get; set; }
+        public DateTime? AsOf { get; set; }
     }
 }

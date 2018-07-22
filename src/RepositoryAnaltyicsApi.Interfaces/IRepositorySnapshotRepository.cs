@@ -10,6 +10,5 @@ namespace RepositoryAnaltyicsApi.Interfaces
         Task<RepositorySnapshot> ReadAsync(string id);
         Task DeleteAsync(string id);
         Task<List<RepositorySnapshot>> ReadAllForParent(string repositoryCurrentStateId);
-        Task<List<RepositorySnapshot>> SearchAsync(RepositorySearch repositorySearch);
     }
 }

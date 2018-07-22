@@ -1,5 +1,4 @@
-﻿using Nito.Comparers;
-using RepositoryAnaltyicsApi.Interfaces;
+﻿using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
@@ -13,12 +12,19 @@ namespace RepositoryAnaltyicsApi.Managers
         private IRepositorySnapshotRepository repositorySnapshotRepository;
         private IRepositoryCurrentStateRepository repositoryCurrentStateRepository;
         private IRepositorySourceManager repositorySourceManager;
+        private IRepositorySearchRepository repositorySearchRepository;
 
-        public RepositoryManager(IRepositorySnapshotRepository repositorySnapshotRepository, IRepositoryCurrentStateRepository repositoryCurrentStateRepository, IRepositorySourceManager repositorySourceManager)
+        public RepositoryManager(
+            IRepositorySnapshotRepository repositorySnapshotRepository, 
+            IRepositoryCurrentStateRepository repositoryCurrentStateRepository, 
+            IRepositorySourceManager repositorySourceManager, 
+            IRepositorySearchRepository repositorySearchRepository
+        )
         {
             this.repositorySnapshotRepository = repositorySnapshotRepository;
             this.repositoryCurrentStateRepository = repositoryCurrentStateRepository;
             this.repositorySourceManager = repositorySourceManager;
+            this.repositorySearchRepository = repositorySearchRepository;
         }
 
         public async Task UpsertAsync(Repository repository, DateTime? asOf)
@@ -89,10 +95,9 @@ namespace RepositoryAnaltyicsApi.Managers
             return null;
         }
 
-        public async Task<List<Repository>> SearchAsync(RepositorySearch repositorySearch)
+        public async Task<List<string>> SearchAsync(RepositorySearch repositorySearch)
         {
-            return null;
-            //return await repositoryRepository.SearchAsync(repositorySearch);
+            return await repositorySearchRepository.SearchAsync(repositorySearch);
         }
 
     }

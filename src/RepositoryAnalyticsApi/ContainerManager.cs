@@ -64,6 +64,7 @@ namespace RepositoryAnalyticsApi
             services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
             services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
             services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
+            services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();
 
             services.AddTransient<IEnumerable<IDependencyScraperManager>>((serviceProvider) => new List<IDependencyScraperManager> {
                 new BowerDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
