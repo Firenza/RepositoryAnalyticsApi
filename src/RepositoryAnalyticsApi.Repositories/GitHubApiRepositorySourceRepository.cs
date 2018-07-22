@@ -230,12 +230,10 @@ namespace RepositoryAnalyticsApi.Repositories
             query ($login: String!, $take: Int, $after: String) {
               #LOGIN_TYPE#(login: $login) {
                 repositories(first: $take, after: $after, orderBy: {field: PUSHED_AT, direction: DESC}) {
-                  edges {
-                    node {
+                  nodes {
                       url
                       createdAt
                       pushedAt
-                    }
                   }
                   pageInfo {
                     hasNextPage
@@ -260,7 +258,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             query = query.Replace("#LOGIN_TYPE#", loginType);
 
-            var variables = new { login = login, take = take, branch = "master", after = endCursor};
+            var variables = new { login = login, take = take, after = endCursor};
 
             GraphQlNodesParent<Model.Github.GraphQL.Repository> graphQLRepositories = null;
 
