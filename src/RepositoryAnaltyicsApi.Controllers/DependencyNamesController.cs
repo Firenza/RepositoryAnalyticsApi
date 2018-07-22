@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RepositoryAnaltyicsApi.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -22,9 +23,9 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// <param name="nameRegex">A regex to match names on</param>
         /// <returns></returns>
         [HttpGet()]
-        public async Task<List<string>> Get([FromQuery] string nameRegex)
+        public async Task<List<string>> Get([FromQuery] string nameRegex, [FromQuery]DateTime? asOf)
         {
-            var dependencies = await dependencyManager.SearchNamesAsync(nameRegex).ConfigureAwait(false);
+            var dependencies = await dependencyManager.SearchNamesAsync(nameRegex, asOf).ConfigureAwait(false);
 
             return dependencies;
         }

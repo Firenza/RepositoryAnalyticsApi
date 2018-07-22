@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -26,9 +27,9 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// Search dependency information by dependency name.  Results are grouped by Name and Version.
         /// </remarks>
         [HttpGet()]
-        public async Task<List<RepositoryDependencySearchResult>> Get([FromQuery] string name)
+        public async Task<List<RepositoryDependencySearchResult>> Get([FromQuery] string name, [FromQuery]DateTime? asOf)
         {
-            return await dependencyManager.SearchAsync(name);
+            return await dependencyManager.SearchAsync(name, asOf).ConfigureAwait(false);
         }
     }
 }

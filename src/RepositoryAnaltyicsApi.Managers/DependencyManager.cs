@@ -16,14 +16,14 @@ namespace RepositoryAnaltyicsApi.Managers
             this.dependencyRepository = dependencyRepository;
         }
 
-        public async Task<List<RepositoryDependencySearchResult>> SearchAsync(string name)
+        public async Task<List<RepositoryDependencySearchResult>> SearchAsync(string name, DateTime? asOf)
         {
-            return await dependencyRepository.SearchAsync(name);
+            return await dependencyRepository.SearchAsync(name, asOf).ConfigureAwait(false);
         }
 
-        public async Task<List<string>> SearchNamesAsync(string name)
+        public async Task<List<string>> SearchNamesAsync(string name, DateTime? asOf)
         {
-            return await dependencyRepository.SearchNamesAsync(name).ConfigureAwait(false);
+            return await dependencyRepository.SearchNamesAsync(name, asOf).ConfigureAwait(false);
         }
     }
 }

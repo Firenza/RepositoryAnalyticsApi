@@ -3,6 +3,7 @@ using MongoDB.Driver;
 using Newtonsoft.Json.Linq;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,53 +12,74 @@ namespace RepositoryAnalyticsApi.Repositories
 {
     public class MongoDependencyRepository : IDependencyRepository
     {
-        private IMongoDatabase mongoDatabase;
+        private IMongoCollection<BsonDocument> mongoCollection;
 
-        public MongoDependencyRepository(IMongoDatabase mongoDatabase)
+        public MongoDependencyRepository(IMongoCollection<BsonDocument> mongoCollection)
         {
-            this.mongoDatabase = mongoDatabase;
+            this.mongoCollection = mongoCollection;
         }
 
-        public async Task<List<RepositoryDependencySearchResult>> SearchAsync(string name)
+        public async Task<List<RepositoryDependencySearchResult>> SearchAsync(string name, DateTime? asOf)
         {
             var searchResults = new List<RepositoryDependencySearchResult>();
 
-            var query = $@"
-            {{
-                aggregate: ""repositorySnapshot"",
-                pipeline:
-                [
-                    {{ $match: {{ ""Dependencies.Name"" : ""{name}""}}}},
-                    {{ $unwind: {{ path: ""$Dependencies""}}}},
-                    {{ $match: {{ ""Dependencies.Name"": ""{name}""}}}},
-                    {{ $group: {{ _id: {{ Name: ""$Dependencies.Name"", Version: ""$Dependencies.Version""}}, count : {{$sum: 1}}}}}},
-                    {{ $sort: {{ ""_id.Version"": -1 }}}},
-                ]
-            }}        
-            ";
-
-            var command = new JsonCommand<BsonDocument>(query);
-            var result = await mongoDatabase.RunCommandAsync(command);
-
-            var jObject = JObject.Parse(result.ToJson());
-
-            var numberOfSearchResults = jObject["result"].Count();
-
-            if (numberOfSearchResults > 0)
+            var options = new AggregateOptions()
             {
-                for (int i = 0; i < numberOfSearchResults; i++)
-                {
-                    var searchResult = new RepositoryDependencySearchResult
-                    {
-                      Count = jObject["result"][i]["count"].Value<int>(),
-                      RepositoryDependency = new RepositoryDependency
-                      {
-                          Name = jObject["result"][i]["_id"]["Name"].Value<string>(),
-                          Version = jObject["result"][i]["_id"]["Version"].Value<string>()
-                      }
-                    };
+                AllowDiskUse = false
+            };
 
-                    searchResults.Add(searchResult);
+            var matchStatements = new BsonArray();
+            matchStatements.Add(new BsonDocument().Add("Dependencies.Name", name));
+
+            if (asOf.HasValue)
+            {
+                matchStatements.Add(new BsonDocument().Add("WindowStartsOn", new BsonDocument().Add("$lte", new BsonDateTime(asOf.Value))));
+                matchStatements.Add(new BsonDocument().Add("WindowEndsOn", new BsonDocument().Add("$gte", new BsonDateTime(asOf.Value))));
+            }
+
+            PipelineDefinition<BsonDocument, BsonDocument> pipeline = new BsonDocument[]
+            {
+                new BsonDocument("$match", new BsonDocument()
+                        .Add("$and", matchStatements)),
+                new BsonDocument("$unwind", new BsonDocument()
+                        .Add("path", "$Dependencies")),
+                new BsonDocument("$match", new BsonDocument()
+                        .Add("$and", matchStatements)),
+                new BsonDocument("$group", new BsonDocument()
+                        .Add("_id", new BsonDocument()
+                                .Add("Name", "$Dependencies.Name")
+                                .Add("Version", "$Dependencies.Version")
+                        )
+                        .Add("count", new BsonDocument()
+                                .Add("$sum", 1.0)
+                        )),
+                new BsonDocument("$sort", new BsonDocument()
+                        .Add("_id.Name", 1.0))
+            };
+
+            using (var cursor = await mongoCollection.AggregateAsync(pipeline, options))
+            {
+                while (await cursor.MoveNextAsync())
+                {
+                    var batch = cursor.Current;
+                    foreach (BsonDocument document in batch)
+                    {
+                        var jObject = JObject.Parse(document.ToJson());
+
+                        var searchResult = new RepositoryDependencySearchResult
+                        {
+                            Count = jObject["count"].Value<int>(),
+                            RepositoryDependency = new RepositoryDependency
+                            {
+                                Name = jObject["_id"]["Name"].Value<string>(),
+                                Version = jObject["_id"]["Version"].Value<string>()
+                            }
+                        };
+
+                        searchResults.Add(searchResult);
+                    }
+
+                    return searchResults;
                 }
             }
 
@@ -65,37 +87,57 @@ namespace RepositoryAnalyticsApi.Repositories
         }
 
 
-        public async Task<List<string>> SearchNamesAsync(string name)
+        public async Task<List<string>> SearchNamesAsync(string name, DateTime? asOf)
         {
-            var query = $@"
-            {{
-                aggregate: ""repositorySnapshot"",
-                pipeline:
-                [
-                    {{ $match: {{ ""Dependencies.Name"" : /{name}/i}}}},
-                    {{ $unwind: {{ path: ""$Dependencies""}}}},
-                    {{ $match: {{ ""Dependencies.Name"": /{name}/i}}}},
-                    {{ $group: {{ _id: {{ Name: ""$Dependencies.Name""}}}}}},
-                    {{ $sort: {{ _id: 1 }}}},
-                ]
-            }}        
-            ";
+            var dependencyNames = new List<string>();
 
-            var command = new JsonCommand<BsonDocument>(query);
-            var result = await mongoDatabase.RunCommandAsync(command);
-
-            var jObject = JObject.Parse(result.ToJson());
-
-            var numberOfNamesFound = jObject["result"].Count();
-
-            if (numberOfNamesFound > 0)
+            var options = new AggregateOptions()
             {
-                return jObject["result"].Select(token => token["_id"]["Name"].Value<string>()).ToList();
-            }
-            else
+                AllowDiskUse = false
+            };
+
+            var matchStatements = new BsonArray();
+            matchStatements.Add(new BsonDocument().Add("Dependencies.Name", new BsonRegularExpression(name, "i")));
+
+            if (asOf.HasValue)
             {
-                return new List<string>();
+                matchStatements.Add(new BsonDocument().Add("WindowStartsOn", new BsonDocument().Add("$lte", new BsonDateTime(asOf.Value))));
+                matchStatements.Add(new BsonDocument().Add("WindowEndsOn", new BsonDocument().Add("$gte", new BsonDateTime(asOf.Value))));
             }
+
+            PipelineDefinition<BsonDocument, BsonDocument> pipeline = new BsonDocument[]
+            {
+                new BsonDocument("$match", new BsonDocument()
+                        .Add("$and", matchStatements)),
+                new BsonDocument("$unwind", new BsonDocument()
+                        .Add("path", "$Dependencies")),
+                new BsonDocument("$match", new BsonDocument()
+                        .Add("$and", matchStatements)),
+                new BsonDocument("$group", new BsonDocument()
+                        .Add("_id", new BsonDocument()
+                                .Add("Name", "$Dependencies.Name")
+                        )),
+                new BsonDocument("$sort", new BsonDocument()
+                        .Add("_id.Name", 1.0))
+            };
+
+            using (var cursor = await mongoCollection.AggregateAsync(pipeline, options))
+            {
+                while (await cursor.MoveNextAsync())
+                {
+                    var batch = cursor.Current;
+                    foreach (BsonDocument document in batch)
+                    {
+                        var jObject = JObject.Parse(document.ToJson());
+
+                        var dependencyName = jObject["_id"]["Name"].Value<string>();
+
+                        dependencyNames.Add(dependencyName);
+                    }
+                }
+            }
+
+            return dependencyNames;
         }
     }
 }
