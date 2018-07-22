@@ -6,7 +6,7 @@
     <Authors>Chad Oftedahl</Authors>
     <Company />
     <Description>Types used when interacting with the RepositoryAnalyticsApi</Description>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
   </PropertyGroup>
 
 </Project>
