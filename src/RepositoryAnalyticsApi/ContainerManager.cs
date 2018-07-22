@@ -56,6 +56,7 @@ namespace RepositoryAnalyticsApi
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
             services.AddTransient<IDependencyManager, DependencyManager>();
             services.AddTransient<IRepositorySourceRepository>(serviceProvider => codeRepo);
+            services.AddTransient<IRepositoryCurrentStateRepository, MongoRepositoryCurrentStateRepository>();
             services.AddTransient<IRepositoryImplementationsManager, RepositoryImplementationsManager>();
             services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
             services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
@@ -78,6 +79,7 @@ namespace RepositoryAnalyticsApi
 
             services.AddScoped((serviceProvider) => db);
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositorySnapshot>("repositorySnapshot"));
+            services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositoryCurrentState>("repositoryCurrentState"));
             services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repositorySnapshot"));
         }
 

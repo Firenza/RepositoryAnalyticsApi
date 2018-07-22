@@ -53,7 +53,6 @@ namespace RepositoryAnaltyicsApi.Managers
                 }
                 else
                 {
-                    
                     var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, null).ConfigureAwait(false);
 
                     repositoryLastUpdatedOn = repositorySummary.UpdatedAt;
@@ -61,20 +60,26 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 var repository = await repositoryManager.ReadAsync(repositoryAnalysis.RepositoryId, null).ConfigureAwait(false);
 
-                if (repositoryLastUpdatedOn > repository.CurrentState.RepositoryLastUpdatedOn)
+                if (repository == null || repositoryLastUpdatedOn > repository.CurrentState.RepositoryLastUpdatedOn)
                 {
-                    var updatedRepository = new Repository
-                    {
-                        CurrentState = new RepositoryCurrentState(),
-                        Snapshot = new RepositorySnapshot()
-                    };
-
+           
                     // Do repository summary call to get the commit Id of the latest commit and the date that commit was pushed for the snapshot
                     // populate the snapshot date with the corresponding manager calls (E.G. ScrapeDependenciesAsync) 
                     // Do full repository read to get all the current state stuff (including calls to get derived data like devops integrations)
                     var sourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name);
 
-                    //updatedRepository.CurrentState.Name = 
+                    var repositoryCurrentState = new RepositoryCurrentState();
+                    repositoryCurrentState.DefaultBranch = sourceRepository.DefaultBranchName;
+                    repositoryCurrentState.HasIssues = sourceRepository.IssueCount > 0;
+                    repositoryCurrentState.HasProjects = sourceRepository.ProjectCount > 0;
+                    repositoryCurrentState.HasPullRequests = sourceRepository.PullRequestCount > 0;
+                    repositoryCurrentState.RepositoryCreatedOn = sourceRepository.CreatedAt;
+                    repositoryCurrentState.RepositoryLastUpdatedOn = sourceRepository.PushedAt;
+                    repositoryCurrentState.Name = sourceRepository.Name;
+                    repositoryCurrentState.Teams = sourceRepository.Teams;
+                    repositoryCurrentState.Topics = sourceRepository.TopicNames;
+                    repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name);
+    
 
                 }
 
