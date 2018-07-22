@@ -75,13 +75,16 @@ namespace RepositoryAnaltyicsApi.Managers
                     var sourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name);
 
                     var repositoryCurrentState = new RepositoryCurrentState();
+                    repositoryCurrentState.CurrentStateId = $"{parsedRepoUrl.Host}|{parsedRepoUrl.Owner}|{parsedRepoUrl.Name}";
+                    repositoryCurrentState.Name = sourceRepository.Name;
+                    repositoryCurrentState.Owner = parsedRepoUrl.Owner;
                     repositoryCurrentState.DefaultBranch = sourceRepository.DefaultBranchName;
                     repositoryCurrentState.HasIssues = sourceRepository.IssueCount > 0;
                     repositoryCurrentState.HasProjects = sourceRepository.ProjectCount > 0;
                     repositoryCurrentState.HasPullRequests = sourceRepository.PullRequestCount > 0;
                     repositoryCurrentState.RepositoryCreatedOn = sourceRepository.CreatedAt;
                     repositoryCurrentState.RepositoryLastUpdatedOn = sourceRepository.PushedAt;
-                    repositoryCurrentState.Name = sourceRepository.Name;
+
                     repositoryCurrentState.Teams = sourceRepository.Teams;
                     repositoryCurrentState.Topics = sourceRepository.TopicNames;
                     repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name);
@@ -99,7 +102,7 @@ namespace RepositoryAnaltyicsApi.Managers
                         Snapshot = repositorySnapshot
                     };
 
-                    await repositoryManager.UpsertAsync(updatedRepository);
+                    await repositoryManager.UpsertAsync(updatedRepository, repositoryAnalysis.AsOf);
                 }
 
             }
@@ -188,13 +191,14 @@ namespace RepositoryAnaltyicsApi.Managers
             //}
 
 
-            (string Owner, string Name) ParseRepositoryUrl()
+            (string Owner, string Name, string Host) ParseRepositoryUrl()
             {
                 var repositoryUri = new Uri(repositoryAnalysis.RepositoryId);
                 var owner = repositoryUri.Segments[1].TrimEnd('/');
                 var name = repositoryUri.Segments[2].TrimEnd('/');
+                var host = repositoryUri.Host;
 
-                return (owner, name);
+                return (owner, name, host);
             }
 
             //var now = DateTime.Now;

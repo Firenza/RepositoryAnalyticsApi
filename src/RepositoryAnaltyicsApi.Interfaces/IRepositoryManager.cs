@@ -6,7 +6,7 @@ namespace RepositoryAnaltyicsApi.Interfaces
 {
     public interface IRepositoryManager
     {
-        Task UpsertAsync(Repository repository);
+        Task UpsertAsync(Repository repository, DateTime? asOf);
         Task<Repository> ReadAsync(string id, DateTime? asOf);
     }
 }
