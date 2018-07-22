@@ -11,11 +11,14 @@ using System.Threading.Tasks;
 namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
 {
     [Export(typeof(IDeriveRepositoryTypeAndImplementations))]
-    public class AspNetApi : IDeriveRepositoryTypeAndImplementations
+    public class AspNetApi : IDeriveRepositoryTypeAndImplementations, IRequireDependenciesAccess, IRequireFileListAccess
     {
-        public async Task<RepositoryTypeAndImplementations> DeriveImplementationAsync(IEnumerable<RepositoryDependency> dependencies, Func<Task<List<RepositoryFile>>> readFilesAsync, IEnumerable<string> topics, string name, Func<string, Task<string>> readFileContentAsync)
+        public IEnumerable<RepositoryDependency> Dependencies { get; set; }
+        public Func<Task<List<RepositoryFile>>> ReadFileListAsync { get; set; }
+
+        public async Task<RepositoryTypeAndImplementations> DeriveImplementationAsync(string repositoryName)
         {
-            var files = await readFilesAsync();
+            var files = await ReadFileListAsync();
 
             // Check for ASP.NET based projects
             var globalAsaxFile = files.FirstOrDefault(file => file.Name == "Global.asax");
@@ -37,7 +40,7 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                 var fileNameRegex = @"[^/]+\Z";
                 var globalAsaxDirectory = Regex.Replace(globalAsaxFile.FullPath, fileNameRegex, string.Empty);
 
-                var nuGetDependencies = dependencies?.Where(depencency => depencency.Source == "NuGet");
+                var nuGetDependencies = Dependencies?.Where(depencency => depencency.Source == "NuGet");
 
                 var serviceStackDependency = nuGetDependencies.FirstOrDefault(dependency => dependency.RepoPath.Contains(globalAsaxDirectory) && dependency.Name == "ServiceStack");
                 var webApiDependency = nuGetDependencies.FirstOrDefault(dependency => dependency.RepoPath.Contains(globalAsaxDirectory) && dependency.Name == "Microsoft.AspNet.WebApi");

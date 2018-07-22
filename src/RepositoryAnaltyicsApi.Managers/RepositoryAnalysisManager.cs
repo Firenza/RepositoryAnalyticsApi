@@ -91,6 +91,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     repositorySnapshot.RepositoryCurrentStateId = repositoryCurrentState.Id;
                     repositorySnapshot.TakenOn = DateTime.Now;
                     repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
+                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositorySnapshot.Dependencies, repositoryCurrentState.Topics, repositoryAnalysis.AsOf);
 
                     var updatedRepository =  new Repository
                     {
@@ -315,29 +316,46 @@ namespace RepositoryAnaltyicsApi.Managers
             return allDependencies;
         }
 
-        //private async Task<IEnumerable<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(RepositorySnapshot repository, string owner)
-        //{
-        //    var typesAndImplementations = new List<RepositoryTypeAndImplementations>();
+        private async Task<IEnumerable<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(string owner, string name, string branch, IEnumerable<RepositoryDependency> dependencies, IEnumerable<string> topicNames, DateTime? asOf)
+        {
+            var typesAndImplementations = new List<RepositoryTypeAndImplementations>();
 
-        //    var readFileContentAsync = new Func<string, Task<string>>(async (fullFilePath) =>
-        //        await repositorySourceManager.ReadFileContentAsync(owner, repository.RepositoryName, fullFilePath).ConfigureAwait(false)
-        //    );
+            var readFileContentAsync = new Func<string, Task<string>>(async (fullFilePath) =>
+                await repositorySourceManager.ReadFileContentAsync(owner, name, branch, fullFilePath).ConfigureAwait(false)
+            );
 
-        //    var readFilesAsync = new Func<Task<List<RepositoryFile>>>(async () =>
-        //        await repositorySourceManager.ReadFilesAsync(owner, repository.RepositoryName, repository.DefaultBranch).ConfigureAwait(false)
-        //    );
+            var readFilesAsync = new Func<Task<List<RepositoryFile>>>(async () =>
+                await repositorySourceManager.ReadFilesAsync(owner, name, branch).ConfigureAwait(false)
+            );
 
-        //    foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
-        //    {
-        //        var typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(repository.Dependencies, readFilesAsync, repository.Topics, repository.RepositoryName, readFileContentAsync);
+            foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
+            {
+                if (typeAndImplementationDeriver is IRequireDependenciesAccess)
+                {
+                    (typeAndImplementationDeriver as IRequireDependenciesAccess).Dependencies = dependencies;
+                }
+                if (typeAndImplementationDeriver is IRequireTopicsAccess)
+                {
+                    (typeAndImplementationDeriver as IRequireTopicsAccess).TopicNames = topicNames;
+                }
+                if (typeAndImplementationDeriver is IRequireFileListAccess)
+                {
+                    (typeAndImplementationDeriver as IRequireFileListAccess).ReadFileListAsync = readFilesAsync;
+                }
+                if (typeAndImplementationDeriver is IRequireFileContentAccess)
+                {
+                    (typeAndImplementationDeriver as IRequireFileContentAccess).ReadFileContentAsync = readFileContentAsync;
+                }
 
-        //        if (typeAndImplementationInfo != null)
-        //        {
-        //            typesAndImplementations.Add(typeAndImplementationInfo);
-        //        }
-        //    }
+                var typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(name);
 
-        //    return typesAndImplementations;
-        //}
+                if (typeAndImplementationInfo != null)
+                {
+                    typesAndImplementations.Add(typeAndImplementationInfo);
+                }
+            }
+
+            return typesAndImplementations;
+        }
     }
 }

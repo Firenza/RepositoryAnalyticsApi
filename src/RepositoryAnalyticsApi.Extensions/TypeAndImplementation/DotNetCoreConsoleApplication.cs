@@ -11,16 +11,19 @@ using System.Xml.Linq;
 namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
 {
     [Export(typeof(IDeriveRepositoryTypeAndImplementations))]
-    public class DotNetCoreConsoleApplication : IDeriveRepositoryTypeAndImplementations
+    public class DotNetCoreConsoleApplication : IDeriveRepositoryTypeAndImplementations, IRequireFileListAccess, IRequireFileContentAccess
     {
-        public async Task<RepositoryTypeAndImplementations> DeriveImplementationAsync(IEnumerable<RepositoryDependency> dependencies, Func<Task<List<RepositoryFile>>> readFilesAsync, IEnumerable<string> topics, string name, Func<string, Task<string>> readFileContentAsync)
+        public Func<Task<List<RepositoryFile>>> ReadFileListAsync { get; set; }
+        public Func<string, Task<string>> ReadFileContentAsync { get; set; }
+
+        public async Task<RepositoryTypeAndImplementations> DeriveImplementationAsync(string repositoryName)
         {
-            var files = await readFilesAsync();
+            var files = await ReadFileListAsync();
             var projFiles = files.Where(file => file.FullPath.EndsWith(".csproj") || file.FullPath.EndsWith(".vbproj"));
 
             foreach (var projFile in projFiles)
             {
-                var projectFileContent = await readFileContentAsync(projFile.FullPath).ConfigureAwait(false);
+                var projectFileContent = await ReadFileContentAsync(projFile.FullPath).ConfigureAwait(false);
 
                 var xDoc = XmlHelper.RemoveUtf8ByteOrderMarkAndParse(projectFileContent);
 

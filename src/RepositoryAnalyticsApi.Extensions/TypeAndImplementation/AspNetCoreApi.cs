@@ -9,11 +9,13 @@ using System.Threading.Tasks;
 namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
 {
     [Export(typeof(IDeriveRepositoryTypeAndImplementations))]
-    public class AspNetCoreApi : IDeriveRepositoryTypeAndImplementations
+    public class AspNetCoreApi : IDeriveRepositoryTypeAndImplementations, IRequireDependenciesAccess
     {
-        public async Task<RepositoryTypeAndImplementations> DeriveImplementationAsync(IEnumerable<RepositoryDependency> dependencies, Func<Task<List<RepositoryFile>>> readFilesAsync, IEnumerable<string> topics, string name, Func<string, Task<string>> readFileContentAsync)
+        public IEnumerable<RepositoryDependency> Dependencies { get; set; }
+
+        public async Task<RepositoryTypeAndImplementations> DeriveImplementationAsync(string repositoryName)
         {
-            var nugetDependencies = dependencies?.Where(dependency => dependency.Source == "NuGet");
+            var nugetDependencies = Dependencies?.Where(dependency => dependency.Source == "NuGet");
 
             var aspNetCoreAllDependency = nugetDependencies.FirstOrDefault(dependency => dependency.Name == "Microsoft.AspNetCore.All");
 
