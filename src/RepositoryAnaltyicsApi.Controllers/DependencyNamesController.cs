@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers
 {
-    [Produces("application/json")]
     [Route("api/dependencies/names")]
+    [ApiController]
     public class DependencyNamesController : ControllerBase
     {
         private IDependencyManager dependencyManager;
@@ -23,7 +23,7 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// <param name="nameRegex">A regex to match names on</param>
         /// <returns></returns>
         [HttpGet()]
-        public async Task<List<string>> Get([FromQuery] string nameRegex, [FromQuery]DateTime? asOf)
+        public async Task<ActionResult<List<string>>> Get(string nameRegex, DateTime? asOf)
         {
             var dependencies = await dependencyManager.SearchNamesAsync(nameRegex, asOf).ConfigureAwait(false);
 

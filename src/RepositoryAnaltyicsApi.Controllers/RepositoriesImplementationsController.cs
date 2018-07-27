@@ -1,12 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RepositoryAnaltyicsApi.Interfaces;
+using RepositoryAnalyticsApi.ServiceModel;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
     [Route("api/repoistories/{repositoryTypeName}/implementations")]
+    [ApiController]
     public class RepositoriesImplementationsController : ControllerBase
     {
         private IRepositoryImplementationsManager repositoryImplementationsManager;
@@ -15,9 +18,6 @@ namespace RepositoryAnaltyicsApi.Controllers
         {
             this.repositoryImplementationsManager = repositoryImplementationsManager;
         }
-
-
-
 
         /// <summary>
         /// Search for repository implementations
@@ -28,11 +28,11 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// <param name="intervals"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> GetAsync([FromRoute]string repositoryTypeName, [FromQuery]DateTime? intervalStartTime, [FromQuery]DateTime? intervalEndTime, [FromQuery]int? intervals)
+        public async Task<ActionResult<List<IntervalCountAggregations>>> GetAsync(string repositoryTypeName, DateTime? intervalStartTime, DateTime? intervalEndTime, int? intervals)
         {
             var intervalCountAggregations =  await repositoryImplementationsManager.SearchAsync(repositoryTypeName, intervalStartTime, intervalEndTime, intervals);
 
-            return new ObjectResult(intervalCountAggregations);
+            return intervalCountAggregations;
         }
     }
 }

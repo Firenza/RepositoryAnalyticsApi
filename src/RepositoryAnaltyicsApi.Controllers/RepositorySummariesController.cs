@@ -8,6 +8,7 @@ namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
     [Route("api/repositorysource/repositories")]
+    [ApiController]
     public class RepositorySummariesController : ControllerBase
     {
         private IRepositorySourceManager repositorySourceManager;
@@ -29,7 +30,7 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// facilitate processing of all repositories under a given organization or user.
         /// </remarks>
         [HttpGet()]
-        public async Task<CursorPagedResults<RepositorySummary>> Get([FromQuery] string owner, [FromQuery] int take, [FromQuery] string endCursor  )
+        public async Task<ActionResult<CursorPagedResults<RepositorySummary>>> Get(string owner, int take, string endCursor)
         {
             var pagedRepositorySummaries = await repositorySourceManager.ReadRepositorySummariesAsync(owner, take, endCursor);
 

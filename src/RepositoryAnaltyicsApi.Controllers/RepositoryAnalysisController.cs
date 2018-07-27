@@ -7,7 +7,7 @@ namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
     [Route("api/[controller]")]
-    [ValidateModel]
+    [ApiController]
     public class RepositoryAnalysisController : ControllerBase
     {
         private IRepositoryAnalysisManager repositoryAnalysisManager;
@@ -18,9 +18,9 @@ namespace RepositoryAnaltyicsApi.Controllers
         }
 
         [HttpPost]
-        public async Task Post([FromBody]RepositoryAnalysis repositoyAnalysis)
+        public async Task Post(RepositoryAnalysis repositoyAnalysis)
         {
-            await repositoryAnalysisManager.CreateAsync(repositoyAnalysis).ConfigureAwait(false);
+             await repositoryAnalysisManager.CreateAsync(repositoyAnalysis).ConfigureAwait(false);
         }
     }
 }

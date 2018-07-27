@@ -9,6 +9,7 @@ namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
     [Route("api/dependencies")]
+    [ApiController]
     public class DependenciesController : ControllerBase
     {
         private IDependencyManager dependencyManager;
@@ -27,9 +28,11 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// Search dependency information by dependency name.  Results are grouped by Name and Version.
         /// </remarks>
         [HttpGet()]
-        public async Task<List<RepositoryDependencySearchResult>> Get([FromQuery] string name, [FromQuery]DateTime? asOf)
+        public async Task<ActionResult<List<RepositoryDependencySearchResult>>> Get(string name, DateTime? asOf)
         {
-            return await dependencyManager.SearchAsync(name, asOf).ConfigureAwait(false);
+            var dependencySearchResults = await dependencyManager.SearchAsync(name, asOf).ConfigureAwait(false);
+
+            return dependencySearchResults;
         }
     }
 }
