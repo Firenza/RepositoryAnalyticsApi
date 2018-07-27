@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers
 {
-    [Produces("application/json")]
     [Route("api/repoistories")]
+    [ApiController]
     public class RepositoriesController : ControllerBase
     {
         private IRepositoryManager repositoryManager;
@@ -46,12 +46,12 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// </remarks>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> GetAsync(
-            [FromQuery]string typeName, 
-            [FromQuery]string implementationName, 
-            [FromQuery]List<string> dependencies, 
-            [FromQuery]bool? hasContinuousDelivery,
-            [FromQuery]DateTime? asOf)
+        public async Task<ActionResult<List<string>>> GetAsync(
+            string typeName, 
+            string implementationName, 
+            List<string> dependencies, 
+            bool? hasContinuousDelivery,
+            DateTime? asOf)
         {
             var parsedDependencies = new List<(string Name, string Version, RangeSpecifier RangeSpecifier)>();
 
@@ -118,7 +118,7 @@ namespace RepositoryAnaltyicsApi.Controllers
 
             var repositoryNames = await repositoryManager.SearchAsync(repositorySearch);
 
-            return new ObjectResult(repositoryNames);
+            return repositoryNames;
         }
     }
 }

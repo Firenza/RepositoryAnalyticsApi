@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RepositoryAnaltyicsApi.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
     [Route("api/repoistories/typeNames")]
+    [ApiController]
     public class RepositoriesTypeNamesController : ControllerBase
     {
         private IRepositoriesTypeNamesManager repositoriesTypeNamesManager;
@@ -17,11 +19,11 @@ namespace RepositoryAnaltyicsApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAsync([FromQuery]DateTime? asOf)
+        public async Task<ActionResult<List<string>>> GetAsync(DateTime? asOf)
         {
             var typeNames = await repositoriesTypeNamesManager.ReadAsync(asOf);
 
-            return new ObjectResult(typeNames);
+            return typeNames;
         }
     }
 }
