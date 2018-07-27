@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers
 {
+    [Produces("application/json")]
     [Route("api/dependencies/names")]
     [ApiController]
     public class DependencyNamesController : ControllerBase
