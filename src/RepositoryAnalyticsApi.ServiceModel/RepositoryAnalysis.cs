@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace RepositoryAnalyticsApi.ServiceModel
 {
@@ -7,6 +8,7 @@ namespace RepositoryAnalyticsApi.ServiceModel
         /// <summary>
         /// As of now this is the GitHub URL of the repostiory
         /// </summary>
+        [Required]
         public string RepositoryId { get; set; }
 
         /// <summary>
