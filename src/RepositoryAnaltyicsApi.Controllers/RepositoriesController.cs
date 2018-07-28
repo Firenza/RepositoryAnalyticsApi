@@ -48,11 +48,14 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<List<string>>> GetAsync(
-            string typeName, 
-            string implementationName, 
-            List<string> dependencies, 
+            string typeName,
+            string implementationName,
+            // Due to a bug in Asp.Net Core 2.1 need to have the [FromQuery] attribute along with the name specified 
+            // https://github.com/aspnet/Mvc/issues/8126  Should be fixed in 2.2
+            [FromQuery(Name = "dependencies")]string[] dependencies,
             bool? hasContinuousDelivery,
-            DateTime? asOf)
+            DateTime? asOf
+        )
         {
             var parsedDependencies = new List<(string Name, string Version, RangeSpecifier RangeSpecifier)>();
 
