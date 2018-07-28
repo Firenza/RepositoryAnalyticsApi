@@ -112,7 +112,7 @@ namespace RepositoryAnalyticsApi.Repositories
             {
                 filterArray
                     .Add(new BsonDocument()
-                       .Add("DevOpsIntegrations.ContinuousDelivery", new BsonBoolean(true)
+                       .Add("DevOpsIntegrations.ContinuousDelivery", new BsonBoolean(repositorySearch.HasContinuousDelivery.Value)
                     )
                 );
             }
