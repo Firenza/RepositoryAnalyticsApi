@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
-    [Route("api/repoistories/{repositoryTypeName}/implementations")]
+    [Route("api/repoistories/{type}/implementations")]
     [ApiController]
     public class RepositoriesImplementationsController : ControllerBase
     {
@@ -30,7 +30,15 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// <param name="intervals"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<List<IntervalCountAggregations>>> GetAsync(string repositoryTypeName, DateTime? intervalStartTime, DateTime? intervalEndTime, int? intervals)
+        public async Task<ActionResult<List<IntervalCountAggregations>>> GetAsync(
+            string type, 
+            string team, 
+            string topic, 
+            bool? hasContinuousDelivery,
+            DateTime? asOf, 
+            DateTime?intervalStartTime, 
+            DateTime? intervalEndTime, 
+            int? intervals)
         {
             if (intervals.HasValue && (!intervalStartTime.HasValue && !intervalEndTime.HasValue))
             {
@@ -40,7 +48,23 @@ namespace RepositoryAnaltyicsApi.Controllers
                 return BadRequest(modelStateDictionary);
             }
 
-            var intervalCountAggregations =  await repositoryImplementationsManager.SearchAsync(repositoryTypeName, intervalStartTime, intervalEndTime, intervals);
+            var repositorySearch = new RepositorySearch
+            {
+                TypeName = type,
+                Team = team,
+                Topic = topic,
+                HasContinuousDelivery = hasContinuousDelivery,
+                AsOf = asOf
+            };
+
+            var intervalInfo = new IntervalInfo
+            {
+                IntervalStartTime = intervalStartTime,
+                IntervalEndTime = intervalEndTime,
+                Intervals = intervals
+            };
+
+            var intervalCountAggregations =  await repositoryImplementationsManager.SearchAsync(repositorySearch, intervalInfo);
 
             return intervalCountAggregations;
         }

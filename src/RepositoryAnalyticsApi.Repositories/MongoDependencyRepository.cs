@@ -19,43 +19,69 @@ namespace RepositoryAnalyticsApi.Repositories
             this.mongoCollection = mongoCollection;
         }
 
-        public async Task<List<RepositoryDependencySearchResult>> SearchAsync(string name, DateTime? asOf)
+        public async Task<List<RepositoryDependencySearchResult>> SearchAsync(string name, RepositorySearch repositorySearch)
         {
             var searchResults = new List<RepositoryDependencySearchResult>();
+
+
+            var preLookupSnapshotFilterArray = new BsonArray();
+            var repositorySnapshotFilters = MongoFilterFactory.RepositorySnapshotFilters(repositorySearch);
+            preLookupSnapshotFilterArray.AddRange(repositorySnapshotFilters);
+
+            preLookupSnapshotFilterArray.Add(
+                // TODO: Replace with nameof()
+                new BsonDocument().Add("Dependencies.Name", name)
+            );
+
+            var postLookupCurrentStateFilterArray = new BsonArray();
+            var repositoryCurrenStateFilters = MongoFilterFactory.RepositoryCurrenStatePostLookupFilters(repositorySearch);
+            postLookupCurrentStateFilterArray.AddRange(repositoryCurrenStateFilters);
 
             var options = new AggregateOptions()
             {
                 AllowDiskUse = false
             };
 
-            var matchStatements = new BsonArray();
-            matchStatements.Add(new BsonDocument().Add("Dependencies.Name", name));
 
-            if (asOf.HasValue)
+            var pipelineBsonDocuments = new List<BsonDocument>();
+
+            pipelineBsonDocuments.AddRange(new List<BsonDocument> {
+                new BsonDocument("$match", new BsonDocument()
+                     .Add("$and", preLookupSnapshotFilterArray)),
+                new BsonDocument("$unwind", new BsonDocument()
+                    .Add("path", "$Dependencies")),
+                new BsonDocument("$match", new BsonDocument()
+                    .Add("$and", preLookupSnapshotFilterArray))
+            });
+
+            if (postLookupCurrentStateFilterArray.Count > 0)
             {
-                matchStatements.Add(new BsonDocument().Add("WindowStartsOn", new BsonDocument().Add("$lte", new BsonDateTime(asOf.Value))));
-                matchStatements.Add(new BsonDocument().Add("WindowEndsOn", new BsonDocument().Add("$gte", new BsonDateTime(asOf.Value))));
+                pipelineBsonDocuments.AddRange(new List<BsonDocument> {
+                    new BsonDocument("$lookup", new BsonDocument()
+                        .Add("from", "repositoryCurrentState")
+                        .Add("localField", "RepositoryCurrentStateId")
+                        .Add("foreignField", "_id")
+                        .Add("as", "RepositoryCurrentState")),
+                    new BsonDocument("$match", new BsonDocument()
+                    .Add("$and", postLookupCurrentStateFilterArray))
+                });
             }
 
-            PipelineDefinition<BsonDocument, BsonDocument> pipeline = new BsonDocument[]
-            {
-                new BsonDocument("$match", new BsonDocument()
-                        .Add("$and", matchStatements)),
-                new BsonDocument("$unwind", new BsonDocument()
-                        .Add("path", "$Dependencies")),
-                new BsonDocument("$match", new BsonDocument()
-                        .Add("$and", matchStatements)),
+            pipelineBsonDocuments.AddRange(new List<BsonDocument> {
                 new BsonDocument("$group", new BsonDocument()
-                        .Add("_id", new BsonDocument()
-                                .Add("Name", "$Dependencies.Name")
-                                .Add("Version", "$Dependencies.Version")
-                        )
-                        .Add("count", new BsonDocument()
-                                .Add("$sum", 1.0)
-                        )),
+                    .Add("_id", new BsonDocument()
+                        .Add("Name", "$Dependencies.Name")
+                        .Add("Version", "$Dependencies.Version")
+                     )
+                     .Add("count", new BsonDocument()
+                        .Add("$sum", 1.0)
+                     )
+                ),
                 new BsonDocument("$sort", new BsonDocument()
                         .Add("_id.Name", 1.0))
-            };
+            });
+
+            PipelineDefinition<BsonDocument, BsonDocument> pipeline = pipelineBsonDocuments.ToArray();
 
             using (var cursor = await mongoCollection.AggregateAsync(pipeline, options))
             {

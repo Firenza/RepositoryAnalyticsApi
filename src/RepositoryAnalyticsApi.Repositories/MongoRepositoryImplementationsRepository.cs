@@ -18,57 +18,70 @@ namespace RepositoryAnalyticsApi.Repositories
             this.mongoCollection = mongoCollection;
         }
 
-        public async Task<IntervalCountAggregations> SearchAsync(string typeName, DateTime? createdOnOrAfter, DateTime? createdOnOrBefore)
+        public async Task<IntervalCountAggregations> SearchAsync(RepositorySearch repositorySearch, DateTime? createdOnOrAfter, DateTime? createdOnOrBefore)
         {
             var options = new AggregateOptions()
             {
                 AllowDiskUse = false
             };
 
-            var matchStatements = new BsonArray();
+            var preLookupSnapshotFilterArray = new BsonArray();
+            var repositorySnapshotFilters = MongoFilterFactory.RepositorySnapshotFilters(repositorySearch);
+            preLookupSnapshotFilterArray.AddRange(repositorySnapshotFilters);
 
-            matchStatements.Add(new BsonDocument().Add("TypesAndImplementations.TypeName", typeName));
+            var postLookupCurrentStateFilterArray = new BsonArray();
+            var repositoryCurrenStateFilters = MongoFilterFactory.RepositoryCurrenStatePostLookupFilters(repositorySearch);
+            postLookupCurrentStateFilterArray.AddRange(repositoryCurrenStateFilters);
 
-            if (createdOnOrAfter.HasValue)
-            {
-                matchStatements.Add(new BsonDocument().Add("WindowStartsOn", new BsonDocument().Add("$lte", new BsonDateTime(createdOnOrAfter.Value))));
-            }
+            var pipelineBsonDocuments = new List<BsonDocument>();
 
-            if (createdOnOrBefore.HasValue)
-            {
-                matchStatements.Add(new BsonDocument().Add("WindowEndsOn", new BsonDocument().Add("$gte", new BsonDateTime(createdOnOrBefore.Value))));
-            }
-
-            // If not interval window specified then just read from the most recent snapshots
-            if (!createdOnOrAfter.HasValue && !createdOnOrBefore.HasValue)
-            {
-                matchStatements.Add(new BsonDocument().Add("WindowEndsOn", BsonNull.Value));
-            }
-
-            PipelineDefinition<BsonDocument, BsonDocument> pipeline = new BsonDocument[]
-            {
+            // Can always add this since there will always be a window filter query
+            pipelineBsonDocuments.Add(
                 new BsonDocument("$match", new BsonDocument()
-                        .Add("$and", matchStatements)),
+                    .Add("$and", preLookupSnapshotFilterArray))
+            );
+
+            if (postLookupCurrentStateFilterArray.Count > 0)
+            {
+                pipelineBsonDocuments.AddRange(new List<BsonDocument>
+                {
+                    new BsonDocument("$lookup", new BsonDocument()
+                      .Add("from", "repositoryCurrentState")
+                      .Add("localField", "RepositoryCurrentStateId")
+                      .Add("foreignField", "_id")
+                      .Add("as", "RepositoryCurrentState")),
+                  new BsonDocument("$match", new BsonDocument()
+                    .Add("$and", postLookupCurrentStateFilterArray))
+
+                });
+            }
+
+            pipelineBsonDocuments.AddRange(new List<BsonDocument> {
                 new BsonDocument("$unwind", new BsonDocument()
-                        .Add("path", "$TypesAndImplementations")
-                        .Add("includeArrayIndex", "arrayIndex")
-                        .Add("preserveNullAndEmptyArrays", new BsonBoolean(false))),
+                    .Add("path", "$TypesAndImplementations")
+                    .Add("includeArrayIndex", "arrayIndex")
+                    .Add("preserveNullAndEmptyArrays", new BsonBoolean(false))),
+                new BsonDocument("$match", new BsonDocument()
+                  .Add("$and", preLookupSnapshotFilterArray)),
                 new BsonDocument("$project", new BsonDocument()
-                        .Add("TypeAndImplementations", "$TypesAndImplementations")),
+                  .Add("TypeAndImplementations", "$TypesAndImplementations")),
                 new BsonDocument("$match", new BsonDocument()
-                        .Add("TypeAndImplementations.TypeName", typeName)),
+                  .Add("TypeAndImplementations.TypeName", repositorySearch.TypeName)),
                 new BsonDocument("$unwind", new BsonDocument()
-                        .Add("path", "$TypeAndImplementations.Implementations")
-                        .Add("includeArrayIndex", "arrayIndex")
-                        .Add("preserveNullAndEmptyArrays", new BsonBoolean(false))),
-                new BsonDocument("$group", new BsonDocument()
-                        .Add("_id", new BsonDocument()
-                                .Add("Implementation", "$TypeAndImplementations.Implementations.Name")
-                        )
-                        .Add("count", new BsonDocument()
-                                .Add("$sum", 1.0)
-                        ))
-            };
+                    .Add("path", "$TypeAndImplementations.Implementations")
+                    .Add("includeArrayIndex", "arrayIndex")
+                    .Add("preserveNullAndEmptyArrays", new BsonBoolean(false))),
+                 new BsonDocument("$group", new BsonDocument()
+                    .Add("_id", new BsonDocument()
+                        .Add("Implementation", "$TypeAndImplementations.Implementations.Name")
+                     )
+                     .Add("count", new BsonDocument()
+                        .Add("$sum", 1.0)
+                     )
+                )
+            });
+
+            PipelineDefinition<BsonDocument, BsonDocument> pipeline = pipelineBsonDocuments.ToArray();
 
             var intervalCountAggregation = new IntervalCountAggregations();
             intervalCountAggregation.IntervalStart = createdOnOrAfter;

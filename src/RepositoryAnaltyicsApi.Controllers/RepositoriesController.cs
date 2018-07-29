@@ -54,7 +54,9 @@ namespace RepositoryAnaltyicsApi.Controllers
             // https://github.com/aspnet/Mvc/issues/8126  Should be fixed in 2.2
             [FromQuery(Name = "dependencies")]string[] dependencies,
             bool? hasContinuousDelivery,
-            DateTime? asOf
+            DateTime? asOf,
+            string topic,
+            string team
         )
         {
             var parsedDependencies = new List<(string Name, string Version, RangeSpecifier RangeSpecifier)>();
@@ -117,7 +119,9 @@ namespace RepositoryAnaltyicsApi.Controllers
                 ImplementationName = implementationName,
                 HasContinuousDelivery = hasContinuousDelivery,
                 Dependencies = parsedDependencies,
-                AsOf = asOf
+                AsOf = asOf,
+                Team = team,
+                Topic = topic
             };
 
             var repositoryNames = await repositoryManager.SearchAsync(repositorySearch);
