@@ -28,9 +28,17 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// Search dependency information by dependency name.  Results are grouped by Name and Version.
         /// </remarks>
         [HttpGet()]
-        public async Task<ActionResult<List<RepositoryDependencySearchResult>>> Get(string name, DateTime? asOf)
+        public async Task<ActionResult<List<RepositoryDependencySearchResult>>> Get(string name, DateTime? asOf, string team, string topic, bool? hasContinuousDelivery)
         {
-            var dependencySearchResults = await dependencyManager.SearchAsync(name, asOf).ConfigureAwait(false);
+            var repositorySearch = new RepositorySearch
+            {
+                AsOf = asOf,
+                HasContinuousDelivery = hasContinuousDelivery,
+                Team = team,
+                Topic = topic
+            };
+
+            var dependencySearchResults = await dependencyManager.SearchAsync(name, repositorySearch).ConfigureAwait(false);
 
             return dependencySearchResults;
         }
