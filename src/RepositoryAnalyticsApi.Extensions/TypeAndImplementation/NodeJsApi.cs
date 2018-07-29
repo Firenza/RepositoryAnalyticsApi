@@ -29,7 +29,7 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                     }
                 };
 
-                var expressDepencency = bowerAndNpmDependencies.FirstOrDefault(dependency => dependency.Name == "exoress");
+                var expressDepencency = bowerAndNpmDependencies.FirstOrDefault(dependency => dependency.Name == "express");
                 var hapiDependency = bowerAndNpmDependencies.FirstOrDefault(dependency => dependency.Name == "hapi");
 
                 if (expressDepencency != null)
