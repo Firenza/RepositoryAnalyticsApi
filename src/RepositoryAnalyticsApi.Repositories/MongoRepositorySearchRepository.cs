@@ -33,19 +33,16 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var pipelineBsonDocuments = new List<BsonDocument>();
 
-            // Can always add this since there will always be a window filter query
-            pipelineBsonDocuments.Add(
+            pipelineBsonDocuments.AddRange(new List<BsonDocument> {
+                // Can always add this since there will always be a window filter query
                 new BsonDocument("$match", new BsonDocument()
-                    .Add("$and", preLookupSnapshotFilterArray))
-            );
-
-            pipelineBsonDocuments.Add(
+                    .Add("$and", preLookupSnapshotFilterArray)),
                 new BsonDocument("$lookup", new BsonDocument()
                     .Add("from", "repositoryCurrentState")
                     .Add("localField", "RepositoryCurrentStateId")
                     .Add("foreignField", "_id")
                     .Add("as", "RepositoryCurrentState"))
-            );
+            });
 
             if (postLookupCurrentStateFilterArray.Count > 0)
             {

@@ -45,37 +45,29 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var pipelineBsonDocuments = new List<BsonDocument>();
 
-            pipelineBsonDocuments.Add(
+            pipelineBsonDocuments.AddRange(new List<BsonDocument> {
                 new BsonDocument("$match", new BsonDocument()
-                     .Add("$and", preLookupSnapshotFilterArray))
-            );
-
-            pipelineBsonDocuments.Add(
+                     .Add("$and", preLookupSnapshotFilterArray)),
                 new BsonDocument("$unwind", new BsonDocument()
-                    .Add("path", "$Dependencies"))
-            );
-
-            pipelineBsonDocuments.Add(
+                    .Add("path", "$Dependencies")),
                 new BsonDocument("$match", new BsonDocument()
                     .Add("$and", preLookupSnapshotFilterArray))
-            );
+            });
 
             if (postLookupCurrentStateFilterArray.Count > 0)
             {
-                pipelineBsonDocuments.Add(
+                pipelineBsonDocuments.AddRange(new List<BsonDocument> {
                     new BsonDocument("$lookup", new BsonDocument()
                         .Add("from", "repositoryCurrentState")
                         .Add("localField", "RepositoryCurrentStateId")
                         .Add("foreignField", "_id")
-                        .Add("as", "RepositoryCurrentState"))
-                );
-
-                pipelineBsonDocuments.Add(new BsonDocument("$match", new BsonDocument()
+                        .Add("as", "RepositoryCurrentState")),
+                    new BsonDocument("$match", new BsonDocument()
                     .Add("$and", postLookupCurrentStateFilterArray))
-                );
+                });
             }
 
-            pipelineBsonDocuments.Add(
+            pipelineBsonDocuments.AddRange(new List<BsonDocument> {
                 new BsonDocument("$group", new BsonDocument()
                     .Add("_id", new BsonDocument()
                         .Add("Name", "$Dependencies.Name")
@@ -84,13 +76,10 @@ namespace RepositoryAnalyticsApi.Repositories
                      .Add("count", new BsonDocument()
                         .Add("$sum", 1.0)
                      )
-                )
-            );
-
-            pipelineBsonDocuments.Add(
-               new BsonDocument("$sort", new BsonDocument()
+                ),
+                new BsonDocument("$sort", new BsonDocument()
                         .Add("_id.Name", 1.0))
-            );
+            });
 
             PipelineDefinition<BsonDocument, BsonDocument> pipeline = pipelineBsonDocuments.ToArray();
 
