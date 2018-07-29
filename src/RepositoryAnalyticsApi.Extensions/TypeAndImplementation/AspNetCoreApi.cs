@@ -18,8 +18,12 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
             var nugetDependencies = Dependencies?.Where(dependency => dependency.Source == "NuGet");
 
             var aspNetCoreAllDependency = nugetDependencies.FirstOrDefault(dependency => dependency.Name == "Microsoft.AspNetCore.All");
+            var aspNetCoreAppDependency = nugetDependencies.FirstOrDefault(dependency => dependency.Name == "Microsoft.AspNetCore.App");
 
-            if (aspNetCoreAllDependency != null)
+            // If both are found use the newer metapackage
+            var aspNetCoreDependency = aspNetCoreAppDependency ?? aspNetCoreAllDependency;
+
+            if (aspNetCoreDependency != null)
             {
                 var typeAndImplementations = new RepositoryTypeAndImplementations();
                 typeAndImplementations.TypeName = "API";
@@ -29,8 +33,8 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                     new RepositoryImplementation
                     {
                         Name = "ASP.NET Core",
-                        Version = aspNetCoreAllDependency.Version,
-                        MajorVersion = aspNetCoreAllDependency.Version.GetMajorVersion()
+                        Version = aspNetCoreDependency.Version,
+                        MajorVersion = aspNetCoreDependency.Version.GetMajorVersion()
                     }
                 };
 
