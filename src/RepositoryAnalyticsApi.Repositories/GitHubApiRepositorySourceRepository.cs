@@ -103,7 +103,7 @@ namespace RepositoryAnalyticsApi.Repositories
             {
                 treeResponse = await treesClient.GetRecursive(owner, name, gitRef);
             }
-            catch (Octokit.ApiException ex) when (ex.Message == "Git Repository is empty")
+            catch (Octokit.ApiException ex) when (ex.Message == "Git Repository is empty.")
             {
                 return repoFiles;   
             }
