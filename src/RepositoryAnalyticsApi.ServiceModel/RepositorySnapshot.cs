@@ -26,7 +26,11 @@ namespace RepositoryAnalyticsApi.ServiceModel
         /// When the snapshot was created
         /// </summary>
         public DateTime? TakenOn { get; set; }
-       
+        /// <summary>
+        /// Branch name used to compile the snapshot
+        /// </summary>
+        public string BranchUsed { get; set; }
+
         public IEnumerable<RepositoryDependency> Dependencies { get; set; }
         public IEnumerable<RepositoryTypeAndImplementations> TypesAndImplementations { get; set; }
     }

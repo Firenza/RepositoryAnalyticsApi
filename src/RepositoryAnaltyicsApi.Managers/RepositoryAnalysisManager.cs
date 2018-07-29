@@ -3,6 +3,7 @@ using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -70,12 +71,33 @@ namespace RepositoryAnaltyicsApi.Managers
                 repositoryCurrentState.Topics = sourceRepository.TopicNames;
                 repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name);
 
-                var repositorySnapshot = new RepositorySnapshot();
-                // Have to set the windows in the manager
-                repositorySnapshot.RepositoryCurrentStateId = repositoryCurrentState.Id;
-                repositorySnapshot.TakenOn = DateTime.Now;
-                repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositoryAnalysis.AsOf);
-                repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, "master", repositorySnapshot.Dependencies, repositoryCurrentState.Topics, repositoryAnalysis.AsOf);
+                // Need to pick a branch for the snapshot stuff
+                string branchName = null;
+
+                if (sourceRepository.BranchNames.Contains("master"))
+                {
+                    branchName = "master";
+                }
+                else if (sourceRepository.BranchNames.Contains("development"))
+                {
+                    branchName = "development";
+                }
+                else if (!string.IsNullOrWhiteSpace(sourceRepository.DefaultBranchName))
+                {
+                    branchName = sourceRepository.DefaultBranchName;
+                }
+
+                RepositorySnapshot repositorySnapshot = null;
+
+                if (branchName != null)
+                {
+                    repositorySnapshot = new RepositorySnapshot();
+                    // Have to set the windows in the manager
+                    repositorySnapshot.RepositoryCurrentStateId = repositoryCurrentState.Id;
+                    repositorySnapshot.TakenOn = DateTime.Now;
+                    repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf);
+                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositorySnapshot.Dependencies, repositoryCurrentState.Topics, repositoryAnalysis.AsOf);
+                }
 
                 var updatedRepository = new Repository
                 {

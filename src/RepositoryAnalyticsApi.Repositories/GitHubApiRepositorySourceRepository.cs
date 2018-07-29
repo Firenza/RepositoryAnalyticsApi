@@ -136,13 +136,18 @@ namespace RepositoryAnalyticsApi.Repositories
                 createdAt,
                 defaultBranchRef{
                   name
-                },
+                }
+                refs(first:100, refPrefix: ""refs/heads/"") {
+                    nodes {
+                        name
+                    }
+                }
                 projects{
                   totalCount
-                },
+                }
     		    issues{
                   totalCount
-                },
+                }
                 pullRequests{
                   totalCount
                 }
@@ -172,15 +177,20 @@ namespace RepositoryAnalyticsApi.Repositories
                 ProjectCount = repository.Projects.TotalCount.Value,
                 IssueCount = repository.Issues.TotalCount.Value,
                 PullRequestCount = repository.PullRequests.TotalCount.Value,
+                TopicNames = new List<string>(),
+                BranchNames = new List<string>()
             };
-
             if (repository.RepositoryTopics.Nodes.Any())
             {
-                repositorySourceRepository.TopicNames = repository.RepositoryTopics.Nodes.Select(topic => topic.Name).ToList();
+                repositorySourceRepository.TopicNames.AddRange(repository.RepositoryTopics.Nodes.Select(topic => topic.Name));
+            }
+
+            if (repository.Refs.Nodes.Any())
+            {
+                repositorySourceRepository.BranchNames.AddRange(repository.Refs.Nodes.Select(@ref => @ref.Name));
             }
 
             return repositorySourceRepository;
-
         }
 
         public async Task<RepositorySummary> ReadRepositorySummaryAsync(string organization, string user, string name)

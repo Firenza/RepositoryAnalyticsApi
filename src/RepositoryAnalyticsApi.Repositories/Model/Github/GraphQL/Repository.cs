@@ -21,5 +21,7 @@ namespace RepositoryAnalyticsApi.Repositories.Model.Github.GraphQL
         [JsonConverter(typeof(GraphQlNodesParentConverter<Topic>))]
         public GraphQlNodesParent<Topic> RepositoryTopics { get; set; }
         public CommitHistory CommitHistory { get; set; }
+        [JsonConverter(typeof(GraphQlNodesParentConverter<Ref>))]
+        public GraphQlNodesParent<Ref> Refs { get; set; }
     }
 }
