@@ -95,11 +95,21 @@ namespace RepositoryAnalyticsApi.Repositories
         // The GraphQL Api does not support the recursive reading of files so using the V3 API
         public async Task<List<RepositoryFile>> ReadFilesAsync(string owner, string name, string gitRef)
         {
-            var treeResponse = await treesClient.GetRecursive(owner, name, gitRef);
-            var treeItems = treeResponse.Tree;
-
             var repoFiles = new List<RepositoryFile>();
 
+            TreeResponse treeResponse = null;
+
+            try
+            {
+                treeResponse = await treesClient.GetRecursive(owner, name, gitRef);
+            }
+            catch (Octokit.ApiException ex) when (ex.Message == "Git Repository is empty")
+            {
+                return repoFiles;   
+            }
+            
+            var treeItems = treeResponse.Tree;
+            
             if (treeItems != null && treeItems.Any())
             {
                 foreach (var treeItem in treeItems)
