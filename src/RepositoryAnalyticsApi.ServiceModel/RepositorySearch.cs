@@ -11,5 +11,7 @@ namespace RepositoryAnalyticsApi.ServiceModel
         public DateTime? AsOf { get; set; }
         public string Topic { get; set; }
         public string Team { get; set; }
+        public DateTime? OnOrAfter { get; set; }
+        public DateTime? OnOrBefore { get; set; }
     }
 }

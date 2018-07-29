@@ -75,6 +75,45 @@ namespace RepositoryAnalyticsApi.Repositories
         {
             var bsonDocumentFilterList = new List<BsonDocument>();
 
+            // Check to see if we need to do interval time filtering
+            if (repositorySearch.OnOrAfter.HasValue || repositorySearch.OnOrBefore.HasValue)
+            {
+                if (repositorySearch.OnOrAfter.HasValue)
+                {
+                    bsonDocumentFilterList.Add(new BsonDocument()
+                        .Add("WindowStartsOn", new BsonDocument()
+                            .Add("$lte", new BsonDateTime(repositorySearch.OnOrAfter.Value))));
+                }
+
+                if (repositorySearch.OnOrBefore.HasValue)
+                {
+                    bsonDocumentFilterList.Add(new BsonDocument()
+                        .Add("WindowEndsOn", new BsonDocument()
+                        .Add("$gte", new BsonDateTime(repositorySearch.OnOrBefore.Value))));
+                }
+            }
+            else if (repositorySearch.AsOf.HasValue)
+            {
+                bsonDocumentFilterList.Add(new BsonDocument()
+                    .Add(nameof(RepositorySnapshot.WindowStartsOn), new BsonDocument()
+                        .Add("$lte", new BsonDateTime(repositorySearch.AsOf.Value)))
+                );
+                bsonDocumentFilterList.Add(new BsonDocument().Add("$or", new BsonArray()
+                    .Add(new BsonDocument()
+                        .Add(nameof(RepositorySnapshot.WindowEndsOn), BsonNull.Value)
+                     )
+                     .Add(new BsonDocument()
+                        .Add(nameof(RepositorySnapshot.WindowEndsOn), new BsonDocument()
+                            .Add("$gte", new BsonDateTime(repositorySearch.AsOf.Value))
+                        )
+                     ))
+                );
+            }
+            else
+            {
+                bsonDocumentFilterList.Add(new BsonDocument().Add(nameof(RepositorySnapshot.WindowEndsOn), BsonNull.Value));
+            }
+
             if (!repositorySearch.AsOf.HasValue)
             {
                 bsonDocumentFilterList.Add(new BsonDocument().Add(nameof(RepositorySnapshot.WindowEndsOn), BsonNull.Value));
