@@ -151,17 +151,24 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var repository = await graphQLClient.QueryAsync<Model.Github.GraphQL.Repository>(query, variables).ConfigureAwait(false);
 
-            return new RepositorySourceRepository()
+            var repositorySourceRepository = new RepositorySourceRepository()
             {
                 Name = repository.Name,
                 Url = repository.Url,
+                PushedAt = repository.PushedAt,
                 CreatedAt = repository.CreatedAt,
                 DefaultBranchName = repository.DefaultBranchRef.Name,
-                IssueCount = repository.Issues.TotalCount.Value,
                 ProjectCount = repository.Projects.TotalCount.Value,
+                IssueCount = repository.Issues.TotalCount.Value,
                 PullRequestCount = repository.PullRequests.TotalCount.Value,
-                PushedAt = repository.PushedAt
             };
+
+            if (repository.RepositoryTopics.Nodes.Any())
+            {
+                repositorySourceRepository.TopicNames = repository.RepositoryTopics.Nodes.Select(topic => topic.Name).ToList();
+            }
+
+            return repositorySourceRepository;
 
         }
 
