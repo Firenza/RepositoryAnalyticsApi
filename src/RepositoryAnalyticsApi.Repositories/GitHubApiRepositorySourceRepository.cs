@@ -151,13 +151,14 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var repository = await graphQLClient.QueryAsync<Model.Github.GraphQL.Repository>(query, variables).ConfigureAwait(false);
 
+            // TODO: Figure out if anything else needs to be done to accomodate repos without a default branch
             var repositorySourceRepository = new RepositorySourceRepository()
             {
                 Name = repository.Name,
                 Url = repository.Url,
                 PushedAt = repository.PushedAt,
                 CreatedAt = repository.CreatedAt,
-                DefaultBranchName = repository.DefaultBranchRef.Name,
+                DefaultBranchName = repository.DefaultBranchRef?.Name,
                 ProjectCount = repository.Projects.TotalCount.Value,
                 IssueCount = repository.Issues.TotalCount.Value,
                 PullRequestCount = repository.PullRequests.TotalCount.Value,
