@@ -114,28 +114,6 @@ namespace RepositoryAnalyticsApi.Repositories
                 bsonDocumentFilterList.Add(new BsonDocument().Add(nameof(RepositorySnapshot.WindowEndsOn), BsonNull.Value));
             }
 
-            if (!repositorySearch.AsOf.HasValue)
-            {
-                bsonDocumentFilterList.Add(new BsonDocument().Add(nameof(RepositorySnapshot.WindowEndsOn), BsonNull.Value));
-            }
-            else
-            {
-                bsonDocumentFilterList.Add(new BsonDocument()
-                    .Add(nameof(RepositorySnapshot.WindowStartsOn), new BsonDocument()
-                        .Add("$lte", new BsonDateTime(repositorySearch.AsOf.Value)))
-                );
-                bsonDocumentFilterList.Add(new BsonDocument().Add("$or", new BsonArray()
-                    .Add(new BsonDocument()
-                        .Add(nameof(RepositorySnapshot.WindowEndsOn), BsonNull.Value)
-                     )
-                     .Add(new BsonDocument()
-                        .Add(nameof(RepositorySnapshot.WindowEndsOn), new BsonDocument()
-                            .Add("$gte", new BsonDateTime(repositorySearch.AsOf.Value))
-                        )
-                     ))
-                );
-            }
-
             if (!string.IsNullOrWhiteSpace(repositorySearch.TypeName))
             {
                 var fieldName = $"{nameof(RepositorySnapshot.TypesAndImplementations)}.{nameof(RepositoryTypeAndImplementations.TypeName)}";
