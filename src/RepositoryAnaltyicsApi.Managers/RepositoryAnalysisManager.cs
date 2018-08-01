@@ -97,6 +97,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     repositorySnapshot.TakenOn = DateTime.Now;
                     repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf);
                     repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositorySnapshot.Dependencies, repositoryCurrentState.Topics, repositoryAnalysis.AsOf);
+                    repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf);
                 }
 
                 var updatedRepository = new Repository

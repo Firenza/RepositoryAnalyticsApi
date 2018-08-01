@@ -33,5 +33,6 @@ namespace RepositoryAnalyticsApi.ServiceModel
 
         public IEnumerable<RepositoryDependency> Dependencies { get; set; }
         public IEnumerable<RepositoryTypeAndImplementations> TypesAndImplementations { get; set; }
+        public IEnumerable<RepositoryFile> Files { get; set; }
     }
 }
