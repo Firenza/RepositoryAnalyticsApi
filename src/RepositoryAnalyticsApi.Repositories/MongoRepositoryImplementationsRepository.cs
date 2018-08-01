@@ -78,7 +78,9 @@ namespace RepositoryAnalyticsApi.Repositories
                      .Add("count", new BsonDocument()
                         .Add("$sum", 1.0)
                      )
-                )
+                ),
+                new BsonDocument("$sort", new BsonDocument()
+                        .Add("_id.Implementation", 1.0))
             });
 
             PipelineDefinition<BsonDocument, BsonDocument> pipeline = pipelineBsonDocuments.ToArray();

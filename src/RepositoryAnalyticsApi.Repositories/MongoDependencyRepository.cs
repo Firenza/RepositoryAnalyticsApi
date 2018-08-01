@@ -78,7 +78,7 @@ namespace RepositoryAnalyticsApi.Repositories
                      )
                 ),
                 new BsonDocument("$sort", new BsonDocument()
-                        .Add("_id.Name", 1.0))
+                        .Add("_id.Version", -1.0))
             });
 
             PipelineDefinition<BsonDocument, BsonDocument> pipeline = pipelineBsonDocuments.ToArray();

@@ -4,6 +4,7 @@ using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.Repositories
@@ -21,21 +22,15 @@ namespace RepositoryAnalyticsApi.Repositories
         {
             var typeNames = new List<string>();
 
-            FilterDefinition<RepositorySnapshot> filter = null;
+            var snapshotFilterArray = new BsonArray();
+            var repositorySnapshotFilters = MongoFilterFactory.RepositorySnapshotFilters(new RepositorySearch {AsOf = asOf });
+            snapshotFilterArray.AddRange(repositorySnapshotFilters);
 
-            if (asOf.HasValue)
-            {
-                filter = Builders<RepositorySnapshot>.Filter.And(
-                    Builders<RepositorySnapshot>.Filter.Gte(snapshot => snapshot.WindowStartsOn, new BsonDateTime(asOf.Value)),
-                    Builders<RepositorySnapshot>.Filter.Lte(snapshot => snapshot.WindowEndsOn, new BsonDateTime(asOf.Value))
-                    );
-            }
-            else
-            {
-                filter = Builders<RepositorySnapshot>.Filter.Eq(snapshot => snapshot.WindowEndsOn, null);
-            }
+            var filter = new BsonDocument("$and", snapshotFilterArray);
 
-            using (var cursor = await mongoCollection.DistinctAsync<string>("TypesAndImplementations.TypeName", filter))
+            var distinctFieldName = $"{nameof(RepositorySnapshot.TypesAndImplementations)}.{nameof(RepositoryTypeAndImplementations.TypeName)}";
+
+            using (var cursor = await mongoCollection.DistinctAsync<string>(distinctFieldName, filter))
             {
                 while (await cursor.MoveNextAsync())
                 {
@@ -47,7 +42,11 @@ namespace RepositoryAnalyticsApi.Repositories
                 }
             }
 
-            return typeNames;
+            // Sort these after the query as there shouldn't be too many AND I'm not sure how to do sorting
+            // with the "DistinctAsync" call on the client
+            var orderedTypeNames = typeNames.OrderBy(typeName => typeName).ToList();
+
+            return orderedTypeNames;
         }
     }
 }
