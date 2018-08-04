@@ -95,6 +95,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     // Have to set the windows in the manager
                     repositorySnapshot.RepositoryCurrentStateId = repositoryCurrentState.Id;
                     repositorySnapshot.TakenOn = DateTime.Now;
+                    repositorySnapshot.BranchUsed = branchName;
                     repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf);
                     repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositorySnapshot.Dependencies, repositoryCurrentState.Topics, repositoryAnalysis.AsOf);
                     repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf);
