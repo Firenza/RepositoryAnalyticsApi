@@ -112,10 +112,12 @@ namespace RepositoryAnalyticsApi.Repositories
             
             if (treeItems != null && treeItems.Any())
             {
-                foreach (var treeItem in treeItems)
+                var fileTreeItems = treeItems.Where(treeItem => treeItem.Type == TreeType.Blob);
+
+                foreach (var fileTreeItem in fileTreeItems)
                 {
                     var codeRepoFile = new RepositoryFile();
-                    codeRepoFile.FullPath = treeItem.Path;
+                    codeRepoFile.FullPath = fileTreeItem.Path;
                     codeRepoFile.Name = Path.GetFileName(codeRepoFile.FullPath);
 
                     repoFiles.Add(codeRepoFile);
