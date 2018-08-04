@@ -134,7 +134,6 @@ namespace RepositoryAnaltyicsApi.Managers
             }
         }
 
-
         private async Task<List<RepositoryDependency>> ScrapeDependenciesAsync(string owner, string name, string defaultBranch, DateTime? asOf = null)
         {
             var allDependencies = new List<RepositoryDependency>();
@@ -175,10 +174,6 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             var typesAndImplementations = new List<RepositoryTypeAndImplementations>();
 
-            var readFileContentAsync = new Func<string, Task<string>>(async (fullFilePath) =>
-                await repositorySourceManager.ReadFileContentAsync(owner, name, branch, fullFilePath).ConfigureAwait(false)
-            );
-
             var readFilesAsync = new Func<Task<List<RepositoryFile>>>(async () =>
                 await repositorySourceManager.ReadFilesAsync(owner, name, branch).ConfigureAwait(false)
             );
@@ -196,10 +191,6 @@ namespace RepositoryAnaltyicsApi.Managers
                 if (typeAndImplementationDeriver is IRequireFileListAccess)
                 {
                     (typeAndImplementationDeriver as IRequireFileListAccess).ReadFileListAsync = readFilesAsync;
-                }
-                if (typeAndImplementationDeriver is IRequireFileContentAccess)
-                {
-                    (typeAndImplementationDeriver as IRequireFileContentAccess).ReadFileContentAsync = readFileContentAsync;
                 }
 
                 var typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(name);
