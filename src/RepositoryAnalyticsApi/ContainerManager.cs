@@ -76,8 +76,9 @@ namespace RepositoryAnalyticsApi
             var mongoClientSettings = new MongoClientSettings();
             mongoClientSettings.Server = new MongoServerAddress("localhost", 27017);
             mongoClientSettings.ConnectTimeout = new TimeSpan(0, 0, 0, 2, 0);
+           
+            var commandNamesToIgnore = new List<string> { "isMaster", "buildInfo", "getLastError", "update" };
             // Log all query text for debugging purposes
-            var commandNamesToIgnore = new List<string> { "isMaster", "buildInfo", "getLastError" };
             mongoClientSettings.ClusterConfigurator = cb =>
             {
                 cb.Subscribe<CommandStartedEvent>(e =>
