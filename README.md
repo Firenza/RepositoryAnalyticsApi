@@ -41,6 +41,6 @@ To provide these to the API a run time you can do one of the following
 
 1. Build the extension assembly
 2. Copy all of the assemblies to the `./src/RepositoryAnalyticsApi/Plugins/` folder
-3. Start the API and you check the output to see if the types in your plugin were loaded. 
+3. Start the API and you check the output to see if the types in your plugin were loaded. You should see something like the following:
 
-
+![](https://user-images.githubusercontent.com/9145108/43986475-e54f8664-9cd6-11e8-9135-2b6998cb853a.png)
