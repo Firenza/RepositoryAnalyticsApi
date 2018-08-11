@@ -11,7 +11,7 @@ Provide the ability to answer the questions like the following with respect to a
 * Our shared logging package has an critical security vulnerablity for all versions below 1.7.9.  How many repositories are still referencing one of these versions?
 * Is anyone using dependency X with an application of type Y?
 
-The API must also provide the ability to be exended so that people can define thier own application types/implementations along with their level of DevOps integration. This is currently provided via MEF plugin assemblies.
+The API must also provide the ability to be exended so that people can define thier own application types/implementations along with their level of DevOps integration. This is currently provided via [MEF plugin assemblies](https://github.com/Firenza/RepositoryAnaltyicsApiExampleExtension).
 
 #### Tech Used
 
