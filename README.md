@@ -1,8 +1,15 @@
 # RepositoryAnaltyicsApi
 
-An ASP.NET Core API to provide analyitical data about GitHub code repositories.  
+An ASP.NET Core API to provide analyitical data about GitHub code repositories.  Paired with [orchestration wrapper application](https://github.com/Firenza/RepositoryAnaltyicsOrchestrator) to provide easy ingestion of GitHub data.
 
+#### Purpose
 
+Provide the ability to answer the questions like the following with respect to a group of GitHub repositories.
+
+* How many NodeJS APIs do we currently have vs ASP.NET APIs?
+* Our goal was to get 80% of our Web UI's switched to React.  Where are we at now with that and how much progress have we made in the last month?
+* Our shared logging package has an critical security vulnerablity for all versions below 1.7.9.  How many repositories are still referencing one of these versions?
+* Is anyone using dependency X with an application of type Y?
 
 #### Running locally
 
