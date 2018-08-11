@@ -16,8 +16,10 @@ The API must also provide the ability to be exended so that people can define th
 #### Tech Used
 
 * ASP.NET Core Web API
+* Swagger UI
 * MongoDB (Likely to soon also support MySQL)
 * MEF
+* Visual Studio 
 
 #### Running Locally
 
