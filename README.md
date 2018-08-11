@@ -11,12 +11,15 @@ Provide the ability to answer the questions like the following with respect to a
 * Our shared logging package has an critical security vulnerablity for all versions below 1.7.9.  How many repositories are still referencing one of these versions?
 * Is anyone using dependency X with an application of type Y?
 
+The API must also provide the ability to be exended so that people can define thier own application types/implementations along with their level of DevOps integration. This is currently provided via MEF plugin assemblies.
+
 #### Tech Used
 
 * ASP.NET Core Web API
 * MongoDB (Likely to soon also support MySQL)
+* MEF
 
-#### Running locally
+#### Running Locally
 
 The API uses the following environment variables to configure how to connect to GitHub.
 
@@ -33,3 +36,11 @@ To provide these to the API a run time you can do one of the following
 1. Create a `configuration.env` file (in the same directory as the docker-compose.yml file) and put the variables / values in there.  This file has been added to the `.gitignore` file so you don't have to worry about commiting it by accident.
 
 2. Provide the environment varibles in the `docker-compose` command
+
+#### Integrating Extensions
+
+1. Build the extension assembly
+2. Copy all of the assemblies to the `./src/RepositoryAnalyticsApi/Plugins/` folder
+3. Start the API and you check the output to see if the types in your plugin were loaded. 
+
+
