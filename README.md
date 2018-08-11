@@ -11,6 +11,11 @@ Provide the ability to answer the questions like the following with respect to a
 * Our shared logging package has an critical security vulnerablity for all versions below 1.7.9.  How many repositories are still referencing one of these versions?
 * Is anyone using dependency X with an application of type Y?
 
+#### Tech Used
+
+* ASP.NET Core Web API
+* MongoDB (Likely to soon also support MySQL)
+
 #### Running locally
 
 The API uses the following environment variables to configure how to connect to GitHub.
