@@ -19,6 +19,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Composition.Hosting;
+using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -30,6 +32,7 @@ namespace RepositoryAnalyticsApi
 {
     public static class ContainerManager
     {
+
         public static void RegisterServices(IServiceCollection services, IConfiguration configuration)
         {
             // Read in environment variables
@@ -89,6 +92,7 @@ namespace RepositoryAnalyticsApi
                 });
             };
 
+
             // Add in mongo dependencies
             var client = new MongoClient(mongoClientSettings);
             var db = client.GetDatabase(mongoDbDatabase);
@@ -106,18 +110,30 @@ namespace RepositoryAnalyticsApi
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositoryCurrentState>("repositoryCurrentState"));
             services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repositorySnapshot"));
 
+            var mySqlConnection = new MySqlConnection("server=127.0.0.1;uid=root;pwd=my-secret-pw;database=test");
+
+            SetupMySqlSchema(mySqlConnection);
+
+            services.AddSingleton(typeof(MySqlConnection), mySqlConnection);
+            services.AddTransient(typeof(MySqlRepositoryCurrentStateRepository), (serviceProvider) => new MySqlRepositoryCurrentStateRepository(serviceProvider.GetService<MySqlConnection>()));
+            services.AddTransient(typeof(MySqlRepositorySnapshotRepository), (serviceProvider) => new MySqlRepositorySnapshotRepository(serviceProvider.GetService<MySqlConnection>()));
+
             services.AddTransient<IRepositoryManager>((serviceProvider) => new RepositoryManager(
                new MongoRepositorySnapshotRepository(serviceProvider.GetService<IMongoCollection<RepositorySnapshot>>()),
-               new MySqlRepositorySnapshotRepository(serviceProvider.GetService<MySqlConnection>()),
+               serviceProvider.GetService<MySqlRepositorySnapshotRepository>(),
                new MongoRepositoryCurrentStateRepository(serviceProvider.GetService<IMongoCollection<RepositoryCurrentState>>()),
-               new MySqlRepositoryCurrentStateRepository(serviceProvider.GetService<MySqlConnection>()),
+               serviceProvider.GetService<MySqlRepositoryCurrentStateRepository>(),
                serviceProvider.GetService<IRepositorySourceManager>(),
                serviceProvider.GetService<IRepositorySearchRepository>()
             ));
+
         }
 
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
         {
+            
+
+
             var typeAndImplementationDerivers = new List<IDeriveRepositoryTypeAndImplementations>();
             IDeriveRepositoryDevOpsIntegrations devOpsIntegrationDeriver = null;
 
@@ -272,6 +288,44 @@ namespace RepositoryAnalyticsApi
 
                 return null;
             }
+        }
+
+        private static void SetupMySqlSchema(MySqlConnection mySqlConnection)
+        {
+            mySqlConnection.Open();
+
+            var listTables = new List<string>();
+            using (DataTable dt = mySqlConnection.GetSchema("Tables"))
+            {
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    listTables.Capacity = dt.Rows.Count;
+
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        listTables.Add(row["table_name"].ToString());
+                    }
+                }
+            }
+
+            var createRepositoryCurrentStatesTable = @"
+                CREATE TABLE `test`.`RepositoryCurrentStates` (
+                    `Id` INT NOT NULL,
+                    `Name` VARCHAR(45) NULL,
+                    `Owner` VARCHAR(45) NULL,
+                    `RepositoryCreatedOn` DATETIME NULL,
+                    `RepositoryLastUpdatedOn` DATETIME NULL,
+                    PRIMARY KEY (`Id`));
+            ";
+
+            if (!listTables.Contains("RepositoryCurrentStates"))
+            {
+                var cmd = new MySqlCommand(createRepositoryCurrentStatesTable, mySqlConnection);
+                cmd.ExecuteNonQuery();
+            }
+
+
+            mySqlConnection.Close();
         }
     }
 }
