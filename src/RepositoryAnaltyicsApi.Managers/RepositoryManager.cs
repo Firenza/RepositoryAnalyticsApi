@@ -9,27 +9,34 @@ namespace RepositoryAnaltyicsApi.Managers
 {
     public class RepositoryManager : IRepositoryManager
     {
-        private IRepositorySnapshotRepository repositorySnapshotRepository;
-        private IRepositoryCurrentStateRepository repositoryCurrentStateRepository;
+        private IRepositorySnapshotRepository mongoRepositorySnapshotRepository;
+        private IRepositorySnapshotRepository mySqlRepositorySnapshotRepository;
+        private IRepositoryCurrentStateRepository mongoRepositoryCurrentStateRepository;
+        private IRepositoryCurrentStateRepository mySqlRepositoryCurrentStateRepository;
         private IRepositorySourceManager repositorySourceManager;
         private IRepositorySearchRepository repositorySearchRepository;
 
         public RepositoryManager(
-            IRepositorySnapshotRepository repositorySnapshotRepository, 
-            IRepositoryCurrentStateRepository repositoryCurrentStateRepository, 
+            IRepositorySnapshotRepository mongoRepositorySnapshotRepository,
+            IRepositorySnapshotRepository mySqlRepositorySnapshotRepository,
+            IRepositoryCurrentStateRepository mongoRepositoryCurrentStateRepository,
+            IRepositoryCurrentStateRepository mySqlRepositoryCurrentStateRepository,
             IRepositorySourceManager repositorySourceManager, 
             IRepositorySearchRepository repositorySearchRepository
         )
         {
-            this.repositorySnapshotRepository = repositorySnapshotRepository;
-            this.repositoryCurrentStateRepository = repositoryCurrentStateRepository;
+            this.mongoRepositorySnapshotRepository = mongoRepositorySnapshotRepository;
+            this.mySqlRepositorySnapshotRepository = mySqlRepositorySnapshotRepository;
+            this.mongoRepositoryCurrentStateRepository = mongoRepositoryCurrentStateRepository;
+            this.mySqlRepositoryCurrentStateRepository = mySqlRepositoryCurrentStateRepository;
             this.repositorySourceManager = repositorySourceManager;
             this.repositorySearchRepository = repositorySearchRepository;
         }
 
         public async Task UpsertAsync(Repository repository, DateTime? asOf)
         {
-            await repositoryCurrentStateRepository.UpsertAsync(repository.CurrentState).ConfigureAwait(false);
+            await mongoRepositoryCurrentStateRepository.UpsertAsync(repository.CurrentState).ConfigureAwait(false);
+            await mySqlRepositoryCurrentStateRepository.UpsertAsync(repository.CurrentState).ConfigureAwait(false);
 
             if (repository.Snapshot != null)
             {
@@ -45,7 +52,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 // Do we really need to read all existing repository snapshots here?  Could probably get away with just reading
                 // the first one before the asOf date and the first one after the asOf date but that can be left as a future
                 // optimization
-                var existingSnapshots = await repositorySnapshotRepository.ReadAllForParent(repository.CurrentState.Id);
+                var existingSnapshots = await mongoRepositorySnapshotRepository.ReadAllForParent(repository.CurrentState.Id);
 
                 if (!existingSnapshots.Any())
                 {
@@ -84,12 +91,14 @@ namespace RepositoryAnaltyicsApi.Managers
 
                         closestEarlierStartingSnapshot.WindowEndsOn = repository.Snapshot.WindowStartsOn.Value.AddTicks(-1);
 
-                        await repositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot).ConfigureAwait(false);
+                        await mongoRepositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot).ConfigureAwait(false);
+                        await mySqlRepositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot).ConfigureAwait(false);
                     }
 
                 }
 
-                await repositorySnapshotRepository.UpsertAsync(repository.Snapshot).ConfigureAwait(false);
+                await mongoRepositorySnapshotRepository.UpsertAsync(repository.Snapshot).ConfigureAwait(false);
+                await mySqlRepositorySnapshotRepository.UpsertAsync(repository.Snapshot).ConfigureAwait(false);
             }
         }
 

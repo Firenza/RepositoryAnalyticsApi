@@ -5,6 +5,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Events;
+using MySql.Data.MySqlClient;
 using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnaltyicsApi.Managers;
@@ -53,13 +54,11 @@ namespace RepositoryAnalyticsApi
             IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
 
             services.AddTransient<IRepositoryManager, RepositoryManager>();
-            services.AddTransient<IRepositorySnapshotRepository, MongoRepositorySnapshotRepository>();
             services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
             services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
             services.AddTransient<IDependencyManager, DependencyManager>();
             services.AddTransient<IRepositorySourceRepository>(serviceProvider => codeRepo);
-            services.AddTransient<IRepositoryCurrentStateRepository, MongoRepositoryCurrentStateRepository>();
             services.AddTransient<IRepositoryImplementationsManager, RepositoryImplementationsManager>();
             services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
             services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
@@ -107,7 +106,14 @@ namespace RepositoryAnalyticsApi
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositoryCurrentState>("repositoryCurrentState"));
             services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repositorySnapshot"));
 
-         
+            services.AddTransient<IRepositoryManager>((serviceProvider) => new RepositoryManager(
+               new MongoRepositorySnapshotRepository(serviceProvider.GetService<IMongoCollection<RepositorySnapshot>>()),
+               new MySqlRepositorySnapshotRepository(serviceProvider.GetService<MySqlConnection>()),
+               new MongoRepositoryCurrentStateRepository(serviceProvider.GetService<IMongoCollection<RepositoryCurrentState>>()),
+               new MySqlRepositoryCurrentStateRepository(serviceProvider.GetService<MySqlConnection>()),
+               serviceProvider.GetService<IRepositorySourceManager>(),
+               serviceProvider.GetService<IRepositorySearchRepository>()
+            ));
         }
 
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
