@@ -110,7 +110,7 @@ namespace RepositoryAnalyticsApi
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositoryCurrentState>("repositoryCurrentState"));
             services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repositorySnapshot"));
 
-            var mySqlConnection = new MySqlConnection("server=127.0.0.1;uid=root;pwd=my-secret-pw;database=test");
+            var mySqlConnection = new MySqlConnection("server=127.0.0.1;uid=root;pwd=my-secret-pw");
 
             SetupMySqlSchema(mySqlConnection);
 
@@ -294,36 +294,66 @@ namespace RepositoryAnalyticsApi
         {
             mySqlConnection.Open();
 
-            var listTables = new List<string>();
-            using (DataTable dt = mySqlConnection.GetSchema("Tables"))
-            {
-                if (dt != null && dt.Rows.Count > 0)
-                {
-                    listTables.Capacity = dt.Rows.Count;
+            var schemaName = "repository_analysis";
 
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        listTables.Add(row["table_name"].ToString());
-                    }
-                }
-            }
+            // Create schema if needed
+            var createDatabaseCommand = new MySqlCommand($"CREATE SCHEMA IF NOT EXISTS `{schemaName}`", mySqlConnection);
+            createDatabaseCommand.ExecuteNonQuery();
 
-            var createRepositoryCurrentStatesTable = @"
-                CREATE TABLE `test`.`RepositoryCurrentStates` (
+            //// Get a list of existing tables
+            //var listTables = new List<string>();
+            //using (DataTable dt = mySqlConnection.GetSchema("Tables"))
+            //{
+            //    if (dt != null && dt.Rows.Count > 0)
+            //    {
+            //        listTables.Capacity = dt.Rows.Count;
+
+            //        foreach (DataRow row in dt.Rows)
+            //        {
+            //            listTables.Add(row["table_name"].ToString());
+            //        }
+            //    }
+            //}
+
+            var createRepositoryCurrentStatesTable = $@"
+                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryCurrentStates` (
                     `Id` INT NOT NULL,
-                    `Name` VARCHAR(45) NULL,
-                    `Owner` VARCHAR(45) NULL,
-                    `RepositoryCreatedOn` DATETIME NULL,
-                    `RepositoryLastUpdatedOn` DATETIME NULL,
+                    `Name` varchar(45) DEFAULT NULL,
+                    `Owner` varchar(45) DEFAULT NULL,
+                    `RepositoryCreatedOn` datetime DEFAULT NULL,
+                    `RepositoryLastUpdatedOn` datetime DEFAULT NULL,
+                    `DefaultBranch` varchar(45) DEFAULT NULL,
+                    `HasContinuousIntegration` bit(1) DEFAULT NULL,
+                    `HasContinuousDelivery` bit(1) DEFAULT NULL,
+                    `HasContinuousDeployment` bit(1) DEFAULT NULL,
                     PRIMARY KEY (`Id`));
             ";
 
-            if (!listTables.Contains("RepositoryCurrentStates"))
-            {
-                var cmd = new MySqlCommand(createRepositoryCurrentStatesTable, mySqlConnection);
-                cmd.ExecuteNonQuery();
-            }
+            var createRepositoryCurrentStatesTableCommand = new MySqlCommand(createRepositoryCurrentStatesTable, mySqlConnection);
+            createRepositoryCurrentStatesTableCommand.ExecuteNonQuery();
 
+            var createTeamsTable = $@"
+                CREATE TABLE IF NOT EXISTS `{schemaName}`.`Teams` (
+                    `Id` INT NOT NULL,
+                    `RepositoryCurrentStateId` INT NOT NULL,
+                    `Name` VARCHAR(45) NULL,
+                    `Role` VARCHAR(45) NULL,
+                    PRIMARY KEY (`Id`));
+            ";
+
+            var createTeamsTableCommand = new MySqlCommand(createTeamsTable, mySqlConnection);
+            createTeamsTableCommand.ExecuteNonQuery();
+
+            var createTopicsTable = $@"
+                CREATE TABLE IF NOT EXISTS `{schemaName}`.`Topics` (
+                    `Id` INT NOT NULL,
+                    `RepositoryCurrentStateId` INT NOT NULL,
+                    `Name` VARCHAR(45) NULL,
+                    PRIMARY KEY (`Id`));
+            ";
+
+            var createTopicsTableCommand = new MySqlCommand(createTopicsTable, mySqlConnection);
+            createTopicsTableCommand.ExecuteNonQuery();
 
             mySqlConnection.Close();
         }
