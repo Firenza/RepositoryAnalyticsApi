@@ -36,7 +36,7 @@ namespace RepositoryAnaltyicsApi.Managers
         public async Task UpsertAsync(Repository repository, DateTime? asOf)
         {
             await mongoRepositoryCurrentStateRepository.UpsertAsync(repository.CurrentState).ConfigureAwait(false);
-            await mySqlRepositoryCurrentStateRepository.UpsertAsync(repository.CurrentState).ConfigureAwait(false);
+            var repositoryCurrentStateId = await mySqlRepositoryCurrentStateRepository.UpsertAsync(repository.CurrentState).ConfigureAwait(false);
 
             if (repository.Snapshot != null)
             {

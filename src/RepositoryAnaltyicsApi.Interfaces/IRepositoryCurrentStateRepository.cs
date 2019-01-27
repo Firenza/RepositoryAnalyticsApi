@@ -5,6 +5,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
 {
     public interface IRepositoryCurrentStateRepository
     {
-        Task UpsertAsync(RepositoryCurrentState repository);
+        Task<int?> UpsertAsync(RepositoryCurrentState repository);
     }
 }

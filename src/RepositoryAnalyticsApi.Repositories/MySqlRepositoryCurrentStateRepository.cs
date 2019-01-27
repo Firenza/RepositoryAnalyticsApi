@@ -20,7 +20,7 @@ namespace RepositoryAnalyticsApi.Repositories
             this.mySqlConnection = mySqlConnection;
         }
 
-        public async Task UpsertAsync(RepositoryCurrentState repositoryCurrentState)
+        public async Task<int?> UpsertAsync(RepositoryCurrentState repositoryCurrentState)
         {
             var mappedRepositoryCurrentState = Model.MySql.RepositoryCurrentState.MapFrom(repositoryCurrentState);
 
@@ -60,6 +60,8 @@ namespace RepositoryAnalyticsApi.Repositories
             var mappedTopics = Model.MySql.Topic.MapFrom(repositoryCurrentState, existingRecordId);
 
             await mySqlConnection.InsertAsync(mappedTopics);
+
+            return existingRecordId;
         }
     }
 }
