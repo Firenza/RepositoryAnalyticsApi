@@ -92,13 +92,13 @@ namespace RepositoryAnaltyicsApi.Managers
                         closestEarlierStartingSnapshot.WindowEndsOn = repository.Snapshot.WindowStartsOn.Value.AddTicks(-1);
 
                         await mongoRepositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot).ConfigureAwait(false);
-                        await mySqlRepositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot).ConfigureAwait(false);
+                        await mySqlRepositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot, repositoryCurrentStateId).ConfigureAwait(false);
                     }
 
                 }
 
                 await mongoRepositorySnapshotRepository.UpsertAsync(repository.Snapshot).ConfigureAwait(false);
-                await mySqlRepositorySnapshotRepository.UpsertAsync(repository.Snapshot).ConfigureAwait(false);
+                await mySqlRepositorySnapshotRepository.UpsertAsync(repository.Snapshot, repositoryCurrentStateId).ConfigureAwait(false);
             }
         }
 

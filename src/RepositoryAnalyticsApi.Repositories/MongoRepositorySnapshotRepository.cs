@@ -15,7 +15,7 @@ namespace RepositoryAnalyticsApi.Repositories
             this.mongoCollection = mongoCollection;
         }
 
-        public async Task UpsertAsync(RepositorySnapshot snapshot)
+        public async Task UpsertAsync(RepositorySnapshot snapshot, int? repositoryCurrentStateId = null)
         {
             var filter = Builders<RepositorySnapshot>.Filter.And(
                 Builders<RepositorySnapshot>.Filter.Eq(repo => repo.RepositoryCurrentStateId, snapshot.RepositoryCurrentStateId),

@@ -50,7 +50,6 @@ namespace RepositoryAnalyticsApi.Repositories
                         FROM Topics
                         WHERE RepositoryCurrentStateId = @RepositoryCurrentStateId",
                     new { RepositoryCurrentStateId = existingRecordId });
-
             }
 
             var mappedTeams = Model.MySql.Team.MapFrom(repositoryCurrentState, existingRecordId);

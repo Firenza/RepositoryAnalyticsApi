@@ -358,6 +358,51 @@ namespace RepositoryAnalyticsApi
             var createTopicsTableCommand = new MySqlCommand(createTopicsTable, mySqlConnection);
             createTopicsTableCommand.ExecuteNonQuery();
 
+            var createRepositorySnapshotsTable = $@"
+                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositorySnapshots` (
+                     `Id` INT NOT NULL AUTO_INCREMENT,
+                    `RepositoryCurrentStateId` INT NULL,
+                    `WindowStartCommitId` VARCHAR(100) NULL,
+                    `WindowStartsOn` DATETIME NULL,
+                    `WindowEndsOn` DATETIME NULL,
+                    `TakenOn` DATETIME NULL,
+                    `BranchUsed` VARCHAR(45) NULL,
+                    PRIMARY KEY (`Id`));
+            ";
+
+            var createRepositorySnapshotsTableCommand = new MySqlCommand(createRepositorySnapshotsTable, mySqlConnection);
+            createRepositorySnapshotsTableCommand.ExecuteNonQuery();
+
+            var createRepositoryDependenciesTable = $@"
+                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryDependencies` (
+                  `Id` INT NOT NULL AUTO_INCREMENT,
+                  `RepositorySnapshotId` INT NULL,
+                  `Name` VARCHAR(45) NULL,
+                  `Version` VARCHAR(45) NULL,
+                  `MajorVersion` VARCHAR(45) NULL,
+                  `PreReleaseSemanticVersion` VARCHAR(45) NULL,
+                  `Environment` VARCHAR(45) NULL,
+                  `Source` VARCHAR(45) NULL,
+                  `RepoPath` VARCHAR(300) NULL,
+                    PRIMARY KEY (`Id`));
+            ";
+
+            var createRepositoryDependenciesTableCommand = new MySqlCommand(createRepositoryDependenciesTable, mySqlConnection);
+            createRepositoryDependenciesTableCommand.ExecuteNonQuery();
+
+            var createRepositoryFilesTable = $@"
+                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryFiles` (
+                    `Id` INT NOT NULL AUTO_INCREMENT,
+                      `RepositorySnapshotId` INT NULL,
+                      `Name` VARCHAR(100) NULL,
+                      `FullPath` VARCHAR(300) NULL,
+                    PRIMARY KEY (`Id`));
+            ";
+
+            var createRepositoryFilesTableCommand = new MySqlCommand(createRepositoryFilesTable, mySqlConnection);
+            createRepositoryFilesTableCommand.ExecuteNonQuery();
+
+
             mySqlConnection.Close();
         }
     }
