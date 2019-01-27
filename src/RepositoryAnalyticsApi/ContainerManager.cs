@@ -293,12 +293,15 @@ namespace RepositoryAnalyticsApi
         private static void SetupMySqlSchema(MySqlConnection mySqlConnection)
         {
             mySqlConnection.Open();
+       
 
             var schemaName = "repository_analysis";
 
             // Create schema if needed
             var createDatabaseCommand = new MySqlCommand($"CREATE SCHEMA IF NOT EXISTS `{schemaName}`", mySqlConnection);
             createDatabaseCommand.ExecuteNonQuery();
+
+            mySqlConnection.ChangeDatabase(schemaName);
 
             //// Get a list of existing tables
             //var listTables = new List<string>();
@@ -317,7 +320,7 @@ namespace RepositoryAnalyticsApi
 
             var createRepositoryCurrentStatesTable = $@"
                 CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryCurrentStates` (
-                    `Id` INT NOT NULL,
+                    `Id` INT NOT NULL AUTO_INCREMENT,
                     `Name` varchar(45) DEFAULT NULL,
                     `Owner` varchar(45) DEFAULT NULL,
                     `RepositoryCreatedOn` datetime DEFAULT NULL,
@@ -334,7 +337,7 @@ namespace RepositoryAnalyticsApi
 
             var createTeamsTable = $@"
                 CREATE TABLE IF NOT EXISTS `{schemaName}`.`Teams` (
-                    `Id` INT NOT NULL,
+                    `Id` INT NOT NULL AUTO_INCREMENT,
                     `RepositoryCurrentStateId` INT NOT NULL,
                     `Name` VARCHAR(45) NULL,
                     `Role` VARCHAR(45) NULL,
@@ -346,7 +349,7 @@ namespace RepositoryAnalyticsApi
 
             var createTopicsTable = $@"
                 CREATE TABLE IF NOT EXISTS `{schemaName}`.`Topics` (
-                    `Id` INT NOT NULL,
+                    `Id` INT NOT NULL AUTO_INCREMENT,
                     `RepositoryCurrentStateId` INT NOT NULL,
                     `Name` VARCHAR(45) NULL,
                     PRIMARY KEY (`Id`));
