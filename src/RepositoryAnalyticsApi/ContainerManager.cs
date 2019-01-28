@@ -415,12 +415,14 @@ namespace RepositoryAnalyticsApi
 
             var createRepositoryImplementationTable = $@"
                 CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryImplementations` (
-                  `Id` INT NOT NULL AUTO_INCREMENT,
-                  `RepositoryTypeId` INT NULL,
-                  `Name` VARCHAR(45) NULL,
-                  `Version` VARCHAR(45) NULL,
-                  `MajorVersion` VARCHAR(45) NULL,
-                    PRIMARY KEY (`Id`));
+                  `Id` int(11) NOT NULL AUTO_INCREMENT,
+                  `RepositoryTypeId` int(11) DEFAULT NULL,
+                  `Name` varchar(45) DEFAULT NULL,
+                  `Version` varchar(45) DEFAULT NULL,
+                  `MajorVersion` varchar(45) DEFAULT NULL,
+                  PRIMARY KEY (`Id`),
+                  KEY `test_idx` (`RepositoryTypeId`),
+                  CONSTRAINT `RepositoryType` FOREIGN KEY (`RepositoryTypeId`) REFERENCES `RepositoryTypes` (`id`) ON DELETE CASCADE);
             ";
 
             var createRepositoryImplementationTableCommand = new MySqlCommand(createRepositoryImplementationTable, mySqlConnection);

@@ -68,6 +68,7 @@ namespace RepositoryAnalyticsApi.Repositories
                         WHERE RepositorySnapshotId = @RepositorySnapshotId",
                     new { RepositorySnapshotId = existingRecordId });
 
+                // Foreign key constraint will cascade delete any child implementations
                 await mySqlConnection.ExecuteAsync(
                    @"DELETE 
                         FROM RepositoryTypes
