@@ -37,6 +37,8 @@ namespace RepositoryAnalyticsApi.Repositories
 
         public async Task UpsertAsync(RepositorySnapshot snapshot, int? repositoryCurrentStateId = null)
         {
+            await mySqlConnection.OpenAsync();
+
             var mappedRepositorySnapshot = Model.MySql.RepositorySnapshot.MapFrom(snapshot, repositoryCurrentStateId.Value);
 
             var existingRecordId = await mySqlConnection.ExecuteScalarAsync<int>(
@@ -97,6 +99,8 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 await mySqlConnection.InsertAsync(mappedImplementations);
             }
+
+            await mySqlConnection.CloseAsync();
         }
     }
 }

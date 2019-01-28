@@ -112,7 +112,7 @@ namespace RepositoryAnalyticsApi
 
             var mySqlConnection = new MySqlConnection("server=127.0.0.1;uid=root;pwd=my-secret-pw");
 
-            SetupMySqlSchema(mySqlConnection);
+            mySqlConnection = SetupMySqlSchema(mySqlConnection);
 
             services.AddSingleton(typeof(MySqlConnection), mySqlConnection);
             services.AddTransient(typeof(MySqlRepositoryCurrentStateRepository), (serviceProvider) => new MySqlRepositoryCurrentStateRepository(serviceProvider.GetService<MySqlConnection>()));
@@ -290,10 +290,9 @@ namespace RepositoryAnalyticsApi
             }
         }
 
-        private static void SetupMySqlSchema(MySqlConnection mySqlConnection)
+        private static MySqlConnection SetupMySqlSchema(MySqlConnection mySqlConnection)
         {
             mySqlConnection.Open();
-       
 
             var schemaName = "repository_analysis";
 
@@ -301,7 +300,12 @@ namespace RepositoryAnalyticsApi
             var createDatabaseCommand = new MySqlCommand($"CREATE SCHEMA IF NOT EXISTS `{schemaName}`", mySqlConnection);
             createDatabaseCommand.ExecuteNonQuery();
 
-            mySqlConnection.ChangeDatabase(schemaName);
+            mySqlConnection.Close();
+
+            // Update the connection to default to the defined DB so consumers don't have to specify the DB
+            mySqlConnection = new MySqlConnection($"server=127.0.0.1;uid=root;pwd=my-secret-pw;database={schemaName}");
+
+            mySqlConnection.Open();
 
             //// Get a list of existing tables
             //var listTables = new List<string>();
@@ -429,6 +433,8 @@ namespace RepositoryAnalyticsApi
             createRepositoryImplementationTableCommand.ExecuteNonQuery();
 
             mySqlConnection.Close();
+
+            return mySqlConnection;
         }
     }
 }

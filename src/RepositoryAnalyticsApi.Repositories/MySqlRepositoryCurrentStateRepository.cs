@@ -22,6 +22,8 @@ namespace RepositoryAnalyticsApi.Repositories
 
         public async Task<int?> UpsertAsync(RepositoryCurrentState repositoryCurrentState)
         {
+            await mySqlConnection.OpenAsync();
+
             var mappedRepositoryCurrentState = Model.MySql.RepositoryCurrentState.MapFrom(repositoryCurrentState);
 
             var existingRecordId = await mySqlConnection.ExecuteScalarAsync<int>(
@@ -59,6 +61,8 @@ namespace RepositoryAnalyticsApi.Repositories
             var mappedTopics = Model.MySql.Topic.MapFrom(repositoryCurrentState, existingRecordId);
 
             await mySqlConnection.InsertAsync(mappedTopics);
+
+            await mySqlConnection.CloseAsync();
 
             return existingRecordId;
         }
