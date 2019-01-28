@@ -5,6 +5,7 @@ using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -66,6 +67,12 @@ namespace RepositoryAnalyticsApi.Repositories
                         FROM RepositoryFiles
                         WHERE RepositorySnapshotId = @RepositorySnapshotId",
                     new { RepositorySnapshotId = existingRecordId });
+
+                await mySqlConnection.ExecuteAsync(
+                   @"DELETE 
+                        FROM RepositoryTypes
+                        WHERE RepositorySnapshotId = @RepositorySnapshotId",
+                   new { RepositorySnapshotId = existingRecordId });
             }
 
             var mappedFiles = Model.MySql.RepositoryFile.MapFrom(snapshot, existingRecordId);
@@ -75,6 +82,20 @@ namespace RepositoryAnalyticsApi.Repositories
             var mappedDependencies = Model.MySql.RepositoryDependency.MapFrom(snapshot, existingRecordId);
 
             await mySqlConnection.InsertAsync(mappedDependencies);
+
+            var mappedTypes = Model.MySql.RepositoryType.MapFrom(snapshot, existingRecordId);
+
+            foreach (var mappedType in mappedTypes)
+            {
+                var typeId = await mySqlConnection.InsertAsync(mappedType);
+
+                // Get matching implementation list
+                var matchingTypeAndImplementation = snapshot.TypesAndImplementations.FirstOrDefault(typeAndImplementation => typeAndImplementation.TypeName == mappedType.Name);
+
+                var mappedImplementations = Model.MySql.RepositoryImplementation.MapFrom(matchingTypeAndImplementation.Implementations, typeId);
+
+                await mySqlConnection.InsertAsync(mappedImplementations);
+            }
         }
     }
 }

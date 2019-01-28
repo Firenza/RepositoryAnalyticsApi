@@ -402,6 +402,29 @@ namespace RepositoryAnalyticsApi
             var createRepositoryFilesTableCommand = new MySqlCommand(createRepositoryFilesTable, mySqlConnection);
             createRepositoryFilesTableCommand.ExecuteNonQuery();
 
+            var createRepositoryTypeTable = $@"
+                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryTypes` (
+                     `Id` INT NOT NULL AUTO_INCREMENT,
+                      `RepositorySnapshotId` INT NULL,
+                      `Name` VARCHAR(45) NULL,
+                    PRIMARY KEY (`Id`));
+            ";
+
+            var createRepositoryTypeTableCommand = new MySqlCommand(createRepositoryTypeTable, mySqlConnection);
+            createRepositoryTypeTableCommand.ExecuteNonQuery();
+
+            var createRepositoryImplementationTable = $@"
+                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryImplementations` (
+                  `Id` INT NOT NULL AUTO_INCREMENT,
+                  `RepositoryTypeId` INT NULL,
+                  `Name` VARCHAR(45) NULL,
+                  `Version` VARCHAR(45) NULL,
+                  `MajorVersion` VARCHAR(45) NULL,
+                    PRIMARY KEY (`Id`));
+            ";
+
+            var createRepositoryImplementationTableCommand = new MySqlCommand(createRepositoryImplementationTable, mySqlConnection);
+            createRepositoryImplementationTableCommand.ExecuteNonQuery();
 
             mySqlConnection.Close();
         }
