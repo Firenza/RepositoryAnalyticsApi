@@ -377,7 +377,7 @@ namespace RepositoryAnalyticsApi
                 CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryDependencies` (
                   `Id` INT NOT NULL AUTO_INCREMENT,
                   `RepositorySnapshotId` INT NULL,
-                  `Name` VARCHAR(45) NULL,
+                  `Name` VARCHAR(100) NULL,
                   `Version` VARCHAR(45) NULL,
                   `MajorVersion` VARCHAR(45) NULL,
                   `PreReleaseSemanticVersion` VARCHAR(45) NULL,
