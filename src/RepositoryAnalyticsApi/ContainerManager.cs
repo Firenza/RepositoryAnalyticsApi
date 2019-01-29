@@ -110,13 +110,12 @@ namespace RepositoryAnalyticsApi
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositoryCurrentState>("repositoryCurrentState"));
             services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repositorySnapshot"));
 
-            var mySqlConnection = new MySqlConnection("server=127.0.0.1;uid=root;pwd=my-secret-pw");
+            var mySqlConnectionString = "server=127.0.0.1;uid=root;pwd=my-secret-pw";
 
-            mySqlConnection = SetupMySqlSchema(mySqlConnection);
+            var updatedMySqlConnectionString = SetupMySqlSchema(mySqlConnectionString);
 
-            services.AddSingleton(typeof(MySqlConnection), mySqlConnection);
-            services.AddTransient(typeof(MySqlRepositoryCurrentStateRepository), (serviceProvider) => new MySqlRepositoryCurrentStateRepository(serviceProvider.GetService<MySqlConnection>()));
-            services.AddTransient(typeof(MySqlRepositorySnapshotRepository), (serviceProvider) => new MySqlRepositorySnapshotRepository(serviceProvider.GetService<MySqlConnection>()));
+            services.AddTransient(typeof(MySqlRepositoryCurrentStateRepository), (serviceProvider) => new MySqlRepositoryCurrentStateRepository(updatedMySqlConnectionString));
+            services.AddTransient(typeof(MySqlRepositorySnapshotRepository), (serviceProvider) => new MySqlRepositorySnapshotRepository(updatedMySqlConnectionString));
 
             services.AddTransient<IRepositoryManager>((serviceProvider) => new RepositoryManager(
                new MongoRepositorySnapshotRepository(serviceProvider.GetService<IMongoCollection<RepositorySnapshot>>()),
@@ -290,22 +289,14 @@ namespace RepositoryAnalyticsApi
             }
         }
 
-        private static MySqlConnection SetupMySqlSchema(MySqlConnection mySqlConnection)
+        private static string SetupMySqlSchema(string mySqlConnectionString)
         {
-            mySqlConnection.Open();
-
             var schemaName = "repository_analysis";
 
-            // Create schema if needed
-            var createDatabaseCommand = new MySqlCommand($"CREATE SCHEMA IF NOT EXISTS `{schemaName}`", mySqlConnection);
-            createDatabaseCommand.ExecuteNonQuery();
-
-            mySqlConnection.Close();
+            MySqlHelper.ExecuteNonQuery(mySqlConnectionString, $"CREATE SCHEMA IF NOT EXISTS `{schemaName}`");
 
             // Update the connection to default to the defined DB so consumers don't have to specify the DB
-            mySqlConnection = new MySqlConnection($"server=127.0.0.1;uid=root;pwd=my-secret-pw;database={schemaName}");
-
-            mySqlConnection.Open();
+            var updatedConnectionString = $"server=127.0.0.1;uid=root;pwd=my-secret-pw;database={schemaName}";
 
             //// Get a list of existing tables
             //var listTables = new List<string>();
@@ -322,119 +313,112 @@ namespace RepositoryAnalyticsApi
             //    }
             //}
 
-            var createRepositoryCurrentStatesTable = $@"
-                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryCurrentStates` (
-                    `Id` INT NOT NULL AUTO_INCREMENT,
-                    `Name` varchar(45) DEFAULT NULL,
-                    `Owner` varchar(45) DEFAULT NULL,
-                    `RepositoryCreatedOn` datetime DEFAULT NULL,
-                    `RepositoryLastUpdatedOn` datetime DEFAULT NULL,
-                    `DefaultBranch` varchar(45) DEFAULT NULL,
-                    `HasContinuousIntegration` bit(1) DEFAULT NULL,
-                    `HasContinuousDelivery` bit(1) DEFAULT NULL,
-                    `HasContinuousDeployment` bit(1) DEFAULT NULL,
-                    PRIMARY KEY (`Id`));
-            ";
+            using (MySqlConnection mySqlConnection = new MySqlConnection(updatedConnectionString))
+            {
+                var createRepositoryCurrentStatesTable = $@"
+                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryCurrentStates` (
+                        `Id` INT NOT NULL AUTO_INCREMENT,
+                        `Name` varchar(150) DEFAULT NULL,
+                        `Owner` varchar(45) DEFAULT NULL,
+                        `RepositoryCreatedOn` datetime DEFAULT NULL,
+                        `RepositoryLastUpdatedOn` datetime DEFAULT NULL,
+                        `DefaultBranch` varchar(45) DEFAULT NULL,
+                        `HasContinuousIntegration` bit(1) DEFAULT NULL,
+                        `HasContinuousDelivery` bit(1) DEFAULT NULL,
+                        `HasContinuousDeployment` bit(1) DEFAULT NULL,
+                        PRIMARY KEY (`Id`));
+                ";
 
-            var createRepositoryCurrentStatesTableCommand = new MySqlCommand(createRepositoryCurrentStatesTable, mySqlConnection);
-            createRepositoryCurrentStatesTableCommand.ExecuteNonQuery();
+                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositoryCurrentStatesTable);
 
-            var createTeamsTable = $@"
-                CREATE TABLE IF NOT EXISTS `{schemaName}`.`Teams` (
-                    `Id` INT NOT NULL AUTO_INCREMENT,
-                    `RepositoryCurrentStateId` INT NOT NULL,
-                    `Name` VARCHAR(45) NULL,
-                    `Role` VARCHAR(45) NULL,
-                    PRIMARY KEY (`Id`));
-            ";
+                var createTeamsTable = $@"
+                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`Teams` (
+                        `Id` INT NOT NULL AUTO_INCREMENT,
+                        `RepositoryCurrentStateId` INT NOT NULL,
+                        `Name` VARCHAR(45) NULL,
+                        `Role` VARCHAR(45) NULL,
+                        PRIMARY KEY (`Id`));
+                ";
 
-            var createTeamsTableCommand = new MySqlCommand(createTeamsTable, mySqlConnection);
-            createTeamsTableCommand.ExecuteNonQuery();
+                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createTeamsTable);
 
-            var createTopicsTable = $@"
-                CREATE TABLE IF NOT EXISTS `{schemaName}`.`Topics` (
-                    `Id` INT NOT NULL AUTO_INCREMENT,
-                    `RepositoryCurrentStateId` INT NOT NULL,
-                    `Name` VARCHAR(45) NULL,
-                    PRIMARY KEY (`Id`));
-            ";
+                var createTopicsTable = $@"
+                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`Topics` (
+                        `Id` INT NOT NULL AUTO_INCREMENT,
+                        `RepositoryCurrentStateId` INT NOT NULL,
+                        `Name` VARCHAR(45) NULL,
+                        PRIMARY KEY (`Id`));
+                ";
 
-            var createTopicsTableCommand = new MySqlCommand(createTopicsTable, mySqlConnection);
-            createTopicsTableCommand.ExecuteNonQuery();
+                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createTopicsTable);
 
-            var createRepositorySnapshotsTable = $@"
-                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositorySnapshots` (
-                     `Id` INT NOT NULL AUTO_INCREMENT,
-                    `RepositoryCurrentStateId` INT NULL,
-                    `WindowStartCommitId` VARCHAR(100) NULL,
-                    `WindowStartsOn` DATETIME NULL,
-                    `WindowEndsOn` DATETIME NULL,
-                    `TakenOn` DATETIME NULL,
-                    `BranchUsed` VARCHAR(45) NULL,
-                    PRIMARY KEY (`Id`));
-            ";
+                var createRepositorySnapshotsTable = $@"
+                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositorySnapshots` (
+                         `Id` INT NOT NULL AUTO_INCREMENT,
+                        `RepositoryCurrentStateId` INT NULL,
+                        `WindowStartCommitId` VARCHAR(100) NULL,
+                        `WindowStartsOn` DATETIME NULL,
+                        `WindowEndsOn` DATETIME NULL,
+                        `TakenOn` DATETIME NULL,
+                        `BranchUsed` VARCHAR(45) NULL,
+                        PRIMARY KEY (`Id`));
+                ";
 
-            var createRepositorySnapshotsTableCommand = new MySqlCommand(createRepositorySnapshotsTable, mySqlConnection);
-            createRepositorySnapshotsTableCommand.ExecuteNonQuery();
+                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositorySnapshotsTable);
 
-            var createRepositoryDependenciesTable = $@"
-                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryDependencies` (
-                  `Id` INT NOT NULL AUTO_INCREMENT,
-                  `RepositorySnapshotId` INT NULL,
-                  `Name` VARCHAR(100) NULL,
-                  `Version` VARCHAR(45) NULL,
-                  `MajorVersion` VARCHAR(45) NULL,
-                  `PreReleaseSemanticVersion` VARCHAR(45) NULL,
-                  `Environment` VARCHAR(45) NULL,
-                  `Source` VARCHAR(45) NULL,
-                  `RepoPath` VARCHAR(300) NULL,
-                    PRIMARY KEY (`Id`));
-            ";
-
-            var createRepositoryDependenciesTableCommand = new MySqlCommand(createRepositoryDependenciesTable, mySqlConnection);
-            createRepositoryDependenciesTableCommand.ExecuteNonQuery();
-
-            var createRepositoryFilesTable = $@"
-                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryFiles` (
-                    `Id` INT NOT NULL AUTO_INCREMENT,
+                var createRepositoryDependenciesTable = $@"
+                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryDependencies` (
+                      `Id` INT NOT NULL AUTO_INCREMENT,
                       `RepositorySnapshotId` INT NULL,
                       `Name` VARCHAR(100) NULL,
-                      `FullPath` VARCHAR(300) NULL,
-                    PRIMARY KEY (`Id`));
-            ";
+                      `Version` VARCHAR(45) NULL,
+                      `MajorVersion` VARCHAR(45) NULL,
+                      `PreReleaseSemanticVersion` VARCHAR(45) NULL,
+                      `Environment` VARCHAR(45) NULL,
+                      `Source` VARCHAR(45) NULL,
+                      `RepoPath` VARCHAR(300) NULL,
+                        PRIMARY KEY (`Id`));
+                ";
 
-            var createRepositoryFilesTableCommand = new MySqlCommand(createRepositoryFilesTable, mySqlConnection);
-            createRepositoryFilesTableCommand.ExecuteNonQuery();
+                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositoryDependenciesTable);
 
-            var createRepositoryTypeTable = $@"
-                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryTypes` (
-                     `Id` INT NOT NULL AUTO_INCREMENT,
-                      `RepositorySnapshotId` INT NULL,
-                      `Name` VARCHAR(45) NULL,
-                    PRIMARY KEY (`Id`));
-            ";
+                var createRepositoryFilesTable = $@"
+                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryFiles` (
+                        `Id` INT NOT NULL AUTO_INCREMENT,
+                          `RepositorySnapshotId` INT NULL,
+                          `Name` VARCHAR(100) NULL,
+                          `FullPath` VARCHAR(300) NULL,
+                        PRIMARY KEY (`Id`));
+                ";
 
-            var createRepositoryTypeTableCommand = new MySqlCommand(createRepositoryTypeTable, mySqlConnection);
-            createRepositoryTypeTableCommand.ExecuteNonQuery();
+                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositoryFilesTable);
 
-            var createRepositoryImplementationTable = $@"
-                CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryImplementations` (
-                  `Id` int(11) NOT NULL AUTO_INCREMENT,
-                  `RepositoryTypeId` int(11) DEFAULT NULL,
-                  `Name` varchar(45) DEFAULT NULL,
-                  `Version` varchar(45) DEFAULT NULL,
-                  `MajorVersion` varchar(45) DEFAULT NULL,
-                  PRIMARY KEY (`Id`),
-                  KEY `test_idx` (`RepositoryTypeId`),
-                  CONSTRAINT `RepositoryType` FOREIGN KEY (`RepositoryTypeId`) REFERENCES `RepositoryTypes` (`id`) ON DELETE CASCADE);
-            ";
+                var createRepositoryTypeTable = $@"
+                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryTypes` (
+                         `Id` INT NOT NULL AUTO_INCREMENT,
+                          `RepositorySnapshotId` INT NULL,
+                          `Name` VARCHAR(45) NULL,
+                        PRIMARY KEY (`Id`));
+                ";
 
-            var createRepositoryImplementationTableCommand = new MySqlCommand(createRepositoryImplementationTable, mySqlConnection);
-            createRepositoryImplementationTableCommand.ExecuteNonQuery();
+                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositoryTypeTable);
 
-            mySqlConnection.Close();
+                var createRepositoryImplementationTable = $@"
+                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryImplementations` (
+                      `Id` int(11) NOT NULL AUTO_INCREMENT,
+                      `RepositoryTypeId` int(11) DEFAULT NULL,
+                      `Name` varchar(45) DEFAULT NULL,
+                      `Version` varchar(45) DEFAULT NULL,
+                      `MajorVersion` varchar(45) DEFAULT NULL,
+                      PRIMARY KEY (`Id`),
+                      KEY `test_idx` (`RepositoryTypeId`),
+                      CONSTRAINT `RepositoryType` FOREIGN KEY (`RepositoryTypeId`) REFERENCES `RepositoryTypes` (`id`) ON DELETE CASCADE);
+                ";
 
-            return mySqlConnection;
+                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositoryImplementationTable);
+            }
+
+            return updatedConnectionString;
         }
     }
 }

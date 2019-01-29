@@ -3,6 +3,7 @@ using Dapper.Contrib.Extensions;
 using MySql.Data.MySqlClient;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,26 +14,28 @@ namespace RepositoryAnalyticsApi.Repositories
 {
     public class MySqlRepositoryCurrentStateRepository : IRepositoryCurrentStateRepository
     {
-        private MySqlConnection mySqlConnection;
+        private string mySqlConnectionString;
 
-        public MySqlRepositoryCurrentStateRepository(MySqlConnection mySqlConnection)
+        public MySqlRepositoryCurrentStateRepository(string mySqlConnectionString)
         {
-            this.mySqlConnection = mySqlConnection;
+            this.mySqlConnectionString = mySqlConnectionString;
         }
 
         public async Task<int?> UpsertAsync(RepositoryCurrentState repositoryCurrentState)
         {
-            try
-            {
-                mySqlConnection.Open();
+            var mappedRepositoryCurrentState = Model.MySql.RepositoryCurrentState.MapFrom(repositoryCurrentState);
 
-                var mappedRepositoryCurrentState = Model.MySql.RepositoryCurrentState.MapFrom(repositoryCurrentState);
+            using (var mySqlConnection = new MySqlConnection(mySqlConnectionString))
+            {
+                await mySqlConnection.OpenAsync();
+
+                var timer = Stopwatch.StartNew();
 
                 var existingRecordId = await mySqlConnection.ExecuteScalarAsync<int>(
-                         @"SELECT Id 
+                    @"SELECT Id 
                       FROM RepositoryCurrentStates
                       WHERE Name = @RepositoryName",
-                         new { RepositoryName = repositoryCurrentState.Name });
+                    new { RepositoryName = repositoryCurrentState.Name });
 
                 if (existingRecordId == 0)
                 {
@@ -64,15 +67,12 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 await mySqlConnection.InsertAsync(mappedTopics);
 
-                await mySqlConnection.CloseAsync();
+                timer.Stop();
+
+                Log.Logger.Debug($"Upsert of {nameof(RepositoryCurrentState)} took {timer.ElapsedMilliseconds} milliseconds");
 
                 return existingRecordId;
             }
-            finally
-            {
-                mySqlConnection.Close();
-            }
-            
         }
     }
 }

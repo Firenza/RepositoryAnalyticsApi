@@ -3,8 +3,10 @@ using Dapper.Contrib.Extensions;
 using MySql.Data.MySqlClient;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,11 +15,11 @@ namespace RepositoryAnalyticsApi.Repositories
 {
     public class MySqlRepositorySnapshotRepository : IRepositorySnapshotRepository
     {
-        private MySqlConnection mySqlConnection;
+        private string mySqlConnectionString;
 
-        public MySqlRepositorySnapshotRepository(MySqlConnection mySqlConnection)
+        public MySqlRepositorySnapshotRepository(string mySqlConnectionString)
         {
-            this.mySqlConnection = mySqlConnection;
+            this.mySqlConnectionString = mySqlConnectionString;
         }
 
         public Task DeleteAsync(string id)
@@ -37,11 +39,13 @@ namespace RepositoryAnalyticsApi.Repositories
 
         public async Task UpsertAsync(RepositorySnapshot snapshot, int? repositoryCurrentStateId = null)
         {
-            try
-            {
-                mySqlConnection.Open();
+            var mappedRepositorySnapshot = Model.MySql.RepositorySnapshot.MapFrom(snapshot, repositoryCurrentStateId.Value);
 
-                var mappedRepositorySnapshot = Model.MySql.RepositorySnapshot.MapFrom(snapshot, repositoryCurrentStateId.Value);
+            using (var mySqlConnection = new MySqlConnection(mySqlConnectionString))
+            {
+                var timer = Stopwatch.StartNew();
+
+                await mySqlConnection.OpenAsync();
 
                 var existingRecordId = await mySqlConnection.ExecuteScalarAsync<int>(
                          @"SELECT Id 
@@ -101,11 +105,12 @@ namespace RepositoryAnalyticsApi.Repositories
 
                     await mySqlConnection.InsertAsync(mappedImplementations);
                 }
-            }
-            finally
-            {
-                mySqlConnection.Close();
+
+                timer.Stop();
+
+                Log.Logger.Debug($"Upsert of {nameof(RepositorySnapshot)} took {timer.ElapsedMilliseconds} milliseconds");
             }
         }
     }
 }
+
