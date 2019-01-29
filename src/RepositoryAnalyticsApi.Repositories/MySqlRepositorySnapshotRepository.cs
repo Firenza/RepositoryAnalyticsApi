@@ -37,70 +37,75 @@ namespace RepositoryAnalyticsApi.Repositories
 
         public async Task UpsertAsync(RepositorySnapshot snapshot, int? repositoryCurrentStateId = null)
         {
-            await mySqlConnection.OpenAsync();
+            try
+            {
+                mySqlConnection.Open();
 
-            var mappedRepositorySnapshot = Model.MySql.RepositorySnapshot.MapFrom(snapshot, repositoryCurrentStateId.Value);
+                var mappedRepositorySnapshot = Model.MySql.RepositorySnapshot.MapFrom(snapshot, repositoryCurrentStateId.Value);
 
-            var existingRecordId = await mySqlConnection.ExecuteScalarAsync<int>(
-                     @"SELECT Id 
+                var existingRecordId = await mySqlConnection.ExecuteScalarAsync<int>(
+                         @"SELECT Id 
                       FROM RepositorySnapshots
                       WHERE WindowStartCommitId = @WindowStartCommitId",
-                     new { WindowStartCommitId = snapshot.WindowStartCommitId });
+                         new { WindowStartCommitId = snapshot.WindowStartCommitId });
 
-            if (existingRecordId == 0)
-            {
-                existingRecordId = await mySqlConnection.InsertAsync(mappedRepositorySnapshot);
-            }
-            else
-            {
-                mappedRepositorySnapshot.Id = existingRecordId;
+                if (existingRecordId == 0)
+                {
+                    existingRecordId = await mySqlConnection.InsertAsync(mappedRepositorySnapshot);
+                }
+                else
+                {
+                    mappedRepositorySnapshot.Id = existingRecordId;
 
-                await mySqlConnection.UpdateAsync(mappedRepositorySnapshot);
+                    await mySqlConnection.UpdateAsync(mappedRepositorySnapshot);
 
-                // For now just always delete all existing child tables
-                await mySqlConnection.ExecuteAsync(
-                     @"DELETE 
+                    // For now just always delete all existing child tables
+                    await mySqlConnection.ExecuteAsync(
+                         @"DELETE 
                         FROM RepositoryDependencies
                         WHERE RepositorySnapshotId = @RepositorySnapshotId",
-                     new { RepositorySnapshotId = existingRecordId });
+                         new { RepositorySnapshotId = existingRecordId });
 
-                await mySqlConnection.ExecuteAsync(
-                    @"DELETE 
+                    await mySqlConnection.ExecuteAsync(
+                        @"DELETE 
                         FROM RepositoryFiles
                         WHERE RepositorySnapshotId = @RepositorySnapshotId",
-                    new { RepositorySnapshotId = existingRecordId });
+                        new { RepositorySnapshotId = existingRecordId });
 
-                // Foreign key constraint will cascade delete any child implementations
-                await mySqlConnection.ExecuteAsync(
-                   @"DELETE 
+                    // Foreign key constraint will cascade delete any child implementations
+                    await mySqlConnection.ExecuteAsync(
+                       @"DELETE 
                         FROM RepositoryTypes
                         WHERE RepositorySnapshotId = @RepositorySnapshotId",
-                   new { RepositorySnapshotId = existingRecordId });
+                       new { RepositorySnapshotId = existingRecordId });
+                }
+
+                var mappedFiles = Model.MySql.RepositoryFile.MapFrom(snapshot, existingRecordId);
+
+                await mySqlConnection.InsertAsync(mappedFiles);
+
+                var mappedDependencies = Model.MySql.RepositoryDependency.MapFrom(snapshot, existingRecordId);
+
+                await mySqlConnection.InsertAsync(mappedDependencies);
+
+                var mappedTypes = Model.MySql.RepositoryType.MapFrom(snapshot, existingRecordId);
+
+                foreach (var mappedType in mappedTypes)
+                {
+                    var typeId = await mySqlConnection.InsertAsync(mappedType);
+
+                    // Get matching implementation list
+                    var matchingTypeAndImplementation = snapshot.TypesAndImplementations.FirstOrDefault(typeAndImplementation => typeAndImplementation.TypeName == mappedType.Name);
+
+                    var mappedImplementations = Model.MySql.RepositoryImplementation.MapFrom(matchingTypeAndImplementation.Implementations, typeId);
+
+                    await mySqlConnection.InsertAsync(mappedImplementations);
+                }
             }
-
-            var mappedFiles = Model.MySql.RepositoryFile.MapFrom(snapshot, existingRecordId);
-
-            await mySqlConnection.InsertAsync(mappedFiles);
-
-            var mappedDependencies = Model.MySql.RepositoryDependency.MapFrom(snapshot, existingRecordId);
-
-            await mySqlConnection.InsertAsync(mappedDependencies);
-
-            var mappedTypes = Model.MySql.RepositoryType.MapFrom(snapshot, existingRecordId);
-
-            foreach (var mappedType in mappedTypes)
+            finally
             {
-                var typeId = await mySqlConnection.InsertAsync(mappedType);
-
-                // Get matching implementation list
-                var matchingTypeAndImplementation = snapshot.TypesAndImplementations.FirstOrDefault(typeAndImplementation => typeAndImplementation.TypeName == mappedType.Name);
-
-                var mappedImplementations = Model.MySql.RepositoryImplementation.MapFrom(matchingTypeAndImplementation.Implementations, typeId);
-
-                await mySqlConnection.InsertAsync(mappedImplementations);
+                mySqlConnection.Close();
             }
-
-            await mySqlConnection.CloseAsync();
         }
     }
 }

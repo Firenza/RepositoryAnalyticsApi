@@ -22,49 +22,57 @@ namespace RepositoryAnalyticsApi.Repositories
 
         public async Task<int?> UpsertAsync(RepositoryCurrentState repositoryCurrentState)
         {
-            await mySqlConnection.OpenAsync();
+            try
+            {
+                mySqlConnection.Open();
 
-            var mappedRepositoryCurrentState = Model.MySql.RepositoryCurrentState.MapFrom(repositoryCurrentState);
+                var mappedRepositoryCurrentState = Model.MySql.RepositoryCurrentState.MapFrom(repositoryCurrentState);
 
-            var existingRecordId = await mySqlConnection.ExecuteScalarAsync<int>(
-                     @"SELECT Id 
+                var existingRecordId = await mySqlConnection.ExecuteScalarAsync<int>(
+                         @"SELECT Id 
                       FROM RepositoryCurrentStates
                       WHERE Name = @RepositoryName",
-                     new { RepositoryName = repositoryCurrentState.Name });
+                         new { RepositoryName = repositoryCurrentState.Name });
 
-            if (existingRecordId == 0)
-            {
-                existingRecordId = await mySqlConnection.InsertAsync(mappedRepositoryCurrentState);
-            }
-            else
-            {
-                await mySqlConnection.UpdateAsync(mappedRepositoryCurrentState);
+                if (existingRecordId == 0)
+                {
+                    existingRecordId = await mySqlConnection.InsertAsync(mappedRepositoryCurrentState);
+                }
+                else
+                {
+                    await mySqlConnection.UpdateAsync(mappedRepositoryCurrentState);
 
-                // For now just always delete all existing child tables
-                await mySqlConnection.ExecuteAsync(
-                     @"DELETE 
+                    // For now just always delete all existing child tables
+                    await mySqlConnection.ExecuteAsync(
+                         @"DELETE 
                         FROM Teams
                         WHERE RepositoryCurrentStateId = @RepositoryCurrentStateId",
-                     new { RepositoryCurrentStateId = existingRecordId });
+                         new { RepositoryCurrentStateId = existingRecordId });
 
-                await mySqlConnection.ExecuteAsync(
-                    @"DELETE 
+                    await mySqlConnection.ExecuteAsync(
+                        @"DELETE 
                         FROM Topics
                         WHERE RepositoryCurrentStateId = @RepositoryCurrentStateId",
-                    new { RepositoryCurrentStateId = existingRecordId });
+                        new { RepositoryCurrentStateId = existingRecordId });
+                }
+
+                var mappedTeams = Model.MySql.Team.MapFrom(repositoryCurrentState, existingRecordId);
+
+                await mySqlConnection.InsertAsync(mappedTeams);
+
+                var mappedTopics = Model.MySql.Topic.MapFrom(repositoryCurrentState, existingRecordId);
+
+                await mySqlConnection.InsertAsync(mappedTopics);
+
+                await mySqlConnection.CloseAsync();
+
+                return existingRecordId;
             }
-
-            var mappedTeams = Model.MySql.Team.MapFrom(repositoryCurrentState, existingRecordId);
-
-            await mySqlConnection.InsertAsync(mappedTeams);
-
-            var mappedTopics = Model.MySql.Topic.MapFrom(repositoryCurrentState, existingRecordId);
-
-            await mySqlConnection.InsertAsync(mappedTopics);
-
-            await mySqlConnection.CloseAsync();
-
-            return existingRecordId;
+            finally
+            {
+                mySqlConnection.Close();
+            }
+            
         }
     }
 }
