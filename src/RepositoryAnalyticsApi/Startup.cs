@@ -42,7 +42,7 @@ namespace RepositoryAnalyticsApi
                 options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
             );
 
-            services.AddMemoryCache();
+            services.AddDistributedMemoryCache();
 
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
