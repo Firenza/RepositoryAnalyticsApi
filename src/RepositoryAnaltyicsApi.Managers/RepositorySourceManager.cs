@@ -25,8 +25,6 @@ namespace RepositoryAnaltyicsApi.Managers
 
         public async Task<List<(string fullFilePath, string fileContent)>> GetMultipleFileContentsAsync(string repositoryOwner, string repositoryName, string branch, List<string> fullFilePaths, DateTime? asOf = null)
         {
-            logger.LogDebug("Retrieving file contents from source");
-
             var gitRef = branch;
 
             if (asOf.HasValue)
@@ -35,13 +33,36 @@ namespace RepositoryAnaltyicsApi.Managers
                 gitRef = repoSourceSnapshot.ClosestCommitTreeId;
             }
 
-            var filesContentInformation = await repositorySourceRepository.GetMultipleFileContentsAsync(repositoryOwner, repositoryName, gitRef, fullFilePaths).ConfigureAwait(false);
+            // Assuming we will always be asking for the same files for each repo, should probs get a hash of all the file names as part of cache key
+            var multipleFileContentsCacheKey = GetMultipleFileContentsCacheKey(repositoryOwner, repositoryName, branch);
 
+            var filesContentInformation = await distributedCache.GetAsync<List<(string fullFilePath, string fileContent)>>(multipleFileContentsCacheKey);
+
+            if (filesContentInformation == null)
+            {
+                logger.LogDebug($"retrieving {multipleFileContentsCacheKey} from source");
+
+                filesContentInformation = await repositorySourceRepository.GetMultipleFileContentsAsync(repositoryOwner, repositoryName, gitRef, fullFilePaths).ConfigureAwait(false);
+
+                var cacheOptions = new DistributedCacheEntryOptions
+                {
+                    SlidingExpiration = TimeSpan.FromSeconds(10)
+                };
+
+                await distributedCache.SetAsync(multipleFileContentsCacheKey, filesContentInformation, cacheOptions);
+            }
+
+            // Go through and cache all the individual files so when we request them individually they can be pulled from the cache
             foreach (var fileContentInformation in filesContentInformation)
             {
-                var cacheKey = GetFileContentCacheKey(repositoryOwner, repositoryName, fileContentInformation.fullFilePath, gitRef);
+                var fileContentCacheKey = GetFileContentCacheKey(repositoryOwner, repositoryName, fileContentInformation.fullFilePath, gitRef);
 
-                await distributedCache.SetStringAsync(cacheKey, fileContentInformation.fileContent);
+                var cacheOptions = new DistributedCacheEntryOptions
+                {
+                    SlidingExpiration = TimeSpan.FromSeconds(10)
+                };
+
+                await distributedCache.SetStringAsync(fileContentCacheKey, fileContentInformation.fileContent, cacheOptions);
             }
 
             return filesContentInformation;
@@ -317,6 +338,11 @@ namespace RepositoryAnaltyicsApi.Managers
         private string GetOrganizationTeamsCacheKey(string organization)
         {
             return $"teams|{organization}";
+        }
+
+        private string GetMultipleFileContentsCacheKey(string owner, string name, string gitRef)
+        {
+            return $"multipleFileContents|{owner}|{name}|{gitRef}";
         }
 
         private string GetFileContentCacheKey(string owner, string name, string fullFilePath, string gitRef)
