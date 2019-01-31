@@ -216,7 +216,6 @@ namespace RepositoryAnaltyicsApi.Managers
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
-                        // Set this duration login enough that a scan of all the repositories will only result in one read of the data
                         SlidingExpiration = TimeSpan.FromSeconds(10)
                     };
 
@@ -235,7 +234,6 @@ namespace RepositoryAnaltyicsApi.Managers
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
-                        // Set this duration login enough that a scan of all the repositories will only result in one read of the data
                         SlidingExpiration = TimeSpan.FromSeconds(10)
                     };
 
@@ -268,7 +266,6 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
-                    // Set this duration login enough that a scan of all the repositories will only result in one read of the data
                     SlidingExpiration = TimeSpan.FromSeconds(10)
                 };
 
@@ -292,7 +289,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
                         // Set this duration login enough that a scan of all the repositories will only result in one read of the data
-                        SlidingExpiration = TimeSpan.FromHours(1)
+                        SlidingExpiration = TimeSpan.FromHours(8)
                     };
 
                     await distributedCache.SetAsync(cacheKey, repository, cacheOptions);
@@ -325,8 +322,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
-                    // Set this duration login enough that a scan of all the repositories will only result in one read of the data
-                    SlidingExpiration = TimeSpan.FromSeconds(10)
+                    SlidingExpiration = TimeSpan.FromDays(1)
                 };
 
                 await distributedCache.SetAsync(cacheKey, ownerType, cacheOptions);
