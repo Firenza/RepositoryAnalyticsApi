@@ -292,7 +292,7 @@ namespace RepositoryAnaltyicsApi.Managers
                         SlidingExpiration = TimeSpan.FromHours(8)
                     };
 
-                    await distributedCache.SetAsync(cacheKey, repository, cacheOptions);
+                    await distributedCache.SetAsync(orgTeamsCacheKey, repository, cacheOptions);
                 }
 
                 var teams = teamToRepositoriesMap.Where(kvp => kvp.Value.Contains(repositoryName))?.Select(kvp => kvp.Key);
