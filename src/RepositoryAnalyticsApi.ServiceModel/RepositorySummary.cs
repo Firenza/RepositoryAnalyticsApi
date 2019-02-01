@@ -5,6 +5,7 @@ namespace RepositoryAnalyticsApi.ServiceModel
     /// <summary>
     /// GitHub repository info needed to determine whether or not a new snapshot should be created
     /// </summary>
+    [Serializable]
     public class RepositorySummary
     {
         public string Url { get; set; }

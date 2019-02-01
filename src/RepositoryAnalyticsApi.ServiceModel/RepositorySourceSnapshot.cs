@@ -5,6 +5,7 @@ namespace RepositoryAnalyticsApi.ServiceModel
     /// <summary>
     /// Information about a Repository at a specific point in time
     /// </summary>
+    [Serializable]
     public class RepositorySourceSnapshot
     {
         /// <summary>

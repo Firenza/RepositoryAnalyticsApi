@@ -7,6 +7,7 @@ namespace RepositoryAnalyticsApi.ServiceModel
     /// <summary>
     /// Repository information from source control (I.E. GitHub)
     /// </summary>
+    [Serializable]
     public class RepositorySourceRepository
     {
         public string Name { get; set; }

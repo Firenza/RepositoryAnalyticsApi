@@ -17,3 +17,8 @@ services:
     image: 'mongo:3.4.13'
     ports:
       - '27017:27017'
+  redis:
+    container_name: repositoryAnalyticsApi_redis
+    image: 'redis:5.0.3'
+    ports:
+      - '6379:6379'
