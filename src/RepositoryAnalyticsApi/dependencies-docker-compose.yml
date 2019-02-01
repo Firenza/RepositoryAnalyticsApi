@@ -22,3 +22,10 @@ services:
     image: 'redis:5.0.3'
     ports:
       - '6379:6379'
+  mysql:
+    container_name: repositoryAnalyticsApi_mysql
+    image: 'mysql:8.0.14'
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+    ports:
+      - '3306:3306'
