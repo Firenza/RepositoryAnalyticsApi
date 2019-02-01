@@ -116,7 +116,7 @@ namespace RepositoryAnalyticsApi
             services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositoryCurrentState>("repositoryCurrentState"));
             services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repositorySnapshot"));
 
-            var mySqlConnectionString = "server=127.0.0.1;uid=root;pwd=my-secret-pw";
+            var mySqlConnectionString = "server=127.0.0.1;uid=root;pwd=password";
 
             var updatedMySqlConnectionString = SetupMySqlSchema(mySqlConnectionString);
 
@@ -302,7 +302,7 @@ namespace RepositoryAnalyticsApi
             MySqlHelper.ExecuteNonQuery(mySqlConnectionString, $"CREATE SCHEMA IF NOT EXISTS `{schemaName}`");
 
             // Update the connection to default to the defined DB so consumers don't have to specify the DB
-            var updatedConnectionString = $"server=127.0.0.1;uid=root;pwd=my-secret-pw;database={schemaName}";
+            var updatedConnectionString = $"server=127.0.0.1;uid=root;pwd=password;database={schemaName}";
 
             //// Get a list of existing tables
             //var listTables = new List<string>();
