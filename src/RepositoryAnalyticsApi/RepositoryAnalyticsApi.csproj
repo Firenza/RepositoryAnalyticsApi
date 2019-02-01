@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\RepositoryAnalyticsApi.InternalModel\RepositoryAnalyticsApi.InternalModel.csproj" />
     <ProjectReference Include="..\RepositoryAnalyticsApi.Extensions\RepositoryAnalyticsApi.Extensions.csproj" />
     <ProjectReference Include="..\RepositoryAnaltyicsApi.Controllers\RepositoryAnaltyicsApi.Controllers.csproj" />
     <ProjectReference Include="..\RepositoryAnaltyicsApi.Interfaces\RepositoryAnaltyicsApi.Interfaces.csproj" />
