@@ -42,6 +42,12 @@ namespace RepositoryAnalyticsApi
             var mongoDbConnection = ReadEnvironmentVariable("MONGO_DB_CONNECTION", configuration);
             var mongoDbDatabase = ReadEnvironmentVariable("MONGO_DB_DATABASE", configuration);
 
+            // Load config data 
+            var caching = new InternalModel.AppSettings.Caching();
+            configuration.GetSection("Caching").Bind(caching);
+
+            services.AddSingleton(typeof(InternalModel.AppSettings.Caching), caching);
+
             // Setup GitHub V3 Api clients
             var gitHubV3ApiCredentials = new Credentials(gitHubAccessToken);
             var gitHubClient = new GitHubClient(new ProductHeaderValue("RepositoryAnalyticsApi"), new Uri(gitHubv3ApiUrl));
