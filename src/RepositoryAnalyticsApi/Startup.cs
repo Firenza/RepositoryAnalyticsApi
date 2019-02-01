@@ -6,6 +6,7 @@ using Serilog;
 using Serilog.Events;
 using Swashbuckle.AspNetCore.Swagger;
 using System;
+using System.Configuration;
 using System.IO;
 
 namespace RepositoryAnalyticsApi
@@ -14,6 +15,7 @@ namespace RepositoryAnalyticsApi
     {
         private const string appName = "Repo Analytics API";
         private const int appVersion = 1;
+        private IConfiguration configuration = null;
 
         public Startup(IConfiguration configuration)
         {
@@ -24,17 +26,13 @@ namespace RepositoryAnalyticsApi
              .WriteTo.Console()
              .WriteTo.Elasticsearch("http://localhost:9200")
              .CreateLogger();
+
+            this.configuration = configuration;
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var configuration = new ConfigurationBuilder()
-                .AddEnvironmentVariables()
-                .Build();
-
-            services.Configure<IConfiguration>(configuration);
-
             ContainerManager.RegisterServices(services, configuration);
             ContainerManager.RegisterExtensions(services, configuration);
 

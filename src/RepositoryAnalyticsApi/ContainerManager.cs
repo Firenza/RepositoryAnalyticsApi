@@ -43,9 +43,7 @@ namespace RepositoryAnalyticsApi
             var mongoDbDatabase = ReadEnvironmentVariable("MONGO_DB_DATABASE", configuration);
 
             // Load config data 
-            var caching = new InternalModel.AppSettings.Caching();
-            configuration.GetSection("Caching").Bind(caching);
-
+            var caching = configuration.GetSection("Caching").Get<InternalModel.AppSettings.Caching>();
             services.AddSingleton(typeof(InternalModel.AppSettings.Caching), caching);
 
             // Setup GitHub V3 Api clients
