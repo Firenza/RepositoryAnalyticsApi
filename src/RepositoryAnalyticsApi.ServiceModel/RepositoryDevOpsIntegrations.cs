@@ -4,6 +4,7 @@ using System.Text;
 
 namespace RepositoryAnalyticsApi.ServiceModel
 {
+    [Serializable]
     public class RepositoryDevOpsIntegrations
     {
         public bool ContinuousIntegration { get; set; }

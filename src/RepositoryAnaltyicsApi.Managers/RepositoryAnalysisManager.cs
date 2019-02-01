@@ -1,5 +1,8 @@
-﻿using RepositoryAnaltyicsApi.Interfaces;
+﻿using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.Extensibility;
+using RepositoryAnalyticsApi.InternalModel.AppSettings;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
@@ -13,25 +16,36 @@ namespace RepositoryAnaltyicsApi.Managers
     {
         private IRepositoryManager repositoryManager;
         private IRepositorySourceManager repositorySourceManager;
-
         private IEnumerable<IDependencyScraperManager> dependencyScraperManagers;
         private IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers;
         private IDeriveRepositoryDevOpsIntegrations devOpsIntegrationsDeriver;
+        private IDistributedCache distributedCache;
+        private ILogger<RepositoryAnalysisManager> logger;
+        private Caching cachingSettings;
 
-        public RepositoryAnalysisManager(IRepositoryManager repositoryManager, IRepositorySourceManager repositorySourceManager, IEnumerable<IDependencyScraperManager> dependencyScraperManagers, IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers, IDeriveRepositoryDevOpsIntegrations devOpsIntegrationsDeriver)
+        public RepositoryAnalysisManager(
+            IRepositoryManager repositoryManager, 
+            IRepositorySourceManager repositorySourceManager, 
+            IEnumerable<IDependencyScraperManager> dependencyScraperManagers, 
+            IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers, 
+            IDeriveRepositoryDevOpsIntegrations devOpsIntegrationsDeriver,
+            IDistributedCache distributedCache,
+            ILogger<RepositoryAnalysisManager> logger,
+            Caching cachingSettings)
         {
             this.repositoryManager = repositoryManager;
             this.repositorySourceManager = repositorySourceManager;
             this.dependencyScraperManagers = dependencyScraperManagers;
             this.typeAndImplementationDerivers = typeAndImplementationDerivers;
             this.devOpsIntegrationsDeriver = devOpsIntegrationsDeriver;
+            this.distributedCache = distributedCache;
+            this.logger = logger;
+            this.cachingSettings = cachingSettings;
         }
 
         public async Task CreateAsync(RepositoryAnalysis repositoryAnalysis)
         {
-
             var parsedRepoUrl = ParseRepositoryUrl();
-
 
             DateTime? repositoryLastUpdatedOn = null;
 
@@ -125,7 +139,23 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             if (devOpsIntegrationsDeriver != null)
             {
-                var devOpsIntegrations = await devOpsIntegrationsDeriver.DeriveIntegrationsAsync(repositoryName);
+                var cacheKey = $"devOpsIntegration|{repositoryName}";
+
+                var devOpsIntegrations = await distributedCache.GetAsync<RepositoryDevOpsIntegrations>(cacheKey);
+
+                if (devOpsIntegrations == null)
+                {
+                    logger.LogDebug($"retrieving {cacheKey} from source");
+
+                    devOpsIntegrations = await devOpsIntegrationsDeriver.DeriveIntegrationsAsync(repositoryName);
+
+                    var cacheOptions = new DistributedCacheEntryOptions
+                    {
+                        SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.DevOpsIntegrations)
+                    };
+
+                    await distributedCache.SetAsync(cacheKey, devOpsIntegrations, cacheOptions);
+                }
 
                 return devOpsIntegrations;
             }
