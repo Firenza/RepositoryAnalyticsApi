@@ -1,6 +1,7 @@
 ﻿using GraphQl.NetStandard.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
@@ -119,7 +120,7 @@ namespace RepositoryAnalyticsApi
             var updatedMySqlConnectionString = SetupMySqlSchema(mySqlConnectionString);
 
             services.AddTransient(typeof(MySqlRepositoryCurrentStateRepository), (serviceProvider) => new MySqlRepositoryCurrentStateRepository(updatedMySqlConnectionString));
-            services.AddTransient(typeof(MySqlRepositorySnapshotRepository), (serviceProvider) => new MySqlRepositorySnapshotRepository(updatedMySqlConnectionString));
+            services.AddTransient(typeof(MySqlRepositorySnapshotRepository), (serviceProvider) => new MySqlRepositorySnapshotRepository(updatedMySqlConnectionString, serviceProvider.GetService<ILogger<MySqlRepositorySnapshotRepository>>()));
 
             services.AddTransient<IRepositoryManager>((serviceProvider) => new RepositoryManager(
                new MongoRepositorySnapshotRepository(serviceProvider.GetService<IMongoCollection<RepositorySnapshot>>()),

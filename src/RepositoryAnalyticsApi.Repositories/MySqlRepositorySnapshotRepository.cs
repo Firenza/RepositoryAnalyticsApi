@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Dapper.Contrib.Extensions;
+using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
@@ -16,10 +17,12 @@ namespace RepositoryAnalyticsApi.Repositories
     public class MySqlRepositorySnapshotRepository : IRepositorySnapshotRepository
     {
         private string mySqlConnectionString;
+        private ILogger<MySqlRepositorySnapshotRepository> logger;
 
-        public MySqlRepositorySnapshotRepository(string mySqlConnectionString)
+        public MySqlRepositorySnapshotRepository(string mySqlConnectionString, ILogger<MySqlRepositorySnapshotRepository> logger)
         {
             this.mySqlConnectionString = mySqlConnectionString;
+            this.logger = logger;
         }
 
         public Task DeleteAsync(string id)
@@ -108,7 +111,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 timer.Stop();
 
-                Log.Logger.Debug($"Upsert of {nameof(RepositorySnapshot)} took {timer.ElapsedMilliseconds} milliseconds");
+                logger.LogDebug($"Upsert of {nameof(RepositorySnapshot)} took {timer.ElapsedMilliseconds} milliseconds");
             }
         }
     }

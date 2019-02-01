@@ -28,7 +28,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnalyticsApi.Exte
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnalyticsApi.Extensions", "RepositoryAnalyticsApi.Extensions\RepositoryAnalyticsApi.Extensions.csproj", "{4DB8CE5A-AB29-47F5-9789-EC91EC9B1753}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RepositoryAnalyticsApi.InternalModel", "..\RepositoryAnalyticsApi.InternalModel\RepositoryAnalyticsApi.InternalModel.csproj", "{F03864DC-6D83-4835-AC5F-193D7064FC24}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnalyticsApi.InternalModel", "..\RepositoryAnalyticsApi.InternalModel\RepositoryAnalyticsApi.InternalModel.csproj", "{F03864DC-6D83-4835-AC5F-193D7064FC24}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
