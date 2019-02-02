@@ -47,7 +47,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             using (var mySqlConnection = new MySqlConnection(mySqlConnectionString))
             {
-                await mySqlConnection.OpenAsync();
+                await mySqlConnection.OpenAsync().ConfigureAwait(false);
 
                 int existingRecordId = 0;
 
@@ -57,14 +57,14 @@ namespace RepositoryAnalyticsApi.Repositories
                          @"SELECT Id 
                       FROM RepositorySnapshots
                       WHERE WindowStartCommitId = @WindowStartCommitId",
-                         new { WindowStartCommitId = snapshot.WindowStartCommitId });
+                         new { WindowStartCommitId = snapshot.WindowStartCommitId }).ConfigureAwait(false);
                 }
 
                 if (existingRecordId == 0)
                 {
                     using (Operation.Time("Snapshot Insert"))
                     {
-                        existingRecordId = await mySqlConnection.InsertAsync(mappedRepositorySnapshot);
+                        existingRecordId = await mySqlConnection.InsertAsync(mappedRepositorySnapshot).ConfigureAwait(false);
                     }
                 }
                 else
@@ -73,12 +73,12 @@ namespace RepositoryAnalyticsApi.Repositories
 
                     using (Operation.Time("Snapshot Update"))
                     {
-                        await mySqlConnection.UpdateAsync(mappedRepositorySnapshot);
+                        await mySqlConnection.UpdateAsync(mappedRepositorySnapshot).ConfigureAwait(false);
                     }
 
                     using (Operation.Time("Snapshot Children Deletion"))
                     {
-                        var trans = await mySqlConnection.BeginTransactionAsync();
+                        var trans = await mySqlConnection.BeginTransactionAsync().ConfigureAwait(false);
 
                         // For now just always delete all existing child tables
                         await mySqlConnection.ExecuteAsync(
@@ -86,14 +86,14 @@ namespace RepositoryAnalyticsApi.Repositories
                         FROM RepositoryDependencies
                         WHERE RepositorySnapshotId = @RepositorySnapshotId",
                              new { RepositorySnapshotId = existingRecordId },
-                             trans);
+                             trans).ConfigureAwait(false);
 
                         await mySqlConnection.ExecuteAsync(
                             @"DELETE 
                         FROM RepositoryFiles
                         WHERE RepositorySnapshotId = @RepositorySnapshotId",
                             new { RepositorySnapshotId = existingRecordId },
-                            trans);
+                            trans).ConfigureAwait(false);
 
                         // Foreign key constraint will cascade delete any child implementations
                         await mySqlConnection.ExecuteAsync(
@@ -101,7 +101,7 @@ namespace RepositoryAnalyticsApi.Repositories
                         FROM RepositoryTypes
                         WHERE RepositorySnapshotId = @RepositorySnapshotId",
                            new { RepositorySnapshotId = existingRecordId },
-                           trans);
+                           trans).ConfigureAwait(false);
 
                         trans.Commit();
                     }
@@ -112,7 +112,7 @@ namespace RepositoryAnalyticsApi.Repositories
                 using (Operation.Time($"Snapshot {mappedFiles.Count} Files Insert"))
                 {
                     var trans = await mySqlConnection.BeginTransactionAsync();
-                    await mySqlConnection.InsertAsync(mappedFiles, trans);
+                    await mySqlConnection.InsertAsync(mappedFiles, trans).ConfigureAwait(false);
                     trans.Commit();
 
                 }
@@ -122,7 +122,7 @@ namespace RepositoryAnalyticsApi.Repositories
                 using (Operation.Time($"Snapshot {mappedDependencies.Count} Dependencies Insert"))
                 {
                     var trans = await mySqlConnection.BeginTransactionAsync();
-                    await mySqlConnection.InsertAsync(mappedDependencies, trans);
+                    await mySqlConnection.InsertAsync(mappedDependencies, trans).ConfigureAwait(false);
                     trans.Commit();
                 }
 
@@ -132,14 +132,14 @@ namespace RepositoryAnalyticsApi.Repositories
                 {
                     foreach (var mappedType in mappedTypes)
                     {
-                        var typeId = await mySqlConnection.InsertAsync(mappedType);
+                        var typeId = await mySqlConnection.InsertAsync(mappedType).ConfigureAwait(false);
 
                         // Get matching implementation list
                         var matchingTypeAndImplementation = snapshot.TypesAndImplementations.FirstOrDefault(typeAndImplementation => typeAndImplementation.TypeName == mappedType.Name);
 
                         var mappedImplementations = Model.MySql.RepositoryImplementation.MapFrom(matchingTypeAndImplementation.Implementations, typeId);
 
-                        await mySqlConnection.InsertAsync(mappedImplementations);
+                        await mySqlConnection.InsertAsync(mappedImplementations).ConfigureAwait(false);
                     }
                 }
             }

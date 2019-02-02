@@ -37,14 +37,14 @@ namespace RepositoryAnaltyicsApi.Managers
 
             if (asOf.HasValue)
             {
-                var repoSourceSnapshot = await ReadRepositorySourceSnapshotAsync(repositoryOwner, repositoryName, branch, asOf);
+                var repoSourceSnapshot = await ReadRepositorySourceSnapshotAsync(repositoryOwner, repositoryName, branch, asOf).ConfigureAwait(false);
                 gitRef = repoSourceSnapshot.ClosestCommitTreeId;
             }
 
             // Assuming we will always be asking for the same files for each repo, should probs get a hash of all the file names as part of cache key
             var multipleFileContentsCacheKey = GetMultipleFileContentsCacheKey(repositoryOwner, repositoryName, branch);
 
-            var filesContentInformation = await distributedCache.GetAsync<List<(string fullFilePath, string fileContent)>>(multipleFileContentsCacheKey);
+            var filesContentInformation = await distributedCache.GetAsync<List<(string fullFilePath, string fileContent)>>(multipleFileContentsCacheKey).ConfigureAwait(false);
 
             if (filesContentInformation == null)
             {
@@ -57,7 +57,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
-                await distributedCache.SetAsync(multipleFileContentsCacheKey, filesContentInformation, cacheOptions);
+                await distributedCache.SetAsync(multipleFileContentsCacheKey, filesContentInformation, cacheOptions).ConfigureAwait(false);
             }
 
             // Go through and cache all the individual files so when we request them individually they can be pulled from the cache
@@ -70,7 +70,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
-                await distributedCache.SetStringAsync(fileContentCacheKey, fileContentInformation.fileContent, cacheOptions);
+                await distributedCache.SetStringAsync(fileContentCacheKey, fileContentInformation.fileContent, cacheOptions).ConfigureAwait(false);
             }
 
             return filesContentInformation;
@@ -82,13 +82,13 @@ namespace RepositoryAnaltyicsApi.Managers
 
             if (asOf.HasValue)
             {
-                var repoSourceSnapshot = await ReadRepositorySourceSnapshotAsync(owner, name, branch, asOf);
+                var repoSourceSnapshot = await ReadRepositorySourceSnapshotAsync(owner, name, branch, asOf).ConfigureAwait(false);
                 gitRef = repoSourceSnapshot.ClosestCommitTreeId;
             }
 
             var cacheKey = GetFileContentCacheKey(owner, name, fullFilePath, gitRef);
 
-            var fileContent = await distributedCache.GetStringAsync(cacheKey);
+            var fileContent = await distributedCache.GetStringAsync(cacheKey).ConfigureAwait(false);
 
             if (fileContent == null)
             {
@@ -101,7 +101,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
-                await distributedCache.SetStringAsync(cacheKey, fileContent, cacheOptions);
+                await distributedCache.SetStringAsync(cacheKey, fileContent, cacheOptions).ConfigureAwait(false);
             }
 
             return fileContent;
@@ -113,26 +113,26 @@ namespace RepositoryAnaltyicsApi.Managers
 
             if (asOf.HasValue)
             {
-                var repoSourceSnapshot = await ReadRepositorySourceSnapshotAsync(owner, name, branch, asOf);
+                var repoSourceSnapshot = await ReadRepositorySourceSnapshotAsync(owner, name, branch, asOf).ConfigureAwait(false);
                 gitRef = repoSourceSnapshot.ClosestCommitTreeId;
             }
 
             var cacheKey = GetFileListCacheKey(owner, name, gitRef);
 
-            var repositoryFiles = await distributedCache.GetAsync<List<RepositoryFile>>(cacheKey);
+            var repositoryFiles = await distributedCache.GetAsync<List<RepositoryFile>>(cacheKey).ConfigureAwait(false);
 
             if (repositoryFiles == null)
             {
                 logger.LogDebug($"retrieving {cacheKey} from source");
 
-                repositoryFiles = await repositorySourceRepository.ReadFilesAsync(owner, name, gitRef);
+                repositoryFiles = await repositorySourceRepository.ReadFilesAsync(owner, name, gitRef).ConfigureAwait(false);
 
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
                     SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
-                await distributedCache.SetAsync(cacheKey, repositoryFiles);
+                await distributedCache.SetAsync(cacheKey, repositoryFiles).ConfigureAwait(false);
             }
 
             return repositoryFiles;
@@ -142,15 +142,15 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             var respositorySummaries = new CursorPagedResults<RepositorySummary>();
 
-            var ownerType = await ReadOwnerType(owner);
+            var ownerType = await ReadOwnerType(owner).ConfigureAwait(false);
 
             if (ownerType == OwnerType.Organization)
             {
-                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(owner, null, take, endCursor);
+                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(owner, null, take, endCursor).ConfigureAwait(false);
             }
             else if (ownerType == OwnerType.User)
             {
-                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(null, owner, take, endCursor);
+                respositorySummaries = await repositorySourceRepository.ReadRepositorySummariesAsync(null, owner, take, endCursor).ConfigureAwait(false);
             }
 
             return respositorySummaries;
@@ -160,44 +160,44 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             var repositorySummary = new RepositorySummary();
 
-            var ownerType = await ReadOwnerType(owner);
+            var ownerType = await ReadOwnerType(owner).ConfigureAwait(false);
 
             var cacheKey = GetRepositorySummaryCacheKey(owner, name);
 
             if (ownerType == OwnerType.Organization)
             {
-                repositorySummary = await distributedCache.GetAsync<RepositorySummary>(cacheKey);
+                repositorySummary = await distributedCache.GetAsync<RepositorySummary>(cacheKey).ConfigureAwait(false);
 
                 if (repositorySummary == null)
                 {
                     logger.LogDebug($"retrieving {cacheKey} from source");
 
-                    repositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(owner, null, name);
+                    repositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(owner, null, name).ConfigureAwait(false);
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
                         SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                     };
 
-                    await distributedCache.SetAsync(cacheKey, repositorySummary, cacheOptions);
+                    await distributedCache.SetAsync(cacheKey, repositorySummary, cacheOptions).ConfigureAwait(false);
                 }
             }
             else if (ownerType == OwnerType.User)
             {
-                repositorySummary = await distributedCache.GetAsync<RepositorySummary>(cacheKey);
+                repositorySummary = await distributedCache.GetAsync<RepositorySummary>(cacheKey).ConfigureAwait(false);
 
                 if (repositorySummary == null)
                 {
                     logger.LogDebug($"retrieving {cacheKey} from source");
 
-                    repositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(null, owner, name);
+                    repositorySummary = await repositorySourceRepository.ReadRepositorySummaryAsync(null, owner, name).ConfigureAwait(false);
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
                         SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                     };
 
-                    await distributedCache.SetAsync(cacheKey, repositorySummary, cacheOptions);
+                    await distributedCache.SetAsync(cacheKey, repositorySummary, cacheOptions).ConfigureAwait(false);
                 }
             }
 
@@ -208,44 +208,44 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             var repositorySourceSnapshot = new RepositorySourceSnapshot();
 
-            var ownerType = await ReadOwnerType(owner);
+            var ownerType = await ReadOwnerType(owner).ConfigureAwait(false);
 
             var cacheKey = GetRepositorySourceSnapshotCacheKey(owner, name, branch, asOf);
 
             if (ownerType == OwnerType.Organization)
             {
-                repositorySourceSnapshot = await distributedCache.GetAsync<RepositorySourceSnapshot>(cacheKey);
+                repositorySourceSnapshot = await distributedCache.GetAsync<RepositorySourceSnapshot>(cacheKey).ConfigureAwait(false);
 
                 if (repositorySourceSnapshot == null)
                 {
                     logger.LogDebug($"retrieving {cacheKey} from source");
 
-                    repositorySourceSnapshot = await repositorySourceRepository.ReadRepositorySourceSnapshotAsync(owner, null, name, branch, asOf);
+                    repositorySourceSnapshot = await repositorySourceRepository.ReadRepositorySourceSnapshotAsync(owner, null, name, branch, asOf).ConfigureAwait(false);
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
                         SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                     };
 
-                    await distributedCache.SetAsync(cacheKey, repositorySourceSnapshot, cacheOptions);
+                    await distributedCache.SetAsync(cacheKey, repositorySourceSnapshot, cacheOptions).ConfigureAwait(false);
                 }
             }
             else if (ownerType == OwnerType.User)
             {
-                repositorySourceSnapshot = await distributedCache.GetAsync<RepositorySourceSnapshot>(cacheKey);
+                repositorySourceSnapshot = await distributedCache.GetAsync<RepositorySourceSnapshot>(cacheKey).ConfigureAwait(false);
 
                 if (repositorySourceSnapshot == null)
                 {
                     logger.LogDebug($"retrieving {cacheKey} from source");
 
-                    repositorySourceSnapshot = await repositorySourceRepository.ReadRepositorySourceSnapshotAsync(null, owner, name, branch, asOf);
+                    repositorySourceSnapshot = await repositorySourceRepository.ReadRepositorySourceSnapshotAsync(null, owner, name, branch, asOf).ConfigureAwait(false);
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
                         SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                     };
 
-                    await distributedCache.SetAsync(cacheKey, repositorySourceSnapshot, cacheOptions);
+                    await distributedCache.SetAsync(cacheKey, repositorySourceSnapshot, cacheOptions).ConfigureAwait(false);
                 }
             }
 
@@ -256,19 +256,19 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             var cacheKey = GetRepositroyCacheKey(repositoryOwner, repositoryName);
 
-            var ownerType = await ReadOwnerType(repositoryOwner);
+            var ownerType = await ReadOwnerType(repositoryOwner).ConfigureAwait(false);
 
-            var repository = await distributedCache.GetAsync<RepositorySourceRepository>(cacheKey);
+            var repository = await distributedCache.GetAsync<RepositorySourceRepository>(cacheKey).ConfigureAwait(false);
 
             if (repository == null)
             {
                 logger.LogDebug($"retrieving {cacheKey} from source");
 
-                repository = await repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName);
+                repository = await repositorySourceRepository.ReadRepositoryAsync(repositoryOwner, repositoryName).ConfigureAwait(false);
 
                 if (ownerType == OwnerType.Organization)
                 {
-                    var teams = await ReadTeams();
+                    var teams = await ReadTeams().ConfigureAwait(false);
                     repository.Teams = teams;
                 }
 
@@ -277,7 +277,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
-                await distributedCache.SetAsync(cacheKey, repository, cacheOptions);
+                await distributedCache.SetAsync(cacheKey, repository, cacheOptions).ConfigureAwait(false);
             }
 
             return repository;
@@ -286,20 +286,20 @@ namespace RepositoryAnaltyicsApi.Managers
             {
                 var orgTeamsCacheKey = GetOrganizationTeamsCacheKey(repositoryOwner);
 
-                var teamToRepositoriesMap = await distributedCache.GetAsync<Dictionary<string, List<string>>>(orgTeamsCacheKey);
+                var teamToRepositoriesMap = await distributedCache.GetAsync<Dictionary<string, List<string>>>(orgTeamsCacheKey).ConfigureAwait(false);
 
                 if (teamToRepositoriesMap == null)
                 {
                     logger.LogDebug($"retrieving {orgTeamsCacheKey} from source");
 
-                    teamToRepositoriesMap = await this.repositorySourceRepository.ReadTeamToRepositoriesMaps(repositoryOwner);
+                    teamToRepositoriesMap = await this.repositorySourceRepository.ReadTeamToRepositoriesMaps(repositoryOwner).ConfigureAwait(false);
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
                         SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.OrganizationTeams)
                     };
 
-                    await distributedCache.SetAsync(orgTeamsCacheKey, teamToRepositoriesMap, cacheOptions);
+                    await distributedCache.SetAsync(orgTeamsCacheKey, teamToRepositoriesMap, cacheOptions).ConfigureAwait(false);
                 }
 
                 var teams = teamToRepositoriesMap.Where(kvp => kvp.Value.Contains(repositoryName))?.Select(kvp => kvp.Key);
@@ -319,20 +319,20 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             var cacheKey = $"ownerType|{owner}";
 
-            var ownerType = await distributedCache.GetAsync<OwnerType?>(cacheKey);
+            var ownerType = await distributedCache.GetAsync<OwnerType?>(cacheKey).ConfigureAwait(false);
 
             if (ownerType == null)
             {
                 logger.LogDebug($"retrieving {cacheKey} from source");
 
-                ownerType = await repositorySourceRepository.ReadOwnerType(owner);
+                ownerType = await repositorySourceRepository.ReadOwnerType(owner).ConfigureAwait(false);
 
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
                     SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.OwnerType)
                 };
 
-                await distributedCache.SetAsync(cacheKey, ownerType, cacheOptions);
+                await distributedCache.SetAsync(cacheKey, ownerType, cacheOptions).ConfigureAwait(false);
             }
 
             return ownerType.Value;

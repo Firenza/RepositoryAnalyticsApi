@@ -28,7 +28,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             using (var mySqlConnection = new MySqlConnection(mySqlConnectionString))
             {
-                await mySqlConnection.OpenAsync();
+                await mySqlConnection.OpenAsync().ConfigureAwait(false);
 
                 int existingRecordId = 0;
 
@@ -38,21 +38,21 @@ namespace RepositoryAnalyticsApi.Repositories
                      @"SELECT Id 
                       FROM RepositoryCurrentStates
                       WHERE Name = @RepositoryName",
-                                        new { RepositoryName = repositoryCurrentState.Name });
+                                        new { RepositoryName = repositoryCurrentState.Name }).ConfigureAwait(false);
                 }
 
                 if (existingRecordId == 0)
                 {
                     using (Operation.Time("Current State Insert"))
                     {
-                        existingRecordId = await mySqlConnection.InsertAsync(mappedRepositoryCurrentState);
+                        existingRecordId = await mySqlConnection.InsertAsync(mappedRepositoryCurrentState).ConfigureAwait(false);
                     }
                 }
                 else
                 {
                     using (Operation.Time("Current State Update"))
                     {
-                        await mySqlConnection.UpdateAsync(mappedRepositoryCurrentState);
+                        await mySqlConnection.UpdateAsync(mappedRepositoryCurrentState).ConfigureAwait(false);
                     }
 
                     using (Operation.Time("Current State Children Delete"))
@@ -62,13 +62,13 @@ namespace RepositoryAnalyticsApi.Repositories
                              @"DELETE 
                         FROM Teams
                         WHERE RepositoryCurrentStateId = @RepositoryCurrentStateId",
-                             new { RepositoryCurrentStateId = existingRecordId });
+                             new { RepositoryCurrentStateId = existingRecordId }).ConfigureAwait(false);
 
                         await mySqlConnection.ExecuteAsync(
                             @"DELETE 
                         FROM Topics
                         WHERE RepositoryCurrentStateId = @RepositoryCurrentStateId",
-                            new { RepositoryCurrentStateId = existingRecordId });
+                            new { RepositoryCurrentStateId = existingRecordId }).ConfigureAwait(false);
                     }
                 }
 
@@ -76,14 +76,14 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 using (Operation.Time("Current State Teams Insert"))
                 {
-                    await mySqlConnection.InsertAsync(mappedTeams);
+                    await mySqlConnection.InsertAsync(mappedTeams).ConfigureAwait(false);
                 }
 
                 var mappedTopics = Model.MySql.Topic.MapFrom(repositoryCurrentState, existingRecordId);
 
                 using (Operation.Time("Current State Topics Insert"))
                 {
-                    await mySqlConnection.InsertAsync(mappedTopics);
+                    await mySqlConnection.InsertAsync(mappedTopics).ConfigureAwait(false);
                 }
 
                 return existingRecordId;

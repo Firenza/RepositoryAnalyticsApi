@@ -16,7 +16,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
         public async Task<List<string>> ReadAsync(DateTime? asOf)
         {
-            return await repositoriesTypeNamesRepository.ReadAsync(asOf);
+            return await repositoriesTypeNamesRepository.ReadAsync(asOf).ConfigureAwait(false);
         }
     }
 }

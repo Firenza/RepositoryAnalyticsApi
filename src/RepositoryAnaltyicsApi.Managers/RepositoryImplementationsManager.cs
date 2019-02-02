@@ -40,7 +40,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     searchTasks.Add(searchTask);
                 }
 
-                await Task.WhenAll(searchTasks);
+                await Task.WhenAll(searchTasks).ConfigureAwait(false);
 
                 foreach (var task in searchTasks)
                 {
@@ -49,7 +49,7 @@ namespace RepositoryAnaltyicsApi.Managers
             }
             else
             {
-                var intervalCountAggregation = await repositoryImplementationsRepository.SearchAsync(repositorySearch, intervalInfo.IntervalStartTime, intervalInfo.IntervalEndTime);
+                var intervalCountAggregation = await repositoryImplementationsRepository.SearchAsync(repositorySearch, intervalInfo.IntervalStartTime, intervalInfo.IntervalEndTime).ConfigureAwait(false);
                 intervalCountAggregations.Add(intervalCountAggregation);
             }
 

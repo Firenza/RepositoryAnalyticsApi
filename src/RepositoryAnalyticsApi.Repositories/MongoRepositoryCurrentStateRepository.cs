@@ -17,7 +17,7 @@ namespace RepositoryAnalyticsApi.Repositories
         {
             var filter = Builders<RepositoryCurrentState>.Filter.Eq(repo => repo.Id, repository.Id);
 
-            await mongoCollection.ReplaceOneAsync(filter, repository, new UpdateOptions { IsUpsert = true});
+            await mongoCollection.ReplaceOneAsync(filter, repository, new UpdateOptions { IsUpsert = true}).ConfigureAwait(false);
 
             return null;
         }

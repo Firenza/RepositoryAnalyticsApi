@@ -68,7 +68,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 // Do repository summary call to get the commit Id of the latest commit and the date that commit was pushed for the snapshot
                 // populate the snapshot date with the corresponding manager calls (E.G. ScrapeDependenciesAsync) 
                 // Do full repository read to get all the current state stuff (including calls to get derived data like devops integrations)
-                var sourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name);
+                var sourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name).ConfigureAwait(false);
 
                 var repositoryCurrentState = new RepositoryCurrentState();
                 repositoryCurrentState.Id = $"{parsedRepoUrl.Host}|{parsedRepoUrl.Owner}|{parsedRepoUrl.Name}";
@@ -83,7 +83,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 repositoryCurrentState.Teams = sourceRepository.Teams;
                 repositoryCurrentState.Topics = sourceRepository.TopicNames;
-                repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name);
+                repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name).ConfigureAwait(false);
 
                 // Need to pick a branch for the snapshot stuff
                 string branchName = null;
@@ -110,9 +110,9 @@ namespace RepositoryAnaltyicsApi.Managers
                     repositorySnapshot.RepositoryCurrentStateId = repositoryCurrentState.Id;
                     repositorySnapshot.TakenOn = DateTime.Now;
                     repositorySnapshot.BranchUsed = branchName;
-                    repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf);
-                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositorySnapshot.Dependencies, repositoryCurrentState.Topics, repositoryAnalysis.AsOf);
-                    repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf);
+                    repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
+                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositorySnapshot.Dependencies, repositoryCurrentState.Topics, repositoryAnalysis.AsOf).ConfigureAwait(false);
+                    repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
                 }
 
                 var updatedRepository = new Repository
@@ -121,7 +121,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     Snapshot = repositorySnapshot
                 };
 
-                await repositoryManager.UpsertAsync(updatedRepository, repositoryAnalysis.AsOf);
+                await repositoryManager.UpsertAsync(updatedRepository, repositoryAnalysis.AsOf).ConfigureAwait(false);
             }
 
             (string Owner, string Name, string Host) ParseRepositoryUrl()
@@ -141,20 +141,20 @@ namespace RepositoryAnaltyicsApi.Managers
             {
                 var cacheKey = $"devOpsIntegration|{repositoryName}";
 
-                var devOpsIntegrations = await distributedCache.GetAsync<RepositoryDevOpsIntegrations>(cacheKey);
+                var devOpsIntegrations = await distributedCache.GetAsync<RepositoryDevOpsIntegrations>(cacheKey).ConfigureAwait(false);
 
                 if (devOpsIntegrations == null)
                 {
                     logger.LogDebug($"retrieving {cacheKey} from source");
 
-                    devOpsIntegrations = await devOpsIntegrationsDeriver.DeriveIntegrationsAsync(repositoryName);
+                    devOpsIntegrations = await devOpsIntegrationsDeriver.DeriveIntegrationsAsync(repositoryName).ConfigureAwait(false);
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
                         SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.DevOpsIntegrations)
                     };
 
-                    await distributedCache.SetAsync(cacheKey, devOpsIntegrations, cacheOptions);
+                    await distributedCache.SetAsync(cacheKey, devOpsIntegrations, cacheOptions).ConfigureAwait(false);
                 }
 
                 return devOpsIntegrations;
@@ -170,7 +170,7 @@ namespace RepositoryAnaltyicsApi.Managers
             var allDependencies = new List<RepositoryDependency>();
 
             var sourceFileRegexes = dependencyScraperManagers.Select(dependencyManager => dependencyManager.SourceFileRegex);
-            var sourceFiles = await repositorySourceManager.ReadFilesAsync(owner, name, defaultBranch, asOf);
+            var sourceFiles = await repositorySourceManager.ReadFilesAsync(owner, name, defaultBranch, asOf).ConfigureAwait(false);
 
             // Get the files that all the dependency scrapers need so we can read them all in one shot and have them
             // cached for each dependency scraper

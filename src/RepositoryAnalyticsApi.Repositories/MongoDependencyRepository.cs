@@ -83,9 +83,9 @@ namespace RepositoryAnalyticsApi.Repositories
 
             PipelineDefinition<BsonDocument, BsonDocument> pipeline = pipelineBsonDocuments.ToArray();
 
-            using (var cursor = await mongoCollection.AggregateAsync(pipeline, options))
+            using (var cursor = await mongoCollection.AggregateAsync(pipeline, options).ConfigureAwait(false))
             {
-                while (await cursor.MoveNextAsync())
+                while (await cursor.MoveNextAsync().ConfigureAwait(false))
                 {
                     var batch = cursor.Current;
                     foreach (BsonDocument document in batch)
@@ -147,9 +147,9 @@ namespace RepositoryAnalyticsApi.Repositories
                         .Add("_id.Name", 1.0))
             };
 
-            using (var cursor = await mongoCollection.AggregateAsync(pipeline, options))
+            using (var cursor = await mongoCollection.AggregateAsync(pipeline, options).ConfigureAwait(false))
             {
-                while (await cursor.MoveNextAsync())
+                while (await cursor.MoveNextAsync().ConfigureAwait(false))
                 {
                     var batch = cursor.Current;
                     foreach (BsonDocument document in batch)

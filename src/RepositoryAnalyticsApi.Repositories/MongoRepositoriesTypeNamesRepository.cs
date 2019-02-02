@@ -30,9 +30,9 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var distinctFieldName = $"{nameof(RepositorySnapshot.TypesAndImplementations)}.{nameof(RepositoryTypeAndImplementations.TypeName)}";
 
-            using (var cursor = await mongoCollection.DistinctAsync<string>(distinctFieldName, filter))
+            using (var cursor = await mongoCollection.DistinctAsync<string>(distinctFieldName, filter).ConfigureAwait(false))
             {
-                while (await cursor.MoveNextAsync())
+                while (await cursor.MoveNextAsync().ConfigureAwait(false))
                 {
                     var batch = cursor.Current;
                     foreach (var typeName in batch)

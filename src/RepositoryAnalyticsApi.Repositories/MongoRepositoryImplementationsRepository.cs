@@ -90,9 +90,9 @@ namespace RepositoryAnalyticsApi.Repositories
             intervalCountAggregation.IntervalEnd = createdOnOrBefore;
             intervalCountAggregation.CountAggreations = new List<CountAggreation>();
 
-            using (var cursor = await mongoCollection.AggregateAsync(pipeline, options))
+            using (var cursor = await mongoCollection.AggregateAsync(pipeline, options).ConfigureAwait(false))
             {
-                while (await cursor.MoveNextAsync())
+                while (await cursor.MoveNextAsync().ConfigureAwait(false))
                 {
                     var batch = cursor.Current;
                     foreach (BsonDocument document in batch)

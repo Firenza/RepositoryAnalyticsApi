@@ -29,7 +29,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
         public async Task<string> ReadFileContentAsync(string owner, string name, string fullFilePath, string gitRef)
         {
-            var repositoryContent = await gitHubClient.Repository.Content.GetAllContentsByRef(owner, name, fullFilePath, gitRef);
+            var repositoryContent = await gitHubClient.Repository.Content.GetAllContentsByRef(owner, name, fullFilePath, gitRef).ConfigureAwait(false);
 
             if (repositoryContent != null && repositoryContent.Any())
             {
@@ -101,7 +101,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             try
             {
-                treeResponse = await treesClient.GetRecursive(owner, name, gitRef);
+                treeResponse = await treesClient.GetRecursive(owner, name, gitRef).ConfigureAwait(false);
             }
             catch (Octokit.ApiException ex) when (ex.Message == "Git Repository is empty.")
             {
@@ -438,7 +438,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 var allTeamsRepositoriesVariables = new { login = organization, afterCursor = teamAfterCursor };
 
-                var graphQLOrganization = await graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(allTeamsRepositoriesQuery, allTeamsRepositoriesVariables);
+                var graphQLOrganization = await graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(allTeamsRepositoriesQuery, allTeamsRepositoriesVariables).ConfigureAwait(false);
 
                 if (graphQLOrganization.Teams.Nodes != null && graphQLOrganization.Teams.Nodes.Any())
                 {
@@ -457,7 +457,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
                         while (moreTeamRepositoriesToRead)
                         {
-                            var result = await GetAdditionalTeamRepositoriesAsync(team.Name, afterCursor);
+                            var result = await GetAdditionalTeamRepositoriesAsync(team.Name, afterCursor).ConfigureAwait(false);
 
                             teamRepositoryNames.AddRange(result.TeamNames);
 
