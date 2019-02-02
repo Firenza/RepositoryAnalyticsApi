@@ -391,7 +391,7 @@ namespace RepositoryAnalyticsApi
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryFiles` (
                         `Id` INT NOT NULL AUTO_INCREMENT,
                           `RepositorySnapshotId` INT NULL,
-                          `Name` VARCHAR(100) NULL,
+                          `Name` VARCHAR(150) NULL,
                           `FullPath` VARCHAR(300) NULL,
                         PRIMARY KEY (`Id`));
                 ";
