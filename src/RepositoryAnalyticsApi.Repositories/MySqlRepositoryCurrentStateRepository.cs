@@ -4,6 +4,7 @@ using MySql.Data.MySqlClient;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
 using Serilog;
+using SerilogTimings;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -29,47 +30,61 @@ namespace RepositoryAnalyticsApi.Repositories
             {
                 await mySqlConnection.OpenAsync();
 
-                var timer = Stopwatch.StartNew();
+                int existingRecordId = 0;
 
-                var existingRecordId = await mySqlConnection.ExecuteScalarAsync<int>(
-                    @"SELECT Id 
+                using (Operation.Time("Current State Find"))
+                {
+                    existingRecordId = await mySqlConnection.ExecuteScalarAsync<int>(
+                     @"SELECT Id 
                       FROM RepositoryCurrentStates
                       WHERE Name = @RepositoryName",
-                    new { RepositoryName = repositoryCurrentState.Name });
+                                        new { RepositoryName = repositoryCurrentState.Name });
+                }
 
                 if (existingRecordId == 0)
                 {
-                    existingRecordId = await mySqlConnection.InsertAsync(mappedRepositoryCurrentState);
+                    using (Operation.Time("Current State Insert"))
+                    {
+                        existingRecordId = await mySqlConnection.InsertAsync(mappedRepositoryCurrentState);
+                    }
                 }
                 else
                 {
-                    await mySqlConnection.UpdateAsync(mappedRepositoryCurrentState);
+                    using (Operation.Time("Current State Update"))
+                    {
+                        await mySqlConnection.UpdateAsync(mappedRepositoryCurrentState);
+                    }
 
-                    // For now just always delete all existing child tables
-                    await mySqlConnection.ExecuteAsync(
-                         @"DELETE 
+                    using (Operation.Time("Current State Children Delete"))
+                    {
+                        // For now just always delete all existing child tables
+                        await mySqlConnection.ExecuteAsync(
+                             @"DELETE 
                         FROM Teams
                         WHERE RepositoryCurrentStateId = @RepositoryCurrentStateId",
-                         new { RepositoryCurrentStateId = existingRecordId });
+                             new { RepositoryCurrentStateId = existingRecordId });
 
-                    await mySqlConnection.ExecuteAsync(
-                        @"DELETE 
+                        await mySqlConnection.ExecuteAsync(
+                            @"DELETE 
                         FROM Topics
                         WHERE RepositoryCurrentStateId = @RepositoryCurrentStateId",
-                        new { RepositoryCurrentStateId = existingRecordId });
+                            new { RepositoryCurrentStateId = existingRecordId });
+                    }
                 }
 
                 var mappedTeams = Model.MySql.Team.MapFrom(repositoryCurrentState, existingRecordId);
 
-                await mySqlConnection.InsertAsync(mappedTeams);
+                using (Operation.Time("Current State Teams Insert"))
+                {
+                    await mySqlConnection.InsertAsync(mappedTeams);
+                }
 
                 var mappedTopics = Model.MySql.Topic.MapFrom(repositoryCurrentState, existingRecordId);
 
-                await mySqlConnection.InsertAsync(mappedTopics);
-
-                timer.Stop();
-
-                Log.Logger.Debug($"Upsert of {nameof(RepositoryCurrentState)} took {timer.ElapsedMilliseconds} milliseconds");
+                using (Operation.Time("Current State Topics Insert"))
+                {
+                    await mySqlConnection.InsertAsync(mappedTopics);
+                }
 
                 return existingRecordId;
             }
