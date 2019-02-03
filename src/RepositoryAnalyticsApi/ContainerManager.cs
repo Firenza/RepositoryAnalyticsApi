@@ -322,7 +322,8 @@ namespace RepositoryAnalyticsApi
             {
                 var createRepositoryCurrentStatesTable = $@"
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryCurrentStates` (
-                        `Id` varchar(150) NOT NULL,
+                        `Id` INT NOT NULL AUTO_INCREMENT,
+                        `RepositoryId` varchar(200) NOT NULL,
                         `Name` varchar(150) DEFAULT NULL,
                         `Owner` varchar(45) DEFAULT NULL,
                         `RepositoryCreatedOn` datetime DEFAULT NULL,

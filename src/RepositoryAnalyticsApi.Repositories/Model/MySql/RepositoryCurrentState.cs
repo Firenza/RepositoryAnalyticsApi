@@ -11,7 +11,7 @@ namespace RepositoryAnalyticsApi.Repositories.Model.MySql
         {
             return new RepositoryCurrentState
             {
-                Id = repositoryCurrentState.Id,
+                RepositoryId = repositoryCurrentState.Id,
                 Name = repositoryCurrentState.Name,
                 Owner = repositoryCurrentState.Owner,
                 RepositoryCreatedOn = repositoryCurrentState.RepositoryCreatedOn,
@@ -23,8 +23,7 @@ namespace RepositoryAnalyticsApi.Repositories.Model.MySql
             };
         }
 
-        [ExplicitKey]
-        public string Id { get; set; }
+        public string RepositoryId { get; set; }
         public string Name { get; set; }
         public string Owner { get; set; }
         public DateTime? RepositoryCreatedOn { get; set; }
