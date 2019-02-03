@@ -104,13 +104,20 @@ namespace RepositoryAnaltyicsApi.Managers
 
         public async Task<Repository> ReadAsync(string id, DateTime? asOf)
         {
+            Repository repository = null;
+
             var repoCurrentState = await mongoRepositoryCurrentStateRepository.ReadAsync(id);
             // For now don't worry about the snapshot as we don't need it
 
-            return new Repository
+            if (repoCurrentState != null)
             {
-                CurrentState = repoCurrentState
-            };
+                repository = new Repository
+                {
+                    CurrentState = repoCurrentState
+                };
+            }
+
+            return repository;
         }
 
         public async Task<List<string>> SearchAsync(RepositorySearch repositorySearch)
