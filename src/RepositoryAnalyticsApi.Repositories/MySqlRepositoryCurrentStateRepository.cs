@@ -22,6 +22,18 @@ namespace RepositoryAnalyticsApi.Repositories
             this.mySqlConnectionString = mySqlConnectionString;
         }
 
+        public async Task<RepositoryCurrentState> ReadAsync(string repositoryId)
+        {
+            using (var mySqlConnection = new MySqlConnection(mySqlConnectionString))
+            {
+                await mySqlConnection.OpenAsync().ConfigureAwait(false);
+
+                var repositoryCurrentState = await mySqlConnection.GetAsync<RepositoryCurrentState>(repositoryId);
+
+                return repositoryCurrentState;
+            }
+        }
+
         public async Task<int?> UpsertAsync(RepositoryCurrentState repositoryCurrentState)
         {
             var mappedRepositoryCurrentState = Model.MySql.RepositoryCurrentState.MapFrom(repositoryCurrentState);

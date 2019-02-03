@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dapper.Contrib.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -22,6 +23,7 @@ namespace RepositoryAnalyticsApi.Repositories.Model.MySql
             };
         }
 
+        [ExplicitKey]
         public string Id { get; set; }
         public string Name { get; set; }
         public string Owner { get; set; }

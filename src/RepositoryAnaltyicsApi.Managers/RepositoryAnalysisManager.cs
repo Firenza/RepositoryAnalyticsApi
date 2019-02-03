@@ -46,6 +46,8 @@ namespace RepositoryAnaltyicsApi.Managers
         public async Task CreateAsync(RepositoryAnalysis repositoryAnalysis)
         {
             var parsedRepoUrl = ParseRepositoryUrl();
+            // maybe change the name of this var to reflect how it's different than the repositoryAnalysis.repsoitoryId?
+            var repositoryId = $"{parsedRepoUrl.Host}|{parsedRepoUrl.Owner}|{parsedRepoUrl.Name}";
 
             DateTime? repositoryLastUpdatedOn = null;
 
@@ -60,7 +62,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 repositoryLastUpdatedOn = repositorySummary.UpdatedAt;
             }
 
-            var repository = await repositoryManager.ReadAsync(repositoryAnalysis.RepositoryId, null).ConfigureAwait(false);
+            var repository = await repositoryManager.ReadAsync(repositoryId, null).ConfigureAwait(false);
 
             if (repository == null || repositoryLastUpdatedOn > repository.CurrentState.RepositoryLastUpdatedOn)
             {
@@ -71,7 +73,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 var sourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name).ConfigureAwait(false);
 
                 var repositoryCurrentState = new RepositoryCurrentState();
-                repositoryCurrentState.Id = $"{parsedRepoUrl.Host}|{parsedRepoUrl.Owner}|{parsedRepoUrl.Name}";
+                repositoryCurrentState.Id = repositoryId;
                 repositoryCurrentState.Name = sourceRepository.Name;
                 repositoryCurrentState.Owner = parsedRepoUrl.Owner;
                 repositoryCurrentState.DefaultBranch = sourceRepository.DefaultBranchName;
