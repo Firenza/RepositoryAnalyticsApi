@@ -303,25 +303,6 @@ namespace RepositoryAnalyticsApi
             // Update the connection to default to the defined DB so consumers don't have to specify the DB
             var updatedConnectionString = $"server=127.0.0.1;uid=root;pwd=password;database={schemaName}";
 
-            //// Get a list of existing tables
-            //var listTables = new List<string>();
-            //using (DataTable dt = mySqlConnection.GetSchema("Tables"))
-            //{
-            //    if (dt != null && dt.Rows.Count > 0)
-            //    {
-            //        listTables.Capacity = dt.Rows.Count;
-
-            //        foreach (DataRow row in dt.Rows)
-            //        {
-            //            listTables.Add(row["table_name"].ToString());
-            //        }
-            //    }
-            //}
-
-
-
-          
-
             using (MySqlConnection mySqlConnection = new MySqlConnection(updatedConnectionString))
             {
                 var grafanaUserSetup = $@"CREATE USER IF NOT EXISTS 'grafana'@'%'
@@ -329,9 +310,7 @@ namespace RepositoryAnalyticsApi
                     BY 'password';
                     GRANT SELECT ON {schemaName}.*TO 'grafana'@'%';";
 
-
                 MySqlHelper.ExecuteNonQuery(mySqlConnectionString, grafanaUserSetup);
-
 
                 var createRepositoryCurrentStatesTable = $@"
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryCurrentStates` (
