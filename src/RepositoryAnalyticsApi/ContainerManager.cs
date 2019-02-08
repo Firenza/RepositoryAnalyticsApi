@@ -324,10 +324,10 @@ namespace RepositoryAnalyticsApi
 
             using (MySqlConnection mySqlConnection = new MySqlConnection(updatedConnectionString))
             {
-                var grafanaUserSetup = $@"CREATE USER 'grafana'@'%'
-                IDENTIFIED WITH mysql_native_password
-                BY 'password';
-                GRANT SELECT ON {schemaName}.*TO 'grafana'@'%';";
+                var grafanaUserSetup = $@"CREATE USER IF NOT EXISTS 'grafana'@'%'
+                    IDENTIFIED WITH mysql_native_password
+                    BY 'password';
+                    GRANT SELECT ON {schemaName}.*TO 'grafana'@'%';";
 
 
                 MySqlHelper.ExecuteNonQuery(mySqlConnectionString, grafanaUserSetup);
