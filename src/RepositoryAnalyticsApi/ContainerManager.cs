@@ -22,12 +22,14 @@ using System.Collections.Specialized;
 using System.Composition.Hosting;
 using System.Data;
 using System.Diagnostics;
+using Dapper;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi
 {
@@ -118,7 +120,7 @@ namespace RepositoryAnalyticsApi
 
             var mySqlConnectionString = "server=127.0.0.1;uid=root;pwd=password";
 
-            var updatedMySqlConnectionString = SetupMySqlSchema(mySqlConnectionString);
+            var updatedMySqlConnectionString = SetupMySqlSchema(mySqlConnectionString).Result;
 
             services.AddTransient(typeof(MySqlRepositoryCurrentStateRepository), (serviceProvider) => new MySqlRepositoryCurrentStateRepository(updatedMySqlConnectionString));
             services.AddTransient(typeof(MySqlRepositorySnapshotRepository), (serviceProvider) => new MySqlRepositorySnapshotRepository(updatedMySqlConnectionString, serviceProvider.GetService<ILogger<MySqlRepositorySnapshotRepository>>(), serviceProvider.GetService<IVersionManager>()));
@@ -295,11 +297,14 @@ namespace RepositoryAnalyticsApi
             }
         }
 
-        private static string SetupMySqlSchema(string mySqlConnectionString)
+        private static async Task<string> SetupMySqlSchema(string mySqlConnectionString)
         {
             var schemaName = "repository_analysis";
 
-            MySqlHelper.ExecuteNonQuery(mySqlConnectionString, $"CREATE SCHEMA IF NOT EXISTS `{schemaName}`");
+            using (MySqlConnection mySqlConnection = new MySqlConnection(mySqlConnectionString))
+            {
+                await mySqlConnection.ExecuteAsync($"CREATE SCHEMA IF NOT EXISTS `{schemaName}`");
+            }
 
             // Update the connection to default to the defined DB so consumers don't have to specify the DB
             var updatedConnectionString = $"server=127.0.0.1;uid=root;pwd=password;database={schemaName}";
@@ -311,7 +316,7 @@ namespace RepositoryAnalyticsApi
                     BY 'password';
                     GRANT SELECT ON {schemaName}.*TO 'grafana'@'%';";
 
-                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, grafanaUserSetup);
+                await mySqlConnection.ExecuteAsync(grafanaUserSetup);
 
                 var createRepositoryCurrentStatesTable = $@"
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryCurrentStates` (
@@ -328,7 +333,7 @@ namespace RepositoryAnalyticsApi
                         PRIMARY KEY (`Id`));
                 ";
 
-                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositoryCurrentStatesTable);
+                await mySqlConnection.ExecuteAsync(createRepositoryCurrentStatesTable);
 
                 var createTeamsTable = $@"
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`Teams` (
@@ -339,7 +344,7 @@ namespace RepositoryAnalyticsApi
                         PRIMARY KEY (`Id`));
                 ";
 
-                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createTeamsTable);
+                await mySqlConnection.ExecuteAsync(createTeamsTable);
 
                 var createTopicsTable = $@"
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`Topics` (
@@ -349,7 +354,7 @@ namespace RepositoryAnalyticsApi
                         PRIMARY KEY (`Id`));
                 ";
 
-                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createTopicsTable);
+                await mySqlConnection.ExecuteAsync(createTopicsTable);
 
                 var createRepositorySnapshotsTable = $@"
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositorySnapshots` (
@@ -363,7 +368,7 @@ namespace RepositoryAnalyticsApi
                         PRIMARY KEY (`Id`));
                 ";
 
-                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositorySnapshotsTable);
+                await mySqlConnection.ExecuteAsync(createRepositorySnapshotsTable);
 
                 var createRepositoryDependenciesTable = $@"
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryDependencies` (
@@ -381,7 +386,7 @@ namespace RepositoryAnalyticsApi
                         PRIMARY KEY (`Id`));
                 ";
 
-                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositoryDependenciesTable);
+                await mySqlConnection.ExecuteAsync(createRepositoryDependenciesTable);
 
                 var createRepositoryFilesTable = $@"
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryFiles` (
@@ -392,7 +397,7 @@ namespace RepositoryAnalyticsApi
                         PRIMARY KEY (`Id`));
                 ";
 
-                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositoryFilesTable);
+                await mySqlConnection.ExecuteAsync(createRepositoryFilesTable);
 
                 var createRepositoryTypeTable = $@"
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryTypes` (
@@ -402,7 +407,7 @@ namespace RepositoryAnalyticsApi
                         PRIMARY KEY (`Id`));
                 ";
 
-                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositoryTypeTable);
+                await mySqlConnection.ExecuteAsync(createRepositoryTypeTable);
 
                 var createRepositoryImplementationTable = $@"
                     CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryImplementations` (
@@ -416,7 +421,7 @@ namespace RepositoryAnalyticsApi
                       CONSTRAINT `RepositoryType` FOREIGN KEY (`RepositoryTypeId`) REFERENCES `RepositoryTypes` (`id`) ON DELETE CASCADE);
                 ";
 
-                MySqlHelper.ExecuteNonQuery(mySqlConnectionString, createRepositoryImplementationTable);
+                await mySqlConnection.ExecuteAsync(createRepositoryImplementationTable);
             }
 
             return updatedConnectionString;
