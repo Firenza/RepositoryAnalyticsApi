@@ -89,12 +89,18 @@ namespace RepositoryAnaltyicsApi.Managers
                     {
                         var closestEarlierStartingSnapshot = snapshotsWithEarlierStartingDate.OrderByDescending(snapshot => snapshot.WindowStartsOn).First();
 
+                        var newEndTime = repository.Snapshot.WindowStartsOn.Value.AddTicks(-1);
+
                         closestEarlierStartingSnapshot.WindowEndsOn = repository.Snapshot.WindowStartsOn.Value.AddTicks(-1);
 
-                        await mongoRepositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot).ConfigureAwait(false);
-                        await mySqlRepositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot, repositoryCurrentStateId).ConfigureAwait(false);
-                    }
+                        if (closestEarlierStartingSnapshot.WindowEndsOn != newEndTime)
+                        {
+                            closestEarlierStartingSnapshot.WindowEndsOn = newEndTime;
 
+                            await mongoRepositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot).ConfigureAwait(false);
+                            await mySqlRepositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot, repositoryCurrentStateId).ConfigureAwait(false);
+                        }
+                    }
                 }
 
                 await mongoRepositorySnapshotRepository.UpsertAsync(repository.Snapshot).ConfigureAwait(false);
