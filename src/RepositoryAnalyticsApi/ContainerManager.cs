@@ -72,6 +72,7 @@ namespace RepositoryAnalyticsApi
             services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
             services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
             services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();
+            services.AddTransient<IVersionManager, VersionManager>();
 
             services.AddTransient<IEnumerable<IDependencyScraperManager>>((serviceProvider) => new List<IDependencyScraperManager> {
                 new BowerDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
@@ -120,10 +121,10 @@ namespace RepositoryAnalyticsApi
             var updatedMySqlConnectionString = SetupMySqlSchema(mySqlConnectionString);
 
             services.AddTransient(typeof(MySqlRepositoryCurrentStateRepository), (serviceProvider) => new MySqlRepositoryCurrentStateRepository(updatedMySqlConnectionString));
-            services.AddTransient(typeof(MySqlRepositorySnapshotRepository), (serviceProvider) => new MySqlRepositorySnapshotRepository(updatedMySqlConnectionString, serviceProvider.GetService<ILogger<MySqlRepositorySnapshotRepository>>()));
+            services.AddTransient(typeof(MySqlRepositorySnapshotRepository), (serviceProvider) => new MySqlRepositorySnapshotRepository(updatedMySqlConnectionString, serviceProvider.GetService<ILogger<MySqlRepositorySnapshotRepository>>(), serviceProvider.GetService<IVersionManager>()));
 
             services.AddTransient<IRepositoryManager>((serviceProvider) => new RepositoryManager(
-               new MongoRepositorySnapshotRepository(serviceProvider.GetService<IMongoCollection<RepositorySnapshot>>()),
+               new MongoRepositorySnapshotRepository(serviceProvider.GetService<IMongoCollection<RepositorySnapshot>>(), serviceProvider.GetService<IVersionManager>()),
                serviceProvider.GetService<MySqlRepositorySnapshotRepository>(),
                new MongoRepositoryCurrentStateRepository(serviceProvider.GetService<IMongoCollection<RepositoryCurrentState>>()),
                serviceProvider.GetService<MySqlRepositoryCurrentStateRepository>(),
@@ -370,7 +371,9 @@ namespace RepositoryAnalyticsApi
                       `RepositorySnapshotId` INT NULL,
                       `Name` VARCHAR(150) NULL,
                       `Version` VARCHAR(45) NULL,
+                      `PaddedVersion` VARCHAR(300) NULL,
                       `MajorVersion` VARCHAR(45) NULL,
+                      `MinorVersion` VARCHAR(45) NULL,
                       `PreReleaseSemanticVersion` VARCHAR(45) NULL,
                       `Environment` VARCHAR(45) NULL,
                       `Source` VARCHAR(45) NULL,

@@ -1,6 +1,7 @@
 ﻿using MongoDB.Driver;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -9,10 +10,12 @@ namespace RepositoryAnalyticsApi.Repositories
     public class MongoRepositorySnapshotRepository : IRepositorySnapshotRepository
     {
         private IMongoCollection<RepositorySnapshot> mongoCollection;
+        private IVersionManager versionPadManager;
 
-        public MongoRepositorySnapshotRepository(IMongoCollection<RepositorySnapshot> mongoCollection)
+        public MongoRepositorySnapshotRepository(IMongoCollection<RepositorySnapshot> mongoCollection, IVersionManager versionPadManager)
         {
             this.mongoCollection = mongoCollection;
+            this.versionPadManager = versionPadManager;
         }
 
         public async Task UpsertAsync(RepositorySnapshot snapshot, int? repositoryCurrentStateId = null)

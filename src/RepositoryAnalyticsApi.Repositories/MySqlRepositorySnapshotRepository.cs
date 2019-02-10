@@ -4,14 +4,11 @@ using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
-using Serilog;
+using SerilogTimings;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using SerilogTimings;
 
 namespace RepositoryAnalyticsApi.Repositories
 {
@@ -19,11 +16,13 @@ namespace RepositoryAnalyticsApi.Repositories
     {
         private string mySqlConnectionString;
         private ILogger<MySqlRepositorySnapshotRepository> logger;
+        private IVersionManager versionManager;
 
-        public MySqlRepositorySnapshotRepository(string mySqlConnectionString, ILogger<MySqlRepositorySnapshotRepository> logger)
+        public MySqlRepositorySnapshotRepository(string mySqlConnectionString, ILogger<MySqlRepositorySnapshotRepository> logger, IVersionManager versionManager)
         {
             this.mySqlConnectionString = mySqlConnectionString;
             this.logger = logger;
+            this.versionManager = versionManager;
         }
 
         public Task DeleteAsync(string id)
@@ -117,7 +116,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 }
 
-                var mappedDependencies = Model.MySql.RepositoryDependency.MapFrom(snapshot, existingRecordId);
+                var mappedDependencies = Model.MySql.RepositoryDependency.MapFrom(snapshot, existingRecordId, versionManager);
 
                 using (Operation.Time($"Snapshot {mappedDependencies.Count} Dependencies Insert"))
                 {

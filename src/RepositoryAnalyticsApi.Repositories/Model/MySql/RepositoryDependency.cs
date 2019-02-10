@@ -1,12 +1,15 @@
 ﻿using Dapper.Contrib.Extensions;
+using RepositoryAnaltyicsApi.Interfaces;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace RepositoryAnalyticsApi.Repositories.Model.MySql
 {
     [Table("RepositoryDependencies")]
     public class RepositoryDependency
     {
-        public static List<RepositoryDependency> MapFrom(ServiceModel.RepositorySnapshot repositorySnapshot, int repositorySnapshotId)
+        public static List<RepositoryDependency> MapFrom(ServiceModel.RepositorySnapshot repositorySnapshot, int repositorySnapshotId, IVersionManager versionManager)
         {
             var mappedRepositoryDependencies = new List<RepositoryDependency>();
 
@@ -20,6 +23,8 @@ namespace RepositoryAnalyticsApi.Repositories.Model.MySql
                         Name = dependency.Name,
                         Version = dependency.Version,
                         MajorVersion = dependency.MajorVersion,
+                        MinorVersion = versionManager.GetMinorVersion(dependency.Version),
+                        PaddedVersion = versionManager.GetPaddedVersion(dependency.Version),
                         PreReleaseSemanticVersion = dependency.PreReleaseSemanticVersion,
                         Environment = dependency.Environment,
                         Source = dependency.Source,
@@ -36,7 +41,10 @@ namespace RepositoryAnalyticsApi.Repositories.Model.MySql
         public int RepositorySnapshotId { get; set; }
         public string Name { get; set; }
         public string Version { get; set; }
+        // The version number with padding to allow property sorting and filtering (E.G. 1.2.33 => 001.002.033)
+        public string PaddedVersion { get; set; }
         public string MajorVersion { get; set; }
+        public string MinorVersion { get; set; }
         /// <summary>
         /// Anything in the version string after a dash.  Stored here as the Version class doesn't know how to handle it
         /// </summary>
