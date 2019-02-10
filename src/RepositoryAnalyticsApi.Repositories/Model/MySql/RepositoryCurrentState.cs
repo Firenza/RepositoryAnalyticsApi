@@ -1,7 +1,4 @@
-﻿using Dapper.Contrib.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 
 namespace RepositoryAnalyticsApi.Repositories.Model.MySql
 {
@@ -22,7 +19,7 @@ namespace RepositoryAnalyticsApi.Repositories.Model.MySql
                 HasContinuousIntegration = repositoryCurrentState.DevOpsIntegrations?.ContinuousIntegration
             };
         }
-
+        public int Id { get; set; }
         public string RepositoryId { get; set; }
         public string Name { get; set; }
         public string Owner { get; set; }
