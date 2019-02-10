@@ -17,7 +17,7 @@ namespace RepositoryAnaltyicsApi.Controllers
         private IRepositoryManager repositoryManager;
         // Get any non digit portion at the start of the version number.  If there is one assume it's a range
         // specifier like >=
-        private string rangeSpecifierRegex = @"^[^\d]+";
+        private string rangeSpecifierRegex = @"^[^\w]+";
 
         public RepositoriesController(IRepositoryManager repositoryManager)
         {
