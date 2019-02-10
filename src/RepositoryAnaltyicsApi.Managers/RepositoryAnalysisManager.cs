@@ -64,7 +64,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var repository = await repositoryManager.ReadAsync(repositoryId, null).ConfigureAwait(false);
 
-            if (repository == null || repositoryLastUpdatedOn > repository.CurrentState.RepositoryLastUpdatedOn)
+            if (repositoryAnalysis.ForceCompleteRefresh || repository == null || repositoryLastUpdatedOn > repository.CurrentState.RepositoryLastUpdatedOn)
             {
 
                 // Do repository summary call to get the commit Id of the latest commit and the date that commit was pushed for the snapshot
