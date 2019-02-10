@@ -30,7 +30,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     versionStringBuilder.Append('.');
                 }
 
-                versionStringBuilder.Append(Enumerable.Repeat(padCharacter, totalVersionChunkSize - versionChunk.Length));
+                versionStringBuilder.Append(new string(padCharacter, totalVersionChunkSize - versionChunk.Length));
                 versionStringBuilder.Append(versionChunk);
             }
 
