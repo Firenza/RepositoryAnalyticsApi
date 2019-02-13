@@ -45,6 +45,8 @@ namespace RepositoryAnalyticsApi.Repositories
             using (var mySqlConnection = new MySqlConnection(mySqlConnectionString))
             using (Operation.Time("Snapshot Children Deletion"))
             {
+                await mySqlConnection.OpenAsync();
+
                 var trans = await mySqlConnection.BeginTransactionAsync().ConfigureAwait(false);
 
                 // For now just always delete all existing child tables
