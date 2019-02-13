@@ -21,14 +21,14 @@ namespace RepositoryAnalyticsApi
         public Startup(IConfiguration configuration)
         {
             Log.Logger = new LoggerConfiguration()
-             .MinimumLevel.Information()
+             .MinimumLevel.Debug()
              .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
              .Enrich.FromLogContext()
              .WriteTo.Console()
              .WriteTo.Elasticsearch("http://localhost:9200")
              .CreateLogger();
 
-            MySqlConnectorLogManager.Provider = new SerilogLoggerProvider();
+            //MySqlConnectorLogManager.Provider = new SerilogLoggerProvider();
 
             this.configuration = configuration;
         }
