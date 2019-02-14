@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using RepositoryAnaltyicsApi.Interfaces;
+using RepositoryAnalyticsApi.InternalModel;
 using RepositoryAnalyticsApi.InternalModel.AppSettings;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
@@ -280,13 +281,14 @@ namespace RepositoryAnaltyicsApi.Managers
                 await distributedCache.SetAsync(cacheKey, repository, cacheOptions).ConfigureAwait(false);
             }
 
+
             return repository;
 
-            async Task<List<string>> ReadTeams()
+            async Task<List<RepositoryTeam>> ReadTeams()
             {
                 var orgTeamsCacheKey = GetOrganizationTeamsCacheKey(repositoryOwner);
 
-                var teamToRepositoriesMap = await distributedCache.GetAsync<Dictionary<string, List<string>>>(orgTeamsCacheKey).ConfigureAwait(false);
+                var teamToRepositoriesMap = await distributedCache.GetAsync<Dictionary<string, List<TeamRepositoryConnection>>>(orgTeamsCacheKey).ConfigureAwait(false);
 
                 if (teamToRepositoriesMap == null)
                 {
@@ -302,16 +304,25 @@ namespace RepositoryAnaltyicsApi.Managers
                     await distributedCache.SetAsync(orgTeamsCacheKey, teamToRepositoriesMap, cacheOptions).ConfigureAwait(false);
                 }
 
-                var teams = teamToRepositoriesMap.Where(kvp => kvp.Value.Contains(repositoryName))?.Select(kvp => kvp.Key);
+                var repositoryTeams = new List<RepositoryTeam>(); 
 
-                if (teams != null && teams.Any())
+                foreach (var kvp in teamToRepositoriesMap)
                 {
-                    return teams.ToList();
+                    var matchingTeamRepositoryConnection = kvp.Value.FirstOrDefault(trc => string.Equals(trc.RepositoryName, repositoryName));
+
+                    if (matchingTeamRepositoryConnection != null)
+                    {
+                        var repositoryTeam = new RepositoryTeam
+                        {
+                            Name = kvp.Key,
+                            Permission = matchingTeamRepositoryConnection.TeamPermissions
+                        };
+
+                        repositoryTeams.Add(repositoryTeam);
+                    }
                 }
-                else
-                {
-                    return null;
-                }
+
+                return repositoryTeams;
             }
         }
 

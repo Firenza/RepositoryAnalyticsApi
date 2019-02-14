@@ -340,7 +340,7 @@ namespace RepositoryAnalyticsApi
                         `Id` INT NOT NULL AUTO_INCREMENT,
                         `RepositoryCurrentStateId` INT NOT NULL,
                         `Name` VARCHAR(45) NULL,
-                        `Role` VARCHAR(45) NULL,
+                        `Permission` VARCHAR(45) NULL,
                         PRIMARY KEY (`Id`));
                 ";
 

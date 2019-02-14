@@ -20,6 +20,6 @@ namespace RepositoryAnalyticsApi.ServiceModel
         public int IssueCount { get; set; }
         public int PullRequestCount { get; set; }
         public List<string> TopicNames { get; set; }
-        public List<string> Teams { get; set; }
+        public List<RepositoryTeam> Teams { get; set; }
     }
 }

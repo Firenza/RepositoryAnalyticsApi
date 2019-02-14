@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace RepositoryAnalyticsApi.Repositories.Model.MySql
 {
@@ -17,7 +15,8 @@ namespace RepositoryAnalyticsApi.Repositories.Model.MySql
                     var newTeam = new Team
                     {
                         RepositoryCurrentStateId = newRepositoryCurrentStateId,
-                        Name = team
+                        Name = team.Name,
+                        Permission = team.Permission
                     };
 
                     newTeams.Add(newTeam);
@@ -30,6 +29,6 @@ namespace RepositoryAnalyticsApi.Repositories.Model.MySql
 
         public int RepositoryCurrentStateId { get; set; }
         public string Name { get; set; }
-        public string Role { get; set; }
+        public string Permission { get; set; }
     }
 }

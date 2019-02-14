@@ -1,4 +1,5 @@
-﻿using RepositoryAnalyticsApi.ServiceModel;
+﻿using RepositoryAnalyticsApi.InternalModel;
+using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,7 +16,7 @@ namespace RepositoryAnaltyicsApi.Interfaces
         Task<CursorPagedResults<RepositorySummary>> ReadRepositorySummariesAsync(string organization, string user, int take, string endCursor);
         Task<RepositorySummary> ReadRepositorySummaryAsync(string organization, string user, string name);
         Task<RepositorySourceSnapshot> ReadRepositorySourceSnapshotAsync(string organization, string user, string name, string branch, DateTime? asOf);
-        Task<Dictionary<string, List<string>>> ReadTeamToRepositoriesMaps(string organization);
+        Task<Dictionary<string, List<TeamRepositoryConnection>>> ReadTeamToRepositoriesMaps(string organization);
         Task<OwnerType> ReadOwnerType(string owner);
     }
 }

@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\RepositoryAnalyticsApi.InternalModel\RepositoryAnalyticsApi.InternalModel.csproj" />
     <ProjectReference Include="..\RepositoryAnalyticsApi.ServiceModel\RepositoryAnalyticsApi.ServiceModel.csproj" />
   </ItemGroup>
 

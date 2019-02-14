@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\RepositoryAnalyticsApi.InternalModel\RepositoryAnalyticsApi.InternalModel.csproj" />
     <ProjectReference Include="..\RepositoryAnaltyicsApi.Interfaces\RepositoryAnaltyicsApi.Interfaces.csproj" />
     <ProjectReference Include="..\RepositoryAnalyticsApi.ServiceModel\RepositoryAnalyticsApi.ServiceModel.csproj" />
   </ItemGroup>

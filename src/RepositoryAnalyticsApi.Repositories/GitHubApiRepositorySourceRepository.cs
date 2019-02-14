@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
+using RepositoryAnalyticsApi.InternalModel;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
@@ -402,9 +403,9 @@ namespace RepositoryAnalyticsApi.Repositories
             return repositorySummary;
         }
 
-        public async Task<Dictionary<string, List<string>>> ReadTeamToRepositoriesMaps(string organization)
+        public async Task<Dictionary<string, List<TeamRepositoryConnection>>> ReadTeamToRepositoriesMaps(string organization)
         {
-            var teamToRespositoriesMap = new Dictionary<string, List<string>>();
+            var teamToRespositoriesMap = new Dictionary<string, List<TeamRepositoryConnection>>();
 
             var moreTeamsToRead = true;
             string teamAfterCursor = null;
@@ -417,10 +418,13 @@ namespace RepositoryAnalyticsApi.Repositories
                     teams(first:100, after: $afterCursor, orderBy:{field:NAME, direction:ASC}){
                       nodes{
                         name,
-                        repositories(first:100){
-                          nodes{
-                            name
-                          },
+                        repositoryEdges: repositories(first:100){
+                          edges{
+                            permission
+                            repository : node {
+                                name
+                            }
+                          }
                           pageInfo{
                             endCursor,
                             hasNextPage
@@ -444,22 +448,28 @@ namespace RepositoryAnalyticsApi.Repositories
                 {
                     foreach (var team in graphQLOrganization.Teams.Nodes)
                     {
-                        var teamRepositoryNames = new List<string>();
+                        var teamRepositoryConnections = new List<TeamRepositoryConnection>();
 
-                        foreach (var teamRepository in team.Repositories.Nodes)
+                        foreach (var teamRepositoryEdge in team.RepositoryEdges.Edges)
                         {
-                            teamRepositoryNames.Add(teamRepository.Name);
+                            var teamRepositoryConnection = new TeamRepositoryConnection
+                            {
+                                RepositoryName = teamRepositoryEdge.Repository.Name,
+                                TeamPermissions = teamRepositoryEdge.Permission
+                            };
+
+                            teamRepositoryConnections.Add(teamRepositoryConnection);
                         }
 
                         // Now get the additional pages of repositories if we need to
-                        bool moreTeamRepositoriesToRead = team.Repositories.PageInfo.HasNextPage;
-                        var afterCursor = team.Repositories.PageInfo.EndCursor;
+                        bool moreTeamRepositoriesToRead = team.RepositoryEdges.PageInfo.HasNextPage;
+                        var afterCursor = team.RepositoryEdges.PageInfo.EndCursor;
 
                         while (moreTeamRepositoriesToRead)
                         {
                             var result = await GetAdditionalTeamRepositoriesAsync(team.Name, afterCursor).ConfigureAwait(false);
 
-                            teamRepositoryNames.AddRange(result.TeamNames);
+                            teamRepositoryConnections.AddRange(result.TeamRepositoryConnections);
 
                             if (result.AfterCursor != null)
                             {
@@ -472,7 +482,7 @@ namespace RepositoryAnalyticsApi.Repositories
                             }
                         }
 
-                        teamToRespositoriesMap.Add(team.Name, teamRepositoryNames);
+                        teamToRespositoriesMap.Add(team.Name, teamRepositoryConnections);
                     }
                 }
 
@@ -486,7 +496,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             return teamToRespositoriesMap;
 
-            async Task<(List<string> TeamNames, string AfterCursor)> GetAdditionalTeamRepositoriesAsync(string teamName, string afterCursor)
+            async Task<(List<TeamRepositoryConnection> TeamRepositoryConnections, string AfterCursor)> GetAdditionalTeamRepositoriesAsync(string teamName, string afterCursor)
             {
                 var teamRepositoriesQuery = @"
                     query ($login: String!, $teamName: String!, $repositoriesAfter: String) {
@@ -494,12 +504,15 @@ namespace RepositoryAnalyticsApi.Repositories
                         teams(first: 1, query: $teamName) {
                           nodes {
                             name
-                            repositories(first: 100, after: $repositoriesAfter) {
-                              nodes {
-                                name
+                            repositoryEdges: repositories(first:100, after: $repositoriesAfter){
+                              edges{
+                                permission
+                                repository : node {
+                                    name
+                                }
                               }
-                              pageInfo {
-                                endCursor
+                              pageInfo{
+                                endCursor,
                                 hasNextPage
                               }
                             }
@@ -513,21 +526,27 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 var graphQLOrganization = await graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(teamRepositoriesQuery, teamRepositoriesVariables).ConfigureAwait(false);
 
-                var repositoryNames = new List<string>();
+                var teamRepositoryConnections = new List<TeamRepositoryConnection>();
 
-                foreach (var repository in graphQLOrganization.Teams.Nodes.First().Repositories.Nodes)
+                foreach (var repositoryEdge in graphQLOrganization.Teams.Nodes.First().RepositoryEdges.Edges)
                 {
-                    repositoryNames.Add(repository.Name);
+                    var teamRepositoryConnection = new TeamRepositoryConnection
+                    {
+                        RepositoryName = repositoryEdge.Repository.Name,
+                        TeamPermissions = repositoryEdge.Permission
+                    };
+
+                    teamRepositoryConnections.Add(teamRepositoryConnection);
                 }
 
                 string nextAfterCursor = null;
 
-                if (graphQLOrganization.Teams.Nodes.First().Repositories.PageInfo.HasNextPage)
+                if (graphQLOrganization.Teams.Nodes.First().RepositoryEdges.PageInfo.HasNextPage)
                 {
-                    nextAfterCursor = graphQLOrganization.Teams.Nodes.First().Repositories.PageInfo.EndCursor;
+                    nextAfterCursor = graphQLOrganization.Teams.Nodes.First().RepositoryEdges.PageInfo.EndCursor;
                 }
 
-                return (repositoryNames, nextAfterCursor);
+                return (teamRepositoryConnections, nextAfterCursor);
             }
         }
 
