@@ -151,12 +151,15 @@ namespace RepositoryAnaltyicsApi.Managers
 
                     devOpsIntegrations = await devOpsIntegrationsDeriver.DeriveIntegrationsAsync(repositoryName).ConfigureAwait(false);
 
-                    var cacheOptions = new DistributedCacheEntryOptions
+                    if (devOpsIntegrations != null)
                     {
-                        SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.DevOpsIntegrations)
-                    };
+                        var cacheOptions = new DistributedCacheEntryOptions
+                        {
+                            SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.DevOpsIntegrations)
+                        };
 
-                    await distributedCache.SetAsync(cacheKey, devOpsIntegrations, cacheOptions).ConfigureAwait(false);
+                        await distributedCache.SetAsync(cacheKey, devOpsIntegrations, cacheOptions).ConfigureAwait(false);
+                    }
                 }
 
                 return devOpsIntegrations;
