@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Dapper.Contrib" Version="1.50.5" />
-    <PackageReference Include="GraphQl.NetStandard.Client" Version="2.1.1-SoruceLinkTest1" />
+    <PackageReference Include="GraphQl.NetStandard.Client" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.6" />
     <PackageReference Include="Microsoft.Composition" Version="1.0.31" />
     <PackageReference Include="Microsoft.Extensions.Caching.Redis" Version="2.1.1" />

@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Dapper.Contrib" Version="1.50.5" />
-    <PackageReference Include="GraphQl.NetStandard.Client" Version="2.1.1-SoruceLinkTest1" />
+    <PackageReference Include="GraphQl.NetStandard.Client" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
     <PackageReference Include="MongoDB.Driver" Version="2.5.0" />
     <PackageReference Include="MongoDB.Driver.Core" Version="2.5.0" />
