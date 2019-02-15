@@ -179,7 +179,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
             // Get the files that all the dependency scrapers need so we can read them all in one shot and have them
             // cached for each dependency scraper
-            var sourceFilesToRead = new List<string>();
+            var sourceFilesToRead = new HashSet<string>();
             foreach (var sourceFile in sourceFiles)
             {
                 foreach (var sourceFileRegex in sourceFileRegexes)
@@ -194,7 +194,7 @@ namespace RepositoryAnaltyicsApi.Managers
             if (sourceFilesToRead.Any())
             {
                 // Get all the file contents that will be needed read and in cache
-                await repositorySourceManager.GetMultipleFileContentsAsync(owner, name, defaultBranch, sourceFilesToRead, asOf).ConfigureAwait(false);
+                await repositorySourceManager.GetMultipleFileContentsAsync(owner, name, defaultBranch, sourceFilesToRead.ToList(), asOf).ConfigureAwait(false);
 
                 foreach (var dependencyManager in dependencyScraperManagers)
                 {
