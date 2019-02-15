@@ -1,4 +1,5 @@
 ﻿using RepositoryAnaltyicsApi.Interfaces;
+using System;
 using System.Linq;
 using System.Text;
 
@@ -39,8 +40,15 @@ namespace RepositoryAnaltyicsApi.Managers
                         versionStringBuilder.Append('.');
                     }
 
-                    versionStringBuilder.Append(new string(padCharacter, totalVersionChunkSize - versionChunk.Length));
-                    versionStringBuilder.Append(versionChunk);
+                    if (versionChunk.Length <= totalVersionChunkSize)
+                    {
+                        versionStringBuilder.Append(new string(padCharacter, totalVersionChunkSize - versionChunk.Length));
+                        versionStringBuilder.Append(versionChunk);
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Version chunk of {versionChunk} is longer than the max length of {totalVersionChunkSize}");
+                    }
                 }
 
                 return versionStringBuilder.ToString();
