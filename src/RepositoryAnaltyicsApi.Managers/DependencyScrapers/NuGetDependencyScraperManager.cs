@@ -58,6 +58,7 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
                         dependency.Source = "NuGet";
                         dependency.Name = descendant.Attribute("id").Value;
                         var versionString = descendant.Attribute("version").Value;
+
                         var preReleaseSemanticVersionMatch = Regex.Match(versionString, @"-.*?\Z");
 
                         if (preReleaseSemanticVersionMatch.Success)
@@ -74,7 +75,8 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
                 }
             }
 
-            // Check for .NET standard NuGet packages
+            // Check for Nuget packaes defined in project files from .NET Standard/Core projects OR from .NET Standard/Framework
+            // dual targeted projects
             var dotNetProjectFiles = files.Where(file => file.Name.EndsWith(".csproj") || file.Name.EndsWith(".vbproj"));
 
             if (dotNetProjectFiles != null && dotNetProjectFiles.Any())
@@ -108,7 +110,20 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
                             dependency.RepoPath = dotNetProjectFile.FullPath;
                             dependency.Source = "NuGet";
                             dependency.Name = packageReferenceElement.FirstAttribute.Value;
-                            var versionString = packageReferenceElement.LastAttribute.Value;
+
+                            string versionString = null;
+
+                            // Figure out if this is a refernce from a .NET Standard/Core project file
+                            if (packageReferenceElement.Attributes().Count() == 2 && packageReferenceElement.LastAttribute.Name == "Version")
+                            {
+                                versionString = packageReferenceElement.LastAttribute.Value;
+                            }
+                            // Figure out if this is a refernce from a .NET Framework project file that has been dual targeted with .NET standard
+                            else if (packageReferenceElement.Attributes().Count() == 1 && packageReferenceElement.HasElements && packageReferenceElement.Elements().First().Name.LocalName == "Version")
+                            {
+                                versionString = packageReferenceElement.Elements().First().Value;
+                            }
+
                             var preReleaseSemanticVersionMatch = Regex.Match(versionString, @"-.*?\Z");
 
                             if (preReleaseSemanticVersionMatch.Success)
