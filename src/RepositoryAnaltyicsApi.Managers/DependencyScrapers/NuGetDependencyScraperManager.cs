@@ -129,16 +129,22 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
                                     versionString = packageReferenceElement.Elements().First().Value;
                                 }
 
-                                var preReleaseSemanticVersionMatch = Regex.Match(versionString, @"-.*?\Z");
-
-                                if (preReleaseSemanticVersionMatch.Success)
-                                {
-                                    versionString = versionString.TrimEnd(preReleaseSemanticVersionMatch.Value.ToCharArray());
-                                    dependency.PreReleaseSemanticVersion = preReleaseSemanticVersionMatch.Value.TrimStart('-');
-                                }
-
                                 dependency.Version = versionString;
-                                dependency.MajorVersion = Regex.Match(dependency.Version, @"\d+").Value;
+
+                                // Some project dependencies like "Microsoft.AspNetCore.App" do not have version elements
+                                // TODO: Move this parsing logic in to the dependency manager class maybe?
+                                if (dependency.Version != null)
+                                {
+                                    var preReleaseSemanticVersionMatch = Regex.Match(versionString, @"-.*?\Z");
+
+                                    if (preReleaseSemanticVersionMatch.Success)
+                                    {
+                                        versionString = versionString.TrimEnd(preReleaseSemanticVersionMatch.Value.ToCharArray());
+                                        dependency.PreReleaseSemanticVersion = preReleaseSemanticVersionMatch.Value.TrimStart('-');
+                                    }
+
+                                    dependency.MajorVersion = Regex.Match(dependency.Version, @"\d+").Value;
+                                }
 
                                 dependencies.Add(dependency);
                             }
