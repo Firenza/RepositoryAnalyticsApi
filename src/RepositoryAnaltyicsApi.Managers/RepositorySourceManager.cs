@@ -71,7 +71,10 @@ namespace RepositoryAnaltyicsApi.Managers
                     SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
-                await distributedCache.SetStringAsync(fileContentCacheKey, fileContentInformation.fileContent, cacheOptions).ConfigureAwait(false);
+                // For whatever reason the current call to get repo file content sometimes returns null even when the file has content
+                // so just cache an empty string as you can't cache a null value
+                // TODO: Figrure out exactly what's going on here
+                await distributedCache.SetStringAsync(fileContentCacheKey, fileContentInformation.fileContent ?? string.Empty, cacheOptions).ConfigureAwait(false);
             }
 
             return filesContentInformation;
