@@ -53,6 +53,18 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 filesContentInformation = await repositorySourceRepository.GetMultipleFileContentsAsync(repositoryOwner, repositoryName, gitRef, fullFilePaths).ConfigureAwait(false);
 
+                // The depenency containing files should probably never be empty, so log a warning if they are so these
+                // cases can be manually examimed after the fact
+                var filesWithNoContent = filesContentInformation.Where(tuple => string.IsNullOrWhiteSpace(tuple.fileContent));
+
+                if (filesWithNoContent != null || filesWithNoContent.Any())
+                {
+                    foreach (var fileWithNoContent in filesWithNoContent)
+                    {
+                        logger.LogWarning($"File read with no content: RepositoryName = {repositoryName}, FilePath = {fileWithNoContent.fullFilePath}");
+                    }
+                }
+
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
                     SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
