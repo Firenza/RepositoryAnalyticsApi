@@ -9,54 +9,60 @@ namespace RepositoryAnaltyicsApi.Managers
     {
         public string GetMinorVersion(string version)
         {
-            var versionChunks = version.Split('.');
+            string minorVersion = null;
 
-            if (versionChunks != null && versionChunks.Length > 1)
+            if (version != null)
             {
-                return versionChunks.ElementAt(1);
+                var versionChunks = version.Split('.');
+
+                if (versionChunks != null && versionChunks.Length > 1)
+                {
+                    minorVersion =  versionChunks.ElementAt(1);
+                }
             }
-            else
-            {
-                return null;
-            }
+
+            return minorVersion;
         }
 
         public string GetPaddedVersion(string version)
         {
+            string paddedVersion = null;
+
             var versionStringBuilder = new StringBuilder();
 
             var padCharacter = ' ';
             // The total of actual version #'s plus padding for each section between the .'s
             var totalVersionChunkSize = 10;
 
-            var versionChunks = version.Split('.');
-
-            if (versionChunks != null && versionChunks.Any())
+            if (version != null)
             {
-                foreach (var versionChunk in versionChunks)
+                var versionChunks = version.Split('.');
+
+                if (versionChunks != null && versionChunks.Any())
                 {
-                    if (versionStringBuilder.Length > 0)
+                    foreach (var versionChunk in versionChunks)
                     {
-                        versionStringBuilder.Append('.');
+                        if (versionStringBuilder.Length > 0)
+                        {
+                            versionStringBuilder.Append('.');
+                        }
+
+                        if (versionChunk.Length <= totalVersionChunkSize)
+                        {
+                            versionStringBuilder.Append(new string(padCharacter, totalVersionChunkSize - versionChunk.Length));
+                            versionStringBuilder.Append(versionChunk);
+                        }
+                        else
+                        {
+                            throw new ArgumentException($"Version chunk of {versionChunk} is longer than the max length of {totalVersionChunkSize}");
+                        }
                     }
 
-                    if (versionChunk.Length <= totalVersionChunkSize)
-                    {
-                        versionStringBuilder.Append(new string(padCharacter, totalVersionChunkSize - versionChunk.Length));
-                        versionStringBuilder.Append(versionChunk);
-                    }
-                    else
-                    {
-                        throw new ArgumentException($"Version chunk of {versionChunk} is longer than the max length of {totalVersionChunkSize}");
-                    }
+                    paddedVersion = versionStringBuilder.ToString();
                 }
+            }
 
-                return versionStringBuilder.ToString();
-            }
-            else
-            {
-                return null;
-            }
+            return paddedVersion;
         }
     }
 }
