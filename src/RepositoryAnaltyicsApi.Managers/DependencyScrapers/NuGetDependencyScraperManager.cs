@@ -36,41 +36,44 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
                 {
                     var packageConfigContent = await repositorySourceManager.ReadFileContentAsync(owner, name, branch, packageConfigFile.FullPath, asOf).ConfigureAwait(false);
 
-                    string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
-                    if (packageConfigContent.StartsWith(byteOrderMarkUtf8))
+                    if (!string.IsNullOrWhiteSpace(packageConfigContent))
                     {
-                        packageConfigContent = packageConfigContent.Remove(0, byteOrderMarkUtf8.Length);
-
-                        // For some reason removing the UTF preamble sometimes removes the first XML character
-                        if (!packageConfigContent.StartsWith("<"))
+                        string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
+                        if (packageConfigContent.StartsWith(byteOrderMarkUtf8))
                         {
-                            packageConfigContent = $"<{packageConfigContent}";
-                        }
-                    }
+                            packageConfigContent = packageConfigContent.Remove(0, byteOrderMarkUtf8.Length);
 
-                    var xdoc = XDocument.Parse(packageConfigContent);
-
-                    foreach (var descendant in xdoc.Elements().First().Descendants())
-                    {
-                        var dependency = new RepositoryDependency();
-
-                        dependency.RepoPath = packageConfigFile.FullPath;
-                        dependency.Source = "NuGet";
-                        dependency.Name = descendant.Attribute("id").Value;
-                        var versionString = descendant.Attribute("version").Value;
-
-                        var preReleaseSemanticVersionMatch = Regex.Match(versionString, @"-.*?\Z");
-
-                        if (preReleaseSemanticVersionMatch.Success)
-                        {
-                            versionString = versionString.TrimEnd(preReleaseSemanticVersionMatch.Value.ToCharArray());
-                            dependency.PreReleaseSemanticVersion = preReleaseSemanticVersionMatch.Value.TrimStart('-');
+                            // For some reason removing the UTF preamble sometimes removes the first XML character
+                            if (!packageConfigContent.StartsWith("<"))
+                            {
+                                packageConfigContent = $"<{packageConfigContent}";
+                            }
                         }
 
-                        dependency.Version = versionString;
-                        dependency.MajorVersion = Regex.Match(dependency.Version, @"\d+").Value;
+                        var xdoc = XDocument.Parse(packageConfigContent);
 
-                        dependencies.Add(dependency);
+                        foreach (var descendant in xdoc.Elements().First().Descendants())
+                        {
+                            var dependency = new RepositoryDependency();
+
+                            dependency.RepoPath = packageConfigFile.FullPath;
+                            dependency.Source = "NuGet";
+                            dependency.Name = descendant.Attribute("id").Value;
+                            var versionString = descendant.Attribute("version").Value;
+
+                            var preReleaseSemanticVersionMatch = Regex.Match(versionString, @"-.*?\Z");
+
+                            if (preReleaseSemanticVersionMatch.Success)
+                            {
+                                versionString = versionString.TrimEnd(preReleaseSemanticVersionMatch.Value.ToCharArray());
+                                dependency.PreReleaseSemanticVersion = preReleaseSemanticVersionMatch.Value.TrimStart('-');
+                            }
+
+                            dependency.Version = versionString;
+                            dependency.MajorVersion = Regex.Match(dependency.Version, @"\d+").Value;
+
+                            dependencies.Add(dependency);
+                        }
                     }
                 }
             }
@@ -85,57 +88,60 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
                 {
                     var projectFileContent = await repositorySourceManager.ReadFileContentAsync(owner, name, branch, dotNetProjectFile.FullPath, asOf).ConfigureAwait(false);
 
-                    string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
-                    if (projectFileContent.StartsWith(byteOrderMarkUtf8))
+                    if (!string.IsNullOrWhiteSpace(projectFileContent))
                     {
-                        projectFileContent = projectFileContent.Remove(0, byteOrderMarkUtf8.Length);
-
-                        // For some reason removing the UTF preamble sometimes removes the first XML character
-                        if (!projectFileContent.StartsWith("<"))
+                        string byteOrderMarkUtf8 = Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble());
+                        if (projectFileContent.StartsWith(byteOrderMarkUtf8))
                         {
-                            projectFileContent = $"<{projectFileContent}";
+                            projectFileContent = projectFileContent.Remove(0, byteOrderMarkUtf8.Length);
+
+                            // For some reason removing the UTF preamble sometimes removes the first XML character
+                            if (!projectFileContent.StartsWith("<"))
+                            {
+                                projectFileContent = $"<{projectFileContent}";
+                            }
                         }
-                    }
 
-                    var xDoc = XDocument.Parse(projectFileContent);
+                        var xDoc = XDocument.Parse(projectFileContent);
 
-                    var packageReferenceElements = xDoc.Descendants().Where(descendant => descendant.Name.LocalName == "PackageReference");
+                        var packageReferenceElements = xDoc.Descendants().Where(descendant => descendant.Name.LocalName == "PackageReference");
 
-                    if (packageReferenceElements != null)
-                    {
-                        foreach (var packageReferenceElement in packageReferenceElements)
+                        if (packageReferenceElements != null)
                         {
-                            var dependency = new RepositoryDependency();
-
-                            dependency.RepoPath = dotNetProjectFile.FullPath;
-                            dependency.Source = "NuGet";
-                            dependency.Name = packageReferenceElement.FirstAttribute.Value;
-
-                            string versionString = null;
-
-                            // Figure out if this is a refernce from a .NET Standard/Core project file
-                            if (packageReferenceElement.Attributes().Count() == 2 && packageReferenceElement.LastAttribute.Name == "Version")
+                            foreach (var packageReferenceElement in packageReferenceElements)
                             {
-                                versionString = packageReferenceElement.LastAttribute.Value;
+                                var dependency = new RepositoryDependency();
+
+                                dependency.RepoPath = dotNetProjectFile.FullPath;
+                                dependency.Source = "NuGet";
+                                dependency.Name = packageReferenceElement.FirstAttribute.Value;
+
+                                string versionString = null;
+
+                                // Figure out if this is a refernce from a .NET Standard/Core project file
+                                if (packageReferenceElement.Attributes().Count() == 2 && packageReferenceElement.LastAttribute.Name == "Version")
+                                {
+                                    versionString = packageReferenceElement.LastAttribute.Value;
+                                }
+                                // Figure out if this is a refernce from a .NET Framework project file that has been dual targeted with .NET standard
+                                else if (packageReferenceElement.Attributes().Count() == 1 && packageReferenceElement.HasElements && packageReferenceElement.Elements().First().Name.LocalName == "Version")
+                                {
+                                    versionString = packageReferenceElement.Elements().First().Value;
+                                }
+
+                                var preReleaseSemanticVersionMatch = Regex.Match(versionString, @"-.*?\Z");
+
+                                if (preReleaseSemanticVersionMatch.Success)
+                                {
+                                    versionString = versionString.TrimEnd(preReleaseSemanticVersionMatch.Value.ToCharArray());
+                                    dependency.PreReleaseSemanticVersion = preReleaseSemanticVersionMatch.Value.TrimStart('-');
+                                }
+
+                                dependency.Version = versionString;
+                                dependency.MajorVersion = Regex.Match(dependency.Version, @"\d+").Value;
+
+                                dependencies.Add(dependency);
                             }
-                            // Figure out if this is a refernce from a .NET Framework project file that has been dual targeted with .NET standard
-                            else if (packageReferenceElement.Attributes().Count() == 1 && packageReferenceElement.HasElements && packageReferenceElement.Elements().First().Name.LocalName == "Version")
-                            {
-                                versionString = packageReferenceElement.Elements().First().Value;
-                            }
-
-                            var preReleaseSemanticVersionMatch = Regex.Match(versionString, @"-.*?\Z");
-
-                            if (preReleaseSemanticVersionMatch.Success)
-                            {
-                                versionString = versionString.TrimEnd(preReleaseSemanticVersionMatch.Value.ToCharArray());
-                                dependency.PreReleaseSemanticVersion = preReleaseSemanticVersionMatch.Value.TrimStart('-');
-                            }
-
-                            dependency.Version = versionString;
-                            dependency.MajorVersion = Regex.Match(dependency.Version, @"\d+").Value;
-
-                            dependencies.Add(dependency);
                         }
                     }
                 }
