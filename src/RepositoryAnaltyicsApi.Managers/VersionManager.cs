@@ -10,7 +10,14 @@ namespace RepositoryAnaltyicsApi.Managers
         {
             var versionChunks = version.Split('.');
 
-            return versionChunks.ElementAt(1);
+            if (versionChunks != null && versionChunks.Length > 1)
+            {
+                return versionChunks.ElementAt(1);
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public string GetPaddedVersion(string version)
@@ -23,20 +30,25 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var versionChunks = version.Split('.');
 
-            foreach (var versionChunk in versionChunks)
+            if (versionChunks != null && versionChunks.Any())
             {
-                if (versionStringBuilder.Length > 0)
+                foreach (var versionChunk in versionChunks)
                 {
-                    versionStringBuilder.Append('.');
+                    if (versionStringBuilder.Length > 0)
+                    {
+                        versionStringBuilder.Append('.');
+                    }
+
+                    versionStringBuilder.Append(new string(padCharacter, totalVersionChunkSize - versionChunk.Length));
+                    versionStringBuilder.Append(versionChunk);
                 }
 
-                versionStringBuilder.Append(new string(padCharacter, totalVersionChunkSize - versionChunk.Length));
-                versionStringBuilder.Append(versionChunk);
+                return versionStringBuilder.ToString();
             }
-
-            return versionStringBuilder.ToString();
+            else
+            {
+                return null;
+            }
         }
-
-        
     }
 }
