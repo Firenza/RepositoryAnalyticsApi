@@ -299,7 +299,7 @@ namespace RepositoryAnalyticsApi
 
         private static async Task<string> SetupMySqlSchema(string mySqlConnectionString)
         {
-            var schemaName = "repository_analysis";
+            var schemaName = "repository_analysis_test";
 
             using (MySqlConnection mySqlConnection = new MySqlConnection(mySqlConnectionString))
             {
@@ -341,7 +341,9 @@ namespace RepositoryAnalyticsApi
                         `RepositoryCurrentStateId` INT NOT NULL,
                         `Name` VARCHAR(45) NULL,
                         `Permission` VARCHAR(45) NULL,
-                        PRIMARY KEY (`Id`));
+                        PRIMARY KEY (`Id`),
+                        KEY `test_idx` (`RepositoryCurrentStateId`),
+                        CONSTRAINT `Teams_RepositoryCurrentState` FOREIGN KEY (`RepositoryCurrentStateId`) REFERENCES `RepositoryCurrentStates` (`id`) ON DELETE CASCADE);
                 ";
 
                 await mySqlConnection.ExecuteAsync(createTeamsTable);
@@ -351,7 +353,9 @@ namespace RepositoryAnalyticsApi
                         `Id` INT NOT NULL AUTO_INCREMENT,
                         `RepositoryCurrentStateId` INT NOT NULL,
                         `Name` VARCHAR(45) NULL,
-                        PRIMARY KEY (`Id`));
+                        PRIMARY KEY (`Id`),
+                        KEY `test_idx` (`RepositoryCurrentStateId`),
+                        CONSTRAINT `Topics_RepositoryCurrentState` FOREIGN KEY (`RepositoryCurrentStateId`) REFERENCES `RepositoryCurrentStates` (`id`) ON DELETE CASCADE);
                 ";
 
                 await mySqlConnection.ExecuteAsync(createTopicsTable);
@@ -365,7 +369,9 @@ namespace RepositoryAnalyticsApi
                         `WindowEndsOn` DATETIME NULL,
                         `TakenOn` DATETIME NULL,
                         `BranchUsed` VARCHAR(45) NULL,
-                        PRIMARY KEY (`Id`));
+                        PRIMARY KEY (`Id`),
+                        KEY `test_idx` (`RepositoryCurrentStateId`),
+                        CONSTRAINT `RepositorySnapshots_RepositoryCurrentState` FOREIGN KEY (`RepositoryCurrentStateId`) REFERENCES `RepositoryCurrentStates` (`id`) ON DELETE CASCADE);
                 ";
 
                 await mySqlConnection.ExecuteAsync(createRepositorySnapshotsTable);
@@ -383,7 +389,10 @@ namespace RepositoryAnalyticsApi
                       `Environment` VARCHAR(45) NULL,
                       `Source` VARCHAR(45) NULL,
                       `RepoPath` VARCHAR(300) NULL,
-                        PRIMARY KEY (`Id`));
+                        PRIMARY KEY (`Id`),
+                        KEY `test_idx` (`RepositorySnapshotId`),
+                        CONSTRAINT `RepositoryDependencies_RepositorySnapshot` FOREIGN KEY (`RepositorySnapshotId`) REFERENCES `RepositorySnapshots` (`id`) ON DELETE CASCADE);
+                        CREATE INDEX `idx_RepositoryDependencies_Name`  ON `{schemaName}`.`RepositoryDependencies` (Name) COMMENT '' ALGORITHM DEFAULT LOCK DEFAULT;
                 ";
 
                 await mySqlConnection.ExecuteAsync(createRepositoryDependenciesTable);
@@ -394,7 +403,9 @@ namespace RepositoryAnalyticsApi
                           `RepositorySnapshotId` INT NULL,
                           `Name` VARCHAR(200) NULL,
                           `FullPath` VARCHAR(400) NULL,
-                        PRIMARY KEY (`Id`));
+                        PRIMARY KEY (`Id`),
+                        KEY `test_idx` (`RepositorySnapshotId`),
+                        CONSTRAINT `RepositoryFiles_RepositorySnapshot` FOREIGN KEY (`RepositorySnapshotId`) REFERENCES `RepositorySnapshots` (`id`) ON DELETE CASCADE);
                 ";
 
                 await mySqlConnection.ExecuteAsync(createRepositoryFilesTable);
@@ -404,7 +415,9 @@ namespace RepositoryAnalyticsApi
                          `Id` INT NOT NULL AUTO_INCREMENT,
                           `RepositorySnapshotId` INT NULL,
                           `Name` VARCHAR(45) NULL,
-                        PRIMARY KEY (`Id`));
+                        PRIMARY KEY (`Id`),
+                        KEY `test_idx` (`RepositorySnapshotId`),
+                        CONSTRAINT `RepositoryTypes_RepositorySnapshot` FOREIGN KEY (`RepositorySnapshotId`) REFERENCES `RepositorySnapshots` (`id`) ON DELETE CASCADE);
                 ";
 
                 await mySqlConnection.ExecuteAsync(createRepositoryTypeTable);
@@ -418,7 +431,7 @@ namespace RepositoryAnalyticsApi
                       `MajorVersion` varchar(45) DEFAULT NULL,
                       PRIMARY KEY (`Id`),
                       KEY `test_idx` (`RepositoryTypeId`),
-                      CONSTRAINT `RepositoryType` FOREIGN KEY (`RepositoryTypeId`) REFERENCES `RepositoryTypes` (`id`) ON DELETE CASCADE);
+                      CONSTRAINT `RepositoryImplementations_RepositoryType` FOREIGN KEY (`RepositoryTypeId`) REFERENCES `RepositoryTypes` (`id`) ON DELETE CASCADE);
                 ";
 
                 await mySqlConnection.ExecuteAsync(createRepositoryImplementationTable);
