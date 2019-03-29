@@ -11,6 +11,8 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
             //this.ConfigureLogging(s => Debug.WriteLine(s));
         }
 
+        public DbSet<RepositoryCurrentState> RepositoryCurrentState { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
