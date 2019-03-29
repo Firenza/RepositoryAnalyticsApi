@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MySqlConnector.Logging;
 using RepositoryAnalyticsApi.Repositories.Model.EntityFramework;
 using Serilog;
 using Serilog.Events;
