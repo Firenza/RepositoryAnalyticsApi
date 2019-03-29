@@ -53,16 +53,16 @@ namespace RepositoryAnalyticsApi
             IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
 
             services.AddTransient<IRepositoryManager, RepositoryManager>();
-            services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
+            //services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
             services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
             services.AddTransient<IDependencyManager, DependencyManager>();
             services.AddTransient<IRepositorySourceRepository>(serviceProvider => codeRepo);
             services.AddTransient<IRepositoryImplementationsManager, RepositoryImplementationsManager>();
-            services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
+            //services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
             services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
-            services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
-            services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();
+            //services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
+            //services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();
             services.AddTransient<IVersionManager, VersionManager>();
             services.AddTransient<IRepositoryCurrentStateRepository, RelationalRepositoryCurrentStateRepository>();
             services.AddTransient<IRepositorySnapshotRepository, RelationalRepositorySnapshotRepository>();

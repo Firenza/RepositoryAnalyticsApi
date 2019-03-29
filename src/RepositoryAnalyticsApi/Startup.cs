@@ -42,8 +42,8 @@ namespace RepositoryAnalyticsApi
 
             services.AddDbContext<RepositoryAnalysisContext>(options =>
             {
-               //options.UseSqlServer("Server=localhost;Database=Test3;User Id=sa;Password=yourStrong(!)Password; ");
-               options.UseNpgsql("UserID = postgres; Password = mysecretpassword; Server = localhost; Port = 5432; Database = Test3; ");
+               //options.UseSqlServer("Server=localhost;Database=repository_analytics;User Id=sa;Password=yourStrong(!)Password; ");
+               options.UseNpgsql("UserID = postgres; Password = mysecretpassword; Server = localhost; Port = 5432; Database = repository_analytics; ");
             });
 
             services.AddMvc().AddJsonOptions(options =>
