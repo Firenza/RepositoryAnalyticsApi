@@ -12,19 +12,19 @@ namespace RepositoryAnaltyicsApi.Managers
         private IRepositorySnapshotRepository repositorySnapshotRepository;
         private IRepositoryCurrentStateRepository repositoryCurrentStateRepository;
         private IRepositorySourceManager repositorySourceManager;
-        private IRepositorySearchRepository repositorySearchRepository;
+       // private IRepositorySearchRepository repositorySearchRepository;
 
         public RepositoryManager(
             IRepositorySnapshotRepository repositorySnapshotRepository,
             IRepositoryCurrentStateRepository repositoryCurrentStateRepository,
-            IRepositorySourceManager repositorySourceManager, 
-            IRepositorySearchRepository repositorySearchRepository
+            IRepositorySourceManager repositorySourceManager 
+            //IRepositorySearchRepository repositorySearchRepository
         )
         {
             this.repositorySnapshotRepository = repositorySnapshotRepository;
             this.repositoryCurrentStateRepository = repositoryCurrentStateRepository;
             this.repositorySourceManager = repositorySourceManager;
-            this.repositorySearchRepository = repositorySearchRepository;
+           // this.repositorySearchRepository = repositorySearchRepository;
         }
 
         public async Task UpsertAsync(Repository repository, DateTime? asOf)
@@ -119,7 +119,8 @@ namespace RepositoryAnaltyicsApi.Managers
 
         public async Task<List<string>> SearchAsync(RepositorySearch repositorySearch)
         {
-            return await repositorySearchRepository.SearchAsync(repositorySearch).ConfigureAwait(false);
+            throw new NotImplementedException();
+            //return await repositorySearchRepository.SearchAsync(repositorySearch).ConfigureAwait(false);
         }
 
     }

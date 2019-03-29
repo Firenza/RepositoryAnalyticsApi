@@ -1,6 +1,7 @@
 ﻿using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.Repositories.Model.EntityFramework;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.Repositories
@@ -16,6 +17,11 @@ namespace RepositoryAnalyticsApi.Repositories
 
         public async Task<ServiceModel.RepositoryCurrentState> ReadAsync(string repositoryId)
         {
+            var repositoryCurrentSatte = repositoryAnalysisContext
+                                            .RepositoryCurrentState
+                                            .SingleOrDefault(rcs => rcs.RepositoryId == repositoryId);
+
+
             throw new NotImplementedException();
         }
 

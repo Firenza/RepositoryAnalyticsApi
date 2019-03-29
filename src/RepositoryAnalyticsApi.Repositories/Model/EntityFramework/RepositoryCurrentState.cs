@@ -6,6 +6,7 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
     public class RepositoryCurrentState
     {
         public int RepositoryCurrentStateId { get; set; }
+        public string RepositoryId { get; set; }
         public string Name { get; set; }
         public string Owner { get; set; }
         public DateTime? RepositoryCreatedOn { get; set; }
