@@ -17,7 +17,8 @@ The API must also provide the ability to be exended so that people can define th
 
 * ASP.NET Core Web API
 * Swagger UI
-* MongoDB (Likely to soon also support MySQL)
+* Entity Framwork Core
+* PostgreSQL or SQL Server
 * MEF
 * Visual Studio 
 
