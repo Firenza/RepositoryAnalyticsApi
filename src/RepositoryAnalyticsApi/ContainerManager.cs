@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using GraphQl.NetStandard.Client;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Octokit;
@@ -10,6 +11,7 @@ using RepositoryAnaltyicsApi.Managers.Dependencies;
 using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.Extensions;
 using RepositoryAnalyticsApi.Repositories;
+using RepositoryAnalyticsApi.Repositories.Model.EntityFramework;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -33,8 +35,8 @@ namespace RepositoryAnalyticsApi
             var gitHubv3ApiUrl = ReadEnvironmentVariable("GITHUB_V3_API_URL", configuration);
             var gitHubGraphQLApiUrl = ReadEnvironmentVariable("GITHUB_GRAPHQL_API_URL", configuration);
             var gitHubAccessToken = ReadEnvironmentVariable("GITHUB_ACCESS_TOKEN", configuration);
-            var mongoDbConnection = ReadEnvironmentVariable("MONGO_DB_CONNECTION", configuration);
-            var mongoDbDatabase = ReadEnvironmentVariable("MONGO_DB_DATABASE", configuration);
+            var dbType = ReadEnvironmentVariable("DB_TYPE", configuration);
+            var dbConnectionString = ReadEnvironmentVariable("DB_CONNECTION_STRING", configuration);
 
             // Load config data 
             var caching = configuration.GetSection("Caching").Get<InternalModel.AppSettings.Caching>();
@@ -75,6 +77,27 @@ namespace RepositoryAnalyticsApi
                 new NpmDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
                 new NuGetDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>())
             });
+
+
+            var formattedDbType = dbType.ToLower().Replace(" ", string.Empty);
+            if (formattedDbType == "sqlserver")
+            {
+                services.AddDbContext<RepositoryAnalysisContext>(options =>
+                {
+                    options.UseSqlServer(dbConnectionString);
+                });
+            }
+            else if (formattedDbType == "postgresql")
+            {
+                services.AddDbContext<RepositoryAnalysisContext>(options =>
+                {
+                    options.UseNpgsql(dbConnectionString);
+                });
+            }
+            else
+            {
+                throw new ArgumentException("Unsupported DB Type, only PostgreSQL and SQL Server are supported");
+            }
 
             var config = new MapperConfiguration(cfg =>
             {

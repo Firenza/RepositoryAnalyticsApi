@@ -29,8 +29,6 @@ namespace RepositoryAnalyticsApi
              .WriteTo.Elasticsearch("http://localhost:9200")
              .CreateLogger();
 
-            //MySqlConnectorLogManager.Provider = new SerilogLoggerProvider();
-
             this.configuration = configuration;
         }
 
@@ -40,17 +38,9 @@ namespace RepositoryAnalyticsApi
             ContainerManager.RegisterServices(services, configuration);
             ContainerManager.RegisterExtensions(services, configuration);
 
-            services.AddDbContext<RepositoryAnalysisContext>(options =>
-            {
-               //options.UseSqlServer("Server=localhost;Database=repository_analytics;User Id=sa;Password=yourStrong(!)Password; ");
-               options.UseNpgsql("UserID = postgres; Password = mysecretpassword; Server = localhost; Port = 5432; Database = repository_analytics; ");
-            });
-
             services.AddMvc().AddJsonOptions(options =>
                 options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
             );
-
-            //services.AddDistributedMemoryCache();
 
             services.AddDistributedRedisCache(options =>
             {
