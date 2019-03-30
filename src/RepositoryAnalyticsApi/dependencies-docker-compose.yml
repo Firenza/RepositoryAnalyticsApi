@@ -23,8 +23,6 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - MSSQL_SA_PASSWORD=<YourStrong!Passw0rd>
-    #volumes:
-    #  - 'C:/DockerVolume/RepositoryAnalytics/SqlServer:/var/opt/mssql'
     ports:
       - '1433:1433'
   postgresql:
@@ -32,8 +30,5 @@ services:
     image: 'postgres:11.2'
     environment:
       - POSTGRES_PASSWORD=mysecretpassword
-    #Postgres does not work with Docker For Windows volume mapping ATM
-    #volumes:
-    #  - 'C:/DockerVolume/RepositoryAnalytics/PostgreSql:/var/lib/postgresql/data'
     ports:
       - '5432:5432'
