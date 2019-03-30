@@ -1,4 +1,6 @@
-﻿using GraphQl.NetStandard.Client;
+﻿using AutoMapper;
+using AutoMapper.EquivalencyExpression;
+using GraphQl.NetStandard.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Octokit;
@@ -73,6 +75,46 @@ namespace RepositoryAnalyticsApi
                 new NpmDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
                 new NuGetDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>())
             });
+
+            var config = new MapperConfiguration(cfg =>
+            {
+                cfg.AddCollectionMappers();
+
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryCurrentState, ServiceModel.RepositoryDevOpsIntegrations>();
+                cfg.CreateMap<ServiceModel.RepositoryDevOpsIntegrations, Repositories.Model.EntityFramework.RepositoryCurrentState>();
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryCurrentState, ServiceModel.RepositoryCurrentState>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(source => source.RepositoryId))
+                .ForMember(dest => dest.DevOpsIntegrations, opt => opt.MapFrom(source => source));
+                cfg.CreateMap<ServiceModel.RepositoryCurrentState, Repositories.Model.EntityFramework.RepositoryCurrentState>()
+                .ForMember(dest => dest.RepositoryId, opt => opt.MapFrom(source => source.Id))
+                .ForMember(dest => dest.ContinuousDelivery, opt => opt.MapFrom(source => source.DevOpsIntegrations.ContinuousDelivery))
+                .ForMember(dest => dest.ContinuousIntegration, opt => opt.MapFrom(source => source.DevOpsIntegrations.ContinuousIntegration))
+                .ForMember(dest => dest.ContinuousDeployment, opt => opt.MapFrom(source => source.DevOpsIntegrations.ContinuousDeployment));
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryDependency, ServiceModel.RepositoryDependency>();
+                cfg.CreateMap<ServiceModel.RepositoryDependency, Repositories.Model.EntityFramework.RepositoryDependency>()
+                    .EqualityComparison((source, dest) => $"{source.Name}|{source.Version}|{source.RepoPath}" == $"{dest.Name}|{dest.Version}|{dest.RepoPath}");
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryFile, ServiceModel.RepositoryFile>();
+                cfg.CreateMap<ServiceModel.RepositoryFile, Repositories.Model.EntityFramework.RepositoryFile>()
+                    .EqualityComparison((source, dest) => source.FullPath == dest.FullPath);
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryImplementation, ServiceModel.RepositoryImplementation>();
+                cfg.CreateMap<ServiceModel.RepositoryImplementation, Repositories.Model.EntityFramework.RepositoryImplementation>()
+                    .EqualityComparison((source, dest) => source.Name == dest.Name);
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryTeam, ServiceModel.RepositoryTeam>();
+                cfg.CreateMap<ServiceModel.RepositoryTeam, Repositories.Model.EntityFramework.RepositoryTeam>()
+                    .EqualityComparison((source, dest) => source.Name == dest.Name);
+                cfg.CreateMap<Repositories.Model.EntityFramework.Topic, ServiceModel.RepositoryTopic>();
+                cfg.CreateMap<ServiceModel.RepositoryTopic, Repositories.Model.EntityFramework.Topic>()
+                    .EqualityComparison((source, dest) => source.Name == dest.Name);
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryTypeAndImplementations, ServiceModel.RepositoryTypeAndImplementations>();
+                cfg.CreateMap<ServiceModel.RepositoryTypeAndImplementations, Repositories.Model.EntityFramework.RepositoryTypeAndImplementations>()
+                    .EqualityComparison((source, dest) => source.TypeName == dest.TypeName);
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositorySnapshot, ServiceModel.RepositorySnapshot>();
+                cfg.CreateMap<ServiceModel.RepositorySnapshot, Repositories.Model.EntityFramework.RepositorySnapshot>()
+                    .EqualityComparison((source, dest) => source.WindowStartCommitId == dest.WindowStartCommitId);
+                   
+            });
+
+            services.AddSingleton(config.CreateMapper());
         }
 
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
@@ -140,7 +182,7 @@ namespace RepositoryAnalyticsApi
                         }
                     }
                 }
-                
+
             }
             catch (ReflectionTypeLoadException ex)
             {

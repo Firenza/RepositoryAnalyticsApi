@@ -19,7 +19,7 @@ namespace RepositoryAnalyticsApi.ServiceModel
         public bool? HasProjects { get; set; }
         public bool? HasPullRequests { get; set; }
         public List<RepositoryTeam> Teams { get; set; }
+        public List<RepositoryTopic> Topics { get; set; }
         public RepositoryDevOpsIntegrations DevOpsIntegrations { get; set; }
-        public IEnumerable<string> Topics { get; set; }
     }
 }

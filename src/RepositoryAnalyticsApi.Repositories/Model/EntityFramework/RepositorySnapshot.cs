@@ -28,9 +28,9 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
         /// </summary>
         public string BranchUsed { get; set; }
 
-        public IEnumerable<RepositoryDependency> Dependencies { get; set; }
-        public IEnumerable<RepositoryTypeAndImplementations> TypesAndImplementations { get; set; }
-        public IEnumerable<RepositoryFile> Files { get; set; }
+        public ICollection<RepositoryDependency> Dependencies { get; set; }
+        public ICollection<RepositoryTypeAndImplementations> TypesAndImplementations { get; set; }
+        public ICollection<RepositoryFile> Files { get; set; }
 
         public int RepositoryCurrentStateId { get; set; }
         public RepositoryCurrentState RepositoryCurrentState { get; set; }
