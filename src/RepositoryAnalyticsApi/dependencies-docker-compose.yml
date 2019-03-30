@@ -12,20 +12,28 @@ services:
     image: docker.elastic.co/kibana/kibana:6.5.2
     ports:
       - '5601:5601'
-  mongodb:
-    container_name: repositoryAnalyticsApi_mongodb
-    image: 'mongo:3.4.13'
-    ports:
-      - '27017:27017'
   redis:
     container_name: repositoryAnalyticsApi_redis
     image: 'redis:5.0.3'
     ports:
       - '6379:6379'
-  mysql:
-    container_name: repositoryAnalyticsApi_mysql
-    image: 'mysql:8.0.14'
+  sqlserver:
+    container_name: repositoryAnalyticsApi_sqlServer
+    image: 'mcr.microsoft.com/mssql/server:2017-CU12'
     environment:
-      - MYSQL_ROOT_PASSWORD=password
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=<YourStrong!Passw0rd>
+    #volumes:
+    #  - 'C:/DockerVolume/RepositoryAnalytics/SqlServer:/var/opt/mssql'
     ports:
-      - '3306:3306'
+      - '1433:1433'
+  postgresql:
+    container_name: repositoryAnalyticsApi_postgresql
+    image: 'postgres:11.2'
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+    #Postgres does not work with Docker For Windows volume mapping ATM
+    #volumes:
+    #  - 'C:/DockerVolume/RepositoryAnalytics/PostgreSql:/var/lib/postgresql/data'
+    ports:
+      - '5432:5432'
