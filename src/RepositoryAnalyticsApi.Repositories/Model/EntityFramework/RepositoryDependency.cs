@@ -10,6 +10,11 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
         public string Name { get; set; }
         public string Version { get; set; }
         public string MajorVersion { get; set; }
+        public string MinorVerison { get; set; }
+        /// <summary>
+        /// Version Padded with spaces to make sorting easy
+        /// </summary>
+        public string PaddedVersion { get; set; }
         /// <summary>
         /// Anything in the version string after a dash.  Stored here as the Version class doesn't know how to handle it
         /// </summary>

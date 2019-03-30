@@ -101,6 +101,8 @@ namespace RepositoryAnalyticsApi
 
             var config = new MapperConfiguration(cfg =>
             {
+                var versionManager = new VersionManager();
+
                 cfg.AddCollectionMappers();
 
                 cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryCurrentState, ServiceModel.RepositoryDevOpsIntegrations>();
@@ -115,6 +117,8 @@ namespace RepositoryAnalyticsApi
                 .ForMember(dest => dest.ContinuousDeployment, opt => opt.MapFrom(source => source.DevOpsIntegrations.ContinuousDeployment));
                 cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryDependency, ServiceModel.RepositoryDependency>();
                 cfg.CreateMap<ServiceModel.RepositoryDependency, Repositories.Model.EntityFramework.RepositoryDependency>()
+                    .ForMember(dest => dest.PaddedVersion, opt => opt.MapFrom(source => versionManager.GetPaddedVersion(source.Version)))
+                    .ForMember(dest => dest.MinorVerison, opt => opt.MapFrom(source => versionManager.GetMinorVersion(source.Version)))
                     .EqualityComparison((source, dest) => $"{source.Name}|{source.Version}|{source.RepoPath}" == $"{dest.Name}|{dest.Version}|{dest.RepoPath}");
                 cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryFile, ServiceModel.RepositoryFile>();
                 cfg.CreateMap<ServiceModel.RepositoryFile, Repositories.Model.EntityFramework.RepositoryFile>()
