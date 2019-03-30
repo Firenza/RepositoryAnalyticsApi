@@ -1,25 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 
-namespace RepositoryAnalyticsApi.Repositories.Model.MySql
+namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
 {
     public class RepositorySnapshot
     {
-        public static RepositorySnapshot MapFrom(ServiceModel.RepositorySnapshot repositorySnapshot, int repositoryCurrentStateId)
-        {
-            return new RepositorySnapshot
-            {
-                RepositoryCurrentStateId = repositoryCurrentStateId,
-                WindowStartCommitId = repositorySnapshot.WindowStartCommitId,
-                WindowStartsOn = repositorySnapshot.WindowStartsOn,
-                WindowEndsOn = repositorySnapshot.WindowEndsOn,
-                TakenOn = repositorySnapshot.TakenOn,
-                BranchUsed = repositorySnapshot.BranchUsed
-            };
-        }
-
-        public int Id { get; set; }
-
-        public int RepositoryCurrentStateId { get; set; }
+        public int RepositorySnapshotId { get; set; }
 
         /// <summary>
         /// The repository commit id corresponding to the WindowStart time
@@ -41,5 +27,12 @@ namespace RepositoryAnalyticsApi.Repositories.Model.MySql
         /// Branch name used to compile the snapshot
         /// </summary>
         public string BranchUsed { get; set; }
+
+        public ICollection<RepositoryDependency> Dependencies { get; set; }
+        public ICollection<RepositoryTypeAndImplementations> TypesAndImplementations { get; set; }
+        public ICollection<RepositoryFile> Files { get; set; }
+
+        public int RepositoryCurrentStateId { get; set; }
+        public RepositoryCurrentState RepositoryCurrentState { get; set; }
     }
 }

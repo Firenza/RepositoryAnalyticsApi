@@ -1,12 +1,9 @@
-﻿using GraphQl.NetStandard.Client;
+﻿using AutoMapper;
+using AutoMapper.EquivalencyExpression;
+using GraphQl.NetStandard.Client;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
-using MongoDB.Driver.Core.Events;
-using MySql.Data.MySqlClient;
 using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnaltyicsApi.Managers;
@@ -14,22 +11,18 @@ using RepositoryAnaltyicsApi.Managers.Dependencies;
 using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.Extensions;
 using RepositoryAnalyticsApi.Repositories;
-using RepositoryAnalyticsApi.ServiceModel;
+using RepositoryAnalyticsApi.Repositories.Model.EntityFramework;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Composition.Hosting;
-using System.Data;
-using System.Diagnostics;
-using Dapper;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi
 {
@@ -42,8 +35,8 @@ namespace RepositoryAnalyticsApi
             var gitHubv3ApiUrl = ReadEnvironmentVariable("GITHUB_V3_API_URL", configuration);
             var gitHubGraphQLApiUrl = ReadEnvironmentVariable("GITHUB_GRAPHQL_API_URL", configuration);
             var gitHubAccessToken = ReadEnvironmentVariable("GITHUB_ACCESS_TOKEN", configuration);
-            var mongoDbConnection = ReadEnvironmentVariable("MONGO_DB_CONNECTION", configuration);
-            var mongoDbDatabase = ReadEnvironmentVariable("MONGO_DB_DATABASE", configuration);
+            var dbType = ReadEnvironmentVariable("DB_TYPE", configuration);
+            var dbConnectionString = ReadEnvironmentVariable("DB_CONNECTION_STRING", configuration);
 
             // Load config data 
             var caching = configuration.GetSection("Caching").Get<InternalModel.AppSettings.Caching>();
@@ -64,17 +57,19 @@ namespace RepositoryAnalyticsApi
             IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
 
             services.AddTransient<IRepositoryManager, RepositoryManager>();
-            services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
+            //services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
             services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
             services.AddTransient<IDependencyManager, DependencyManager>();
             services.AddTransient<IRepositorySourceRepository>(serviceProvider => codeRepo);
             services.AddTransient<IRepositoryImplementationsManager, RepositoryImplementationsManager>();
-            services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
+            //services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
             services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
-            services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
-            services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();
+            //services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
+            //services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();
             services.AddTransient<IVersionManager, VersionManager>();
+            services.AddTransient<IRepositoryCurrentStateRepository, RelationalRepositoryCurrentStateRepository>();
+            services.AddTransient<IRepositorySnapshotRepository, RelationalRepositorySnapshotRepository>();
 
             services.AddTransient<IEnumerable<IDependencyScraperManager>>((serviceProvider) => new List<IDependencyScraperManager> {
                 new BowerDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
@@ -83,64 +78,70 @@ namespace RepositoryAnalyticsApi
                 new NuGetDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>())
             });
 
-            var mongoClientSettings = new MongoClientSettings();
-            mongoClientSettings.Server = new MongoServerAddress("localhost", 27017);
-            mongoClientSettings.ConnectTimeout = new TimeSpan(0, 0, 0, 2, 0);
-           
-            var commandNamesToIgnore = new List<string> { "isMaster", "buildInfo", "getLastError", "update" };
-            // Log all query text for debugging purposes
-            mongoClientSettings.ClusterConfigurator = cb =>
+
+            var formattedDbType = dbType.ToLower().Replace(" ", string.Empty);
+            if (formattedDbType == "sqlserver")
             {
-                cb.Subscribe<CommandStartedEvent>(e =>
+                services.AddDbContext<RepositoryAnalysisContext>(options =>
                 {
-                    if (!commandNamesToIgnore.Contains(e.CommandName))
-                    {
-                        Log.Logger.Information($"{e.CommandName} - {e.Command.ToJson()}");
-                    }
+                    options.UseSqlServer(dbConnectionString);
                 });
-            };
-
-
-            // Add in mongo dependencies
-            var client = new MongoClient(mongoClientSettings);
-            var db = client.GetDatabase(mongoDbDatabase);
-
-            services.AddScoped((serviceProvider) => db);
-
-            BsonClassMap.RegisterClassMap<RepositorySnapshot>(map =>
+            }
+            else if (formattedDbType == "postgresql")
             {
-                map.AutoMap();
-                // This class doesn't need an _id field so need to ignore this field when mongo reads in the autogenerated
-                // property or the mongo client will throw an exception
-                map.SetIgnoreExtraElements(true);
+                services.AddDbContext<RepositoryAnalysisContext>(options =>
+                {
+                    options.UseNpgsql(dbConnectionString);
+                });
+            }
+            else
+            {
+                throw new ArgumentException("Unsupported DB Type, only PostgreSQL and SQL Server are supported");
+            }
+
+            var config = new MapperConfiguration(cfg =>
+            {
+                cfg.AddCollectionMappers();
+
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryCurrentState, ServiceModel.RepositoryDevOpsIntegrations>();
+                cfg.CreateMap<ServiceModel.RepositoryDevOpsIntegrations, Repositories.Model.EntityFramework.RepositoryCurrentState>();
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryCurrentState, ServiceModel.RepositoryCurrentState>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(source => source.RepositoryId))
+                .ForMember(dest => dest.DevOpsIntegrations, opt => opt.MapFrom(source => source));
+                cfg.CreateMap<ServiceModel.RepositoryCurrentState, Repositories.Model.EntityFramework.RepositoryCurrentState>()
+                .ForMember(dest => dest.RepositoryId, opt => opt.MapFrom(source => source.Id))
+                .ForMember(dest => dest.ContinuousDelivery, opt => opt.MapFrom(source => source.DevOpsIntegrations.ContinuousDelivery))
+                .ForMember(dest => dest.ContinuousIntegration, opt => opt.MapFrom(source => source.DevOpsIntegrations.ContinuousIntegration))
+                .ForMember(dest => dest.ContinuousDeployment, opt => opt.MapFrom(source => source.DevOpsIntegrations.ContinuousDeployment));
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryDependency, ServiceModel.RepositoryDependency>();
+                cfg.CreateMap<ServiceModel.RepositoryDependency, Repositories.Model.EntityFramework.RepositoryDependency>()
+                    .EqualityComparison((source, dest) => $"{source.Name}|{source.Version}|{source.RepoPath}" == $"{dest.Name}|{dest.Version}|{dest.RepoPath}");
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryFile, ServiceModel.RepositoryFile>();
+                cfg.CreateMap<ServiceModel.RepositoryFile, Repositories.Model.EntityFramework.RepositoryFile>()
+                    .EqualityComparison((source, dest) => source.FullPath == dest.FullPath);
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryImplementation, ServiceModel.RepositoryImplementation>();
+                cfg.CreateMap<ServiceModel.RepositoryImplementation, Repositories.Model.EntityFramework.RepositoryImplementation>()
+                    .EqualityComparison((source, dest) => source.Name == dest.Name);
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryTeam, ServiceModel.RepositoryTeam>();
+                cfg.CreateMap<ServiceModel.RepositoryTeam, Repositories.Model.EntityFramework.RepositoryTeam>()
+                    .EqualityComparison((source, dest) => source.Name == dest.Name);
+                cfg.CreateMap<Repositories.Model.EntityFramework.Topic, ServiceModel.RepositoryTopic>();
+                cfg.CreateMap<ServiceModel.RepositoryTopic, Repositories.Model.EntityFramework.Topic>()
+                    .EqualityComparison((source, dest) => source.Name == dest.Name);
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryTypeAndImplementations, ServiceModel.RepositoryTypeAndImplementations>();
+                cfg.CreateMap<ServiceModel.RepositoryTypeAndImplementations, Repositories.Model.EntityFramework.RepositoryTypeAndImplementations>()
+                    .EqualityComparison((source, dest) => source.TypeName == dest.TypeName);
+                cfg.CreateMap<Repositories.Model.EntityFramework.RepositorySnapshot, ServiceModel.RepositorySnapshot>();
+                cfg.CreateMap<ServiceModel.RepositorySnapshot, Repositories.Model.EntityFramework.RepositorySnapshot>()
+                    .EqualityComparison((source, dest) => source.WindowStartCommitId == dest.WindowStartCommitId);
+                   
             });
-            services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositorySnapshot>("repositorySnapshot"));
-            services.AddScoped((serviceProvider) => db.GetCollection<ServiceModel.RepositoryCurrentState>("repositoryCurrentState"));
-            services.AddScoped((serviceProvider) => db.GetCollection<BsonDocument>("repositorySnapshot"));
 
-            var mySqlConnectionString = "server=127.0.0.1;uid=root;pwd=password";
-
-            var updatedMySqlConnectionString = SetupMySqlSchema(mySqlConnectionString).Result;
-
-            services.AddTransient(typeof(MySqlRepositoryCurrentStateRepository), (serviceProvider) => new MySqlRepositoryCurrentStateRepository(updatedMySqlConnectionString));
-            services.AddTransient(typeof(MySqlRepositorySnapshotRepository), (serviceProvider) => new MySqlRepositorySnapshotRepository(updatedMySqlConnectionString, serviceProvider.GetService<ILogger<MySqlRepositorySnapshotRepository>>(), serviceProvider.GetService<IVersionManager>()));
-
-            services.AddTransient<IRepositoryManager>((serviceProvider) => new RepositoryManager(
-               new MongoRepositorySnapshotRepository(serviceProvider.GetService<IMongoCollection<RepositorySnapshot>>(), serviceProvider.GetService<IVersionManager>()),
-               serviceProvider.GetService<MySqlRepositorySnapshotRepository>(),
-               new MongoRepositoryCurrentStateRepository(serviceProvider.GetService<IMongoCollection<RepositoryCurrentState>>()),
-               serviceProvider.GetService<MySqlRepositoryCurrentStateRepository>(),
-               serviceProvider.GetService<IRepositorySourceManager>(),
-               serviceProvider.GetService<IRepositorySearchRepository>()
-            ));
-
+            services.AddSingleton(config.CreateMapper());
         }
 
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
         {
-            
-
-
             var typeAndImplementationDerivers = new List<IDeriveRepositoryTypeAndImplementations>();
             IDeriveRepositoryDevOpsIntegrations devOpsIntegrationDeriver = null;
 
@@ -204,7 +205,7 @@ namespace RepositoryAnalyticsApi
                         }
                     }
                 }
-                
+
             }
             catch (ReflectionTypeLoadException ex)
             {
@@ -265,7 +266,6 @@ namespace RepositoryAnalyticsApi
             }
         }
 
-
         /// <summary>
         /// Reads an environment varible based on whether or not the api is running in docker or not
         /// </summary>
@@ -295,149 +295,6 @@ namespace RepositoryAnalyticsApi
 
                 return null;
             }
-        }
-
-        private static async Task<string> SetupMySqlSchema(string mySqlConnectionString)
-        {
-            var schemaName = "repository_analysis_test";
-
-            using (MySqlConnection mySqlConnection = new MySqlConnection(mySqlConnectionString))
-            {
-                await mySqlConnection.ExecuteAsync($"CREATE SCHEMA IF NOT EXISTS `{schemaName}`");
-            }
-
-            // Update the connection to default to the defined DB so consumers don't have to specify the DB
-            var updatedConnectionString = $"server=127.0.0.1;uid=root;pwd=password;database={schemaName}";
-
-            using (MySqlConnection mySqlConnection = new MySqlConnection(updatedConnectionString))
-            {
-                var grafanaUserSetup = $@"CREATE USER IF NOT EXISTS 'grafana'@'%'
-                    IDENTIFIED WITH mysql_native_password
-                    BY 'password';
-                    GRANT SELECT ON {schemaName}.*TO 'grafana'@'%';";
-
-                await mySqlConnection.ExecuteAsync(grafanaUserSetup);
-
-                var createRepositoryCurrentStatesTable = $@"
-                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryCurrentStates` (
-                        `Id` INT NOT NULL AUTO_INCREMENT,
-                        `RepositoryId` varchar(200) NOT NULL,
-                        `Name` varchar(150) DEFAULT NULL,
-                        `Owner` varchar(45) DEFAULT NULL,
-                        `RepositoryCreatedOn` datetime DEFAULT NULL,
-                        `RepositoryLastUpdatedOn` datetime DEFAULT NULL,
-                        `DefaultBranch` varchar(45) DEFAULT NULL,
-                        `HasContinuousIntegration` bit(1) DEFAULT NULL,
-                        `HasContinuousDelivery` bit(1) DEFAULT NULL,
-                        `HasContinuousDeployment` bit(1) DEFAULT NULL,
-                        PRIMARY KEY (`Id`));
-                ";
-
-                await mySqlConnection.ExecuteAsync(createRepositoryCurrentStatesTable);
-
-                var createTeamsTable = $@"
-                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`Teams` (
-                        `Id` INT NOT NULL AUTO_INCREMENT,
-                        `RepositoryCurrentStateId` INT NOT NULL,
-                        `Name` VARCHAR(45) NULL,
-                        `Permission` VARCHAR(45) NULL,
-                        PRIMARY KEY (`Id`),
-                        KEY `test_idx` (`RepositoryCurrentStateId`),
-                        CONSTRAINT `Teams_RepositoryCurrentState` FOREIGN KEY (`RepositoryCurrentStateId`) REFERENCES `RepositoryCurrentStates` (`id`) ON DELETE CASCADE);
-                ";
-
-                await mySqlConnection.ExecuteAsync(createTeamsTable);
-
-                var createTopicsTable = $@"
-                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`Topics` (
-                        `Id` INT NOT NULL AUTO_INCREMENT,
-                        `RepositoryCurrentStateId` INT NOT NULL,
-                        `Name` VARCHAR(45) NULL,
-                        PRIMARY KEY (`Id`),
-                        KEY `test_idx` (`RepositoryCurrentStateId`),
-                        CONSTRAINT `Topics_RepositoryCurrentState` FOREIGN KEY (`RepositoryCurrentStateId`) REFERENCES `RepositoryCurrentStates` (`id`) ON DELETE CASCADE);
-                ";
-
-                await mySqlConnection.ExecuteAsync(createTopicsTable);
-
-                var createRepositorySnapshotsTable = $@"
-                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositorySnapshots` (
-                         `Id` INT NOT NULL AUTO_INCREMENT,
-                        `RepositoryCurrentStateId` INT NULL,
-                        `WindowStartCommitId` VARCHAR(100) NULL,
-                        `WindowStartsOn` DATETIME NULL,
-                        `WindowEndsOn` DATETIME NULL,
-                        `TakenOn` DATETIME NULL,
-                        `BranchUsed` VARCHAR(45) NULL,
-                        PRIMARY KEY (`Id`),
-                        KEY `test_idx` (`RepositoryCurrentStateId`),
-                        CONSTRAINT `RepositorySnapshots_RepositoryCurrentState` FOREIGN KEY (`RepositoryCurrentStateId`) REFERENCES `RepositoryCurrentStates` (`id`) ON DELETE CASCADE);
-                ";
-
-                await mySqlConnection.ExecuteAsync(createRepositorySnapshotsTable);
-
-                var createRepositoryDependenciesTable = $@"
-                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryDependencies` (
-                      `Id` INT NOT NULL AUTO_INCREMENT,
-                      `RepositorySnapshotId` INT NULL,
-                      `Name` VARCHAR(150) NULL,
-                      `Version` VARCHAR(45) NULL,
-                      `PaddedVersion` VARCHAR(300) NULL,
-                      `MajorVersion` VARCHAR(45) NULL,
-                      `MinorVersion` VARCHAR(45) NULL,
-                      `PreReleaseSemanticVersion` VARCHAR(45) NULL,
-                      `Environment` VARCHAR(45) NULL,
-                      `Source` VARCHAR(45) NULL,
-                      `RepoPath` VARCHAR(300) NULL,
-                        PRIMARY KEY (`Id`),
-                        KEY `test_idx` (`RepositorySnapshotId`),
-                        CONSTRAINT `RepositoryDependencies_RepositorySnapshot` FOREIGN KEY (`RepositorySnapshotId`) REFERENCES `RepositorySnapshots` (`id`) ON DELETE CASCADE);
-                        CREATE INDEX `idx_RepositoryDependencies_Name`  ON `{schemaName}`.`RepositoryDependencies` (Name) COMMENT '' ALGORITHM DEFAULT LOCK DEFAULT;
-                ";
-
-                await mySqlConnection.ExecuteAsync(createRepositoryDependenciesTable);
-
-                var createRepositoryFilesTable = $@"
-                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryFiles` (
-                        `Id` INT NOT NULL AUTO_INCREMENT,
-                          `RepositorySnapshotId` INT NULL,
-                          `Name` VARCHAR(200) NULL,
-                          `FullPath` VARCHAR(400) NULL,
-                        PRIMARY KEY (`Id`),
-                        KEY `test_idx` (`RepositorySnapshotId`),
-                        CONSTRAINT `RepositoryFiles_RepositorySnapshot` FOREIGN KEY (`RepositorySnapshotId`) REFERENCES `RepositorySnapshots` (`id`) ON DELETE CASCADE);
-                ";
-
-                await mySqlConnection.ExecuteAsync(createRepositoryFilesTable);
-
-                var createRepositoryTypeTable = $@"
-                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryTypes` (
-                         `Id` INT NOT NULL AUTO_INCREMENT,
-                          `RepositorySnapshotId` INT NULL,
-                          `Name` VARCHAR(45) NULL,
-                        PRIMARY KEY (`Id`),
-                        KEY `test_idx` (`RepositorySnapshotId`),
-                        CONSTRAINT `RepositoryTypes_RepositorySnapshot` FOREIGN KEY (`RepositorySnapshotId`) REFERENCES `RepositorySnapshots` (`id`) ON DELETE CASCADE);
-                ";
-
-                await mySqlConnection.ExecuteAsync(createRepositoryTypeTable);
-
-                var createRepositoryImplementationTable = $@"
-                    CREATE TABLE IF NOT EXISTS `{schemaName}`.`RepositoryImplementations` (
-                      `Id` int(11) NOT NULL AUTO_INCREMENT,
-                      `RepositoryTypeId` int(11) DEFAULT NULL,
-                      `Name` varchar(45) DEFAULT NULL,
-                      `Version` varchar(45) DEFAULT NULL,
-                      `MajorVersion` varchar(45) DEFAULT NULL,
-                      PRIMARY KEY (`Id`),
-                      KEY `test_idx` (`RepositoryTypeId`),
-                      CONSTRAINT `RepositoryImplementations_RepositoryType` FOREIGN KEY (`RepositoryTypeId`) REFERENCES `RepositoryTypes` (`id`) ON DELETE CASCADE);
-                ";
-
-                await mySqlConnection.ExecuteAsync(createRepositoryImplementationTable);
-            }
-
-            return updatedConnectionString;
         }
     }
 }

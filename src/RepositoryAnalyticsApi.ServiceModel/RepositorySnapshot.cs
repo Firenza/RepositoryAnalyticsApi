@@ -8,7 +8,7 @@ namespace RepositoryAnalyticsApi.ServiceModel
     /// </summary>
     public class RepositorySnapshot
     {
-        public string RepositoryCurrentStateId { get; set; }
+        public string RepositoryCurrentStateRepositoryId { get; set; }
 
         /// <summary>
         /// The repository commit id corresponding to the WindowStart time
@@ -31,8 +31,8 @@ namespace RepositoryAnalyticsApi.ServiceModel
         /// </summary>
         public string BranchUsed { get; set; }
 
-        public IEnumerable<RepositoryDependency> Dependencies { get; set; }
-        public IEnumerable<RepositoryTypeAndImplementations> TypesAndImplementations { get; set; }
-        public IEnumerable<RepositoryFile> Files { get; set; }
+        public List<RepositoryDependency> Dependencies { get; set; }
+        public List<RepositoryTypeAndImplementations> TypesAndImplementations { get; set; }
+        public List<RepositoryFile> Files { get; set; }
     }
 }

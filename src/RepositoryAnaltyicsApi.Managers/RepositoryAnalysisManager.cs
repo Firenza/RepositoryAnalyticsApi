@@ -84,7 +84,7 @@ namespace RepositoryAnaltyicsApi.Managers
                 repositoryCurrentState.RepositoryLastUpdatedOn = sourceRepository.PushedAt;
 
                 repositoryCurrentState.Teams = sourceRepository.Teams;
-                repositoryCurrentState.Topics = sourceRepository.TopicNames;
+                repositoryCurrentState.Topics = sourceRepository.TopicNames?.Select(name => new RepositoryTopic { Name = name }).ToList();
                 repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name).ConfigureAwait(false);
 
                 // Need to pick a branch for the snapshot stuff
@@ -109,11 +109,11 @@ namespace RepositoryAnaltyicsApi.Managers
                 {
                     repositorySnapshot = new RepositorySnapshot();
                     // Have to set the windows in the manager
-                    repositorySnapshot.RepositoryCurrentStateId = repositoryCurrentState.Id;
+                    repositorySnapshot.RepositoryCurrentStateRepositoryId = repositoryCurrentState.Id;
                     repositorySnapshot.TakenOn = DateTime.Now;
                     repositorySnapshot.BranchUsed = branchName;
                     repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
-                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositorySnapshot.Dependencies, repositoryCurrentState.Topics, repositoryAnalysis.AsOf).ConfigureAwait(false);
+                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositorySnapshot.Dependencies, repositoryCurrentState.Topics?.Select(topic => topic.Name), repositoryAnalysis.AsOf).ConfigureAwait(false);
                     repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
                 }
 
@@ -206,7 +206,7 @@ namespace RepositoryAnaltyicsApi.Managers
             return allDependencies;
         }
 
-        private async Task<IEnumerable<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(string owner, string name, string branch, IEnumerable<RepositoryDependency> dependencies, IEnumerable<string> topicNames, DateTime? asOf)
+        private async Task<List<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(string owner, string name, string branch, IEnumerable<RepositoryDependency> dependencies, IEnumerable<string> topicNames, DateTime? asOf)
         {
             var typesAndImplementations = new List<RepositoryTypeAndImplementations>();
 
