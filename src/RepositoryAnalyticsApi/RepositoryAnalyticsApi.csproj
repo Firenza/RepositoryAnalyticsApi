@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\RepositoryAnalyticsApi.InternalModel\RepositoryAnalyticsApi.InternalModel.csproj" />
+    <ProjectReference Include="..\RepositoryAnalyticsApi.InternalModel\RepositoryAnalyticsApi.InternalModel.csproj" />
     <ProjectReference Include="..\RepositoryAnalyticsApi.Extensions\RepositoryAnalyticsApi.Extensions.csproj" />
     <ProjectReference Include="..\RepositoryAnaltyicsApi.Controllers\RepositoryAnaltyicsApi.Controllers.csproj" />
     <ProjectReference Include="..\RepositoryAnaltyicsApi.Interfaces\RepositoryAnaltyicsApi.Interfaces.csproj" />

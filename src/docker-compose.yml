@@ -8,13 +8,6 @@ services:
       dockerfile: RepositoryAnalyticsApi/Dockerfile
     ports: 
       - "32771:80"
-    env_file:
-      - RepositoryAnalyticsApi\configuration.env
-
-  mongodb:
-    image: mongo:3.4.13
-    ports:
-      - "27017:27017"
 
   elasticsearch:
     image: elasticsearch
