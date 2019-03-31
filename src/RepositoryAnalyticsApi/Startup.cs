@@ -17,25 +17,31 @@ namespace RepositoryAnalyticsApi
     {
         private const string appName = "Repo Analytics API";
         private const int appVersion = 1;
-        private IConfiguration configuration = null;
+        private IHostingEnvironment env;
+        private IConfiguration configuration ;
 
-        public Startup(IConfiguration configuration)
+        public Startup(IHostingEnvironment env, IConfiguration configuration)
         {
-            Log.Logger = new LoggerConfiguration()
-             .MinimumLevel.Debug()
-             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-             .Enrich.FromLogContext()
-             .WriteTo.Console()
-             .WriteTo.Elasticsearch("http://localhost:9200")
-             .CreateLogger();
-
+            this.env = env;
             this.configuration = configuration;
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            ContainerManager.RegisterServices(services, configuration);
+            // Load config data 
+            var dependencies = configuration.GetSection("Dependencies").Get<InternalModel.AppSettings.Dependencies>();
+            services.AddSingleton(typeof(InternalModel.AppSettings.Dependencies), dependencies);
+
+            Log.Logger = new LoggerConfiguration()
+               .MinimumLevel.Debug()
+               .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+               .Enrich.FromLogContext()
+               .WriteTo.Console()
+               .WriteTo.Elasticsearch(dependencies.ElasticSearch.Url)
+               .CreateLogger();
+
+            ContainerManager.RegisterServices(services, configuration,env);
             ContainerManager.RegisterExtensions(services, configuration);
 
             services.AddMvc().AddJsonOptions(options =>
@@ -44,8 +50,8 @@ namespace RepositoryAnalyticsApi
 
             services.AddDistributedRedisCache(options =>
             {
-                options.Configuration = "localhost";
-                options.InstanceName = "RepositoryAnalyticsApi";
+                options.Configuration = dependencies.Redis.Configuration;
+                options.InstanceName = dependencies.Redis.InstanceName;
             });
 
             // Register the Swagger generator, defining one or more Swagger documents

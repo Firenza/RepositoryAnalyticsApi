@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using GraphQl.NetStandard.Client;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Composition.Hosting;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -29,69 +31,62 @@ namespace RepositoryAnalyticsApi
     public static class ContainerManager
     {
 
-        public static void RegisterServices(IServiceCollection services, IConfiguration configuration)
+        public static void RegisterServices(IServiceCollection services, IConfiguration configuration, IHostingEnvironment env)
         {
-            // Read in environment variables
-            var gitHubv3ApiUrl = ReadEnvironmentVariable("GITHUB_V3_API_URL", configuration);
-            var gitHubGraphQLApiUrl = ReadEnvironmentVariable("GITHUB_GRAPHQL_API_URL", configuration);
-            var gitHubAccessToken = ReadEnvironmentVariable("GITHUB_ACCESS_TOKEN", configuration);
-            var dbType = ReadEnvironmentVariable("DB_TYPE", configuration);
-            var dbConnectionString = ReadEnvironmentVariable("DB_CONNECTION_STRING", configuration);
-
-            // Load config data 
+            // Put caching config in container 
             var caching = configuration.GetSection("Caching").Get<InternalModel.AppSettings.Caching>();
             services.AddSingleton(typeof(InternalModel.AppSettings.Caching), caching);
 
+            // Load config data
+            var dependencies = configuration.GetSection("Dependencies").Get<InternalModel.AppSettings.Dependencies>();
+            services.AddSingleton(typeof(InternalModel.AppSettings.Dependencies), dependencies);
+
+            // ---------------------------------
+            // -- Configure GitHub API access --
+            // ---------------------------------
+
+            // Read in the github api token value (either from local secrets or from environment variables)
+            var gitHubTokenSecretName = $"github_access_token|{new Uri(dependencies.GitHub.V3ApiUrl).Host}";
+            var gitHubAccessToken = configuration[gitHubTokenSecretName];
+
+            if (string.IsNullOrWhiteSpace(gitHubAccessToken))
+            {
+                throw new ArgumentException($"No GitHub API token variable named '{gitHubTokenSecretName}' found in local secrets or enviornment variables");
+            }
+
             // Setup GitHub V3 Api clients
             var gitHubV3ApiCredentials = new Credentials(gitHubAccessToken);
-            var gitHubClient = new GitHubClient(new ProductHeaderValue("RepositoryAnalyticsApi"), new Uri(gitHubv3ApiUrl));
+            var gitHubClient = new GitHubClient(new ProductHeaderValue("RepositoryAnalyticsApi"), new Uri(dependencies.GitHub.V3ApiUrl));
             gitHubClient.Credentials = gitHubV3ApiCredentials;
-            var gitHubTreesClient = new TreesClient(new ApiConnection(new Connection(new ProductHeaderValue("RepositoryAnalyticsApi"), new Uri(gitHubv3ApiUrl)) { Credentials = gitHubV3ApiCredentials }));
+            var gitHubTreesClient = new TreesClient(new ApiConnection(new Connection(new ProductHeaderValue("RepositoryAnalyticsApi"), new Uri(dependencies.GitHub.V3ApiUrl)) { Credentials = gitHubV3ApiCredentials }));
 
             // Setup GitHub GraphQL client
             var requestHeaders = new NameValueCollection();
             requestHeaders.Add("Authorization", $"Bearer {gitHubAccessToken}");
             requestHeaders.Add("User-Agent", "RepositoryAnalyticsApi");
-            var graphQLClient = new GraphQLClient(new HttpClient(), gitHubGraphQLApiUrl, requestHeaders);
+            var graphQLClient = new GraphQLClient(new HttpClient(), dependencies.GitHub.GraphQlApiUrl, requestHeaders);
 
-            IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
+            // ----------------------------
+            // -- Configure the Database --
+            // ----------------------------
 
-            services.AddTransient<IRepositoryManager, RepositoryManager>();
-            //services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
-            services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
-            services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
-            services.AddTransient<IDependencyManager, DependencyManager>();
-            services.AddTransient<IRepositorySourceRepository>(serviceProvider => codeRepo);
-            services.AddTransient<IRepositoryImplementationsManager, RepositoryImplementationsManager>();
-            //services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
-            services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
-            //services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
-            //services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();
-            services.AddTransient<IVersionManager, VersionManager>();
-            services.AddTransient<IRepositoryCurrentStateRepository, RelationalRepositoryCurrentStateRepository>();
-            services.AddTransient<IRepositorySnapshotRepository, RelationalRepositorySnapshotRepository>();
+            var connestionString = dependencies.Database.ConnectionString;
 
-            services.AddTransient<IEnumerable<IDependencyScraperManager>>((serviceProvider) => new List<IDependencyScraperManager> {
-                new BowerDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
-                new DotNetProjectFileDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
-                new NpmDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
-                new NuGetDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>())
-            });
+            // Figure out which DB type needs to be loaded
+            var formattedDbType = dependencies.Database.Type.ToLower().Replace(" ", string.Empty);
 
-
-            var formattedDbType = dbType.ToLower().Replace(" ", string.Empty);
             if (formattedDbType == "sqlserver")
             {
                 services.AddDbContext<RepositoryAnalysisContext>(options =>
                 {
-                    options.UseSqlServer(dbConnectionString);
+                    options.UseSqlServer(connestionString);
                 });
             }
             else if (formattedDbType == "postgresql")
             {
                 services.AddDbContext<RepositoryAnalysisContext>(options =>
                 {
-                    options.UseNpgsql(dbConnectionString);
+                    options.UseNpgsql(connestionString);
                 });
             }
             else
@@ -99,6 +94,26 @@ namespace RepositoryAnalyticsApi
                 throw new ArgumentException("Unsupported DB Type, only PostgreSQL and SQL Server are supported");
             }
 
+            // In development assume DB password is not a part of the connection string and in a local secret
+            if (env.IsDevelopment())
+            {
+                var dbConnectionStringBuilder = new DbConnectionStringBuilder();
+                dbConnectionStringBuilder.ConnectionString = dependencies.Database.ConnectionString;
+
+                var dbPasswordSecretName = $"dbpassword|{dbConnectionStringBuilder["Server"]}|{dbConnectionStringBuilder["Database"]}|{dbConnectionStringBuilder["User Id"]}";
+                var dbPassword = configuration[dbPasswordSecretName];
+
+                if (string.IsNullOrWhiteSpace(dbPassword))
+                {
+                    throw new ArgumentException($"No DB password token variable named '{dbPasswordSecretName}' found in local secrets or enviornment variables");
+                }
+
+                dbConnectionStringBuilder["Password"] = dbPassword;
+
+                connestionString = dbConnectionStringBuilder.ConnectionString;
+            }
+
+            // Now setup all the mapping between the Entity Framework objects
             var config = new MapperConfiguration(cfg =>
             {
                 var versionManager = new VersionManager();
@@ -138,10 +153,37 @@ namespace RepositoryAnalyticsApi
                 cfg.CreateMap<Repositories.Model.EntityFramework.RepositorySnapshot, ServiceModel.RepositorySnapshot>();
                 cfg.CreateMap<ServiceModel.RepositorySnapshot, Repositories.Model.EntityFramework.RepositorySnapshot>()
                     .EqualityComparison((source, dest) => source.WindowStartCommitId == dest.WindowStartCommitId);
-                   
             });
 
             services.AddSingleton(config.CreateMapper());
+
+            // -------------------------
+            // Configure DI container --
+            // -------------------------
+
+            IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
+
+            services.AddTransient<IRepositoryManager, RepositoryManager>();
+            //services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
+            services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
+            services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
+            services.AddTransient<IDependencyManager, DependencyManager>();
+            services.AddTransient<IRepositorySourceRepository>(serviceProvider => codeRepo);
+            services.AddTransient<IRepositoryImplementationsManager, RepositoryImplementationsManager>();
+            //services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
+            services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
+            //services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
+            //services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();
+            services.AddTransient<IVersionManager, VersionManager>();
+            services.AddTransient<IRepositoryCurrentStateRepository, RelationalRepositoryCurrentStateRepository>();
+            services.AddTransient<IRepositorySnapshotRepository, RelationalRepositorySnapshotRepository>();
+
+            services.AddTransient<IEnumerable<IDependencyScraperManager>>((serviceProvider) => new List<IDependencyScraperManager> {
+                new BowerDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
+                new DotNetProjectFileDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
+                new NpmDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
+                new NuGetDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>())
+            });
         }
 
         public static void RegisterExtensions(IServiceCollection services, IConfiguration configuration)
@@ -267,37 +309,6 @@ namespace RepositoryAnalyticsApi
                 }
 
                 return assemblies;
-            }
-        }
-
-        /// <summary>
-        /// Reads an environment varible based on whether or not the api is running in docker or not
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        private static string ReadEnvironmentVariable(string name, IConfiguration configuration)
-        {
-            // If the environment variable specified in the RepositoryAnaltyicsApi startup coniguration is not there
-            // then we must be running inside of Docker so just load the enviornment variables normally
-            if (configuration["RUNNING_OUTSIDE_OF_DOCKER"] != "true")
-            {
-                return configuration[name];
-            }
-            else
-            {
-                var configurationFileLines = File.ReadAllLines("configuration.env");
-
-                foreach (var configurationFileLine in configurationFileLines)
-                {
-                    var match = Regex.Match(configurationFileLine, $"^{name}=(.*)");
-
-                    if (match.Success)
-                    {
-                        return match.Groups[1].Value;
-                    }
-                }
-
-                return null;
             }
         }
     }
