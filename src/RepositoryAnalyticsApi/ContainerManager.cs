@@ -134,6 +134,7 @@ namespace RepositoryAnalyticsApi
                 cfg.CreateMap<ServiceModel.RepositoryDependency, Repositories.Model.EntityFramework.RepositoryDependency>()
                     .ForMember(dest => dest.PaddedVersion, opt => opt.MapFrom(source => versionManager.GetPaddedVersion(source.Version)))
                     .ForMember(dest => dest.MinorVerison, opt => opt.MapFrom(source => versionManager.GetMinorVersion(source.Version)))
+                    .ForMember(dest => dest.PreReleaseSemanticVersion, opt => opt.MapFrom(source => versionManager.GetPreReleaseVersion(source.Version)))
                     .EqualityComparison((source, dest) => $"{source.Name}|{source.Version}|{source.RepoPath}" == $"{dest.Name}|{dest.Version}|{dest.RepoPath}");
                 cfg.CreateMap<Repositories.Model.EntityFramework.RepositoryFile, ServiceModel.RepositoryFile>();
                 cfg.CreateMap<ServiceModel.RepositoryFile, Repositories.Model.EntityFramework.RepositoryFile>()

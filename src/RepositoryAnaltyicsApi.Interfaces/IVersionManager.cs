@@ -4,5 +4,6 @@
     {
         string GetPaddedVersion(string version);
         string GetMinorVersion(string version);
+        string GetPreReleaseVersion(string version);
     }
 }
