@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnaltyicsApi.Managers;
@@ -162,14 +163,17 @@ namespace RepositoryAnalyticsApi
             // Configure DI container --
             // -------------------------
 
-            IRepositorySourceRepository codeRepo = new GitHubApiRepositorySourceRepository(gitHubClient, gitHubTreesClient, graphQLClient);
-
             services.AddTransient<IRepositoryManager, RepositoryManager>();
             //services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
             services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
             services.AddTransient<IDependencyManager, DependencyManager>();
-            services.AddTransient<IRepositorySourceRepository>(serviceProvider => codeRepo);
+            services.AddTransient<IRepositorySourceRepository>(serviceProvider => new GitHubApiRepositorySourceRepository(
+                   gitHubClient,
+                   gitHubTreesClient,
+                   graphQLClient,
+                   serviceProvider.GetService<ILogger<GitHubApiRepositorySourceRepository>>()
+            ));
             services.AddTransient<IRepositoryImplementationsManager, RepositoryImplementationsManager>();
             //services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
             services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();

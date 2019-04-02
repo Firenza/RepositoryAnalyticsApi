@@ -1,4 +1,5 @@
 ﻿using GraphQl.NetStandard.Client;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
@@ -20,12 +21,14 @@ namespace RepositoryAnalyticsApi.Repositories
         private IGitHubClient gitHubClient;
         private ITreesClient treesClient;
         private IGraphQLClient graphQLClient;
+        private ILogger<GitHubApiRepositorySourceRepository> logger;
 
-        public GitHubApiRepositorySourceRepository(IGitHubClient gitHubClient, ITreesClient treesClient, IGraphQLClient graphQLClient)
+        public GitHubApiRepositorySourceRepository(IGitHubClient gitHubClient, ITreesClient treesClient, IGraphQLClient graphQLClient, ILogger<GitHubApiRepositorySourceRepository> logger)
         {
             this.gitHubClient = gitHubClient;
             this.treesClient = treesClient;
             this.graphQLClient = graphQLClient;
+            this.logger = logger;
         }
 
         public async Task<string> ReadFileContentAsync(string owner, string name, string fullFilePath, string gitRef)
@@ -421,6 +424,8 @@ namespace RepositoryAnalyticsApi.Repositories
             var moreTeamsToRead = true;
             string teamAfterCursor = null;
 
+            logger.LogDebug($"Reading team information for organziation {organization}");
+
             while (moreTeamsToRead)
             {
                 var allTeamsRepositoriesQuery = @"
@@ -478,6 +483,8 @@ namespace RepositoryAnalyticsApi.Repositories
 
                         while (moreTeamRepositoriesToRead)
                         {
+                            logger.LogDebug($"Reading additional repository information for team {team.Name}");
+
                             var result = await GetAdditionalTeamRepositoriesAsync(team.Name, afterCursor).ConfigureAwait(false);
 
                             teamRepositoryConnections.AddRange(result.TeamRepositoryConnections);
@@ -502,8 +509,11 @@ namespace RepositoryAnalyticsApi.Repositories
                 if (moreTeamsToRead)
                 {
                     teamAfterCursor = graphQLOrganization.Teams.PageInfo.EndCursor;
+                    logger.LogDebug($"Reading additional team information for organziation {organization}");
                 }
             }
+
+            logger.LogDebug($"Finished reading team information for organziation {organization}");
 
             return teamToRespositoriesMap;
 
