@@ -75,17 +75,35 @@ namespace RepositoryAnaltyicsApi.Managers.Dependencies
 
                             if (targetFrameworkElement != null)
                             {
-                                var dotNetStandardVersion = Regex.Match(targetFrameworkElement.Value, @"(?:\d|\.)+").Value;
+                                // AFAIK only these two names are used in this element
+                                //netstandard
+                                //netcoreapp
 
-                                var dotNetStandardDependency = new RepositoryDependency();
-                                dotNetStandardDependency.Name = ".NET Standard";
-                                dotNetStandardDependency.Version = dotNetStandardVersion;
-                                dotNetStandardDependency.MajorVersion = Regex.Match(dotNetStandardDependency.Version, @"\d+").Value;
-                                dotNetStandardDependency.Environment = "Production";
-                                dotNetStandardDependency.Source = "Visual Studio Project File";
-                                dotNetStandardDependency.RepoPath = dotNetProjectFile.FullPath;
+                                var match = Regex.Match(targetFrameworkElement.Value, @"([A-z]+)([\d|\.]+)");
 
-                                dependencies.Add(dotNetStandardDependency);
+                                var appType = match.Groups[1].Value;
+                                var version = match.Groups[2].Value;
+
+                                var netCoreStandardDependency = new RepositoryDependency();
+                                if (appType.ToLower() == "netstandard")
+                                {
+                                    netCoreStandardDependency.Name = ".NET Standard";
+                                }
+                                else if (appType.ToLower() == "netcoreapp")
+                                {
+                                    netCoreStandardDependency.Name = ".NET Core";
+                                }
+                                else
+                                {
+                                    throw new ArgumentException($"Unrecognized .NET application type of {appType}");
+                                }
+
+                                netCoreStandardDependency.Version = version;
+                                netCoreStandardDependency.MajorVersion = Regex.Match(netCoreStandardDependency.Version, @"\d+").Value;
+                                netCoreStandardDependency.Source = "Visual Studio Project File";
+                                netCoreStandardDependency.RepoPath = dotNetProjectFile.FullPath;
+
+                                dependencies.Add(netCoreStandardDependency);
                             }
                         }
                     }
