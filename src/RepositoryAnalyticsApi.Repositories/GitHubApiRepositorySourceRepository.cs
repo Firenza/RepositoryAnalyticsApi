@@ -74,9 +74,20 @@ namespace RepositoryAnalyticsApi.Repositories
             // Parse the aliased file
             for (int i = 0; i < fullFilePaths.Count; i++)
             {
-                var fileContent = jObject["data"]["repository"][$"file{i + 1}"]["text"].Value<string>();
+                var fileJObject = jObject["data"]["repository"][$"file{i + 1}"];
 
-                tupleList.Add((fullFilePaths[i], fileContent));
+                if (fileJObject.HasValues)
+                {
+                    var fileContent = fileJObject["text"].Value<string>();
+
+                    tupleList.Add((fullFilePaths[i], fileContent));
+                }
+                else
+                {
+                    throw new ArgumentException($"File {fullFilePaths[i]} not found when reading file contents for repo {repositoryName}. " +
+                        $"This is likely the result of a stale file list cache for the repository");
+                }
+ 
             }
 
             return tupleList;
