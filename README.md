@@ -40,6 +40,10 @@ To provide these to the API a run time you can do one of the following
 
 2. Provide the environment varibles in the `docker-compose` command
 
+##### Flushing Redis Cashe
+
+Execute `docker exec -it repositoryAnalyticsApi_redis bash -c "redis-cli FLUSHALL"` to clear all the data
+
 #### Integrating Extensions
 
 1. Build the extension assembly
