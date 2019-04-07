@@ -164,7 +164,7 @@ namespace RepositoryAnalyticsApi
             // -------------------------
 
             services.AddTransient<IRepositoryManager, RepositoryManager>();
-            //services.AddTransient<IDependencyRepository, MongoDependencyRepository>();
+            services.AddTransient<IDependencyRepository, RelationalDependencyRepository>();
             services.AddTransient<IRepositorySourceManager, RepositorySourceManager>();
             services.AddTransient<IRepositoryAnalysisManager, RepositoryAnalysisManager>();
             services.AddTransient<IDependencyManager, DependencyManager>();
