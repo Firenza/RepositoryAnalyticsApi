@@ -18,7 +18,8 @@ namespace RepositoryAnalyticsApi
         private const string appName = "Repo Analytics API";
         private const int appVersion = 1;
         private IHostingEnvironment env;
-        private IConfiguration configuration ;
+        private IConfiguration configuration;
+        readonly string CorsPolicy = "CorsPolicy";
 
         public Startup(IHostingEnvironment env, IConfiguration configuration)
         {
@@ -41,6 +42,16 @@ namespace RepositoryAnalyticsApi
                .WriteTo.Console()
                .WriteTo.Elasticsearch(dependencies.ElasticSearch.Url)
                .CreateLogger();
+
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy(CorsPolicy,
+                builder =>
+                {
+                    builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+                });
+            });
 
             ContainerManager.RegisterServices(services, configuration,env);
             ContainerManager.RegisterExtensions(services, configuration);
@@ -90,6 +101,8 @@ namespace RepositoryAnalyticsApi
                     // context.Database.Migrate();
                 }
             }
+
+            app.UseCors(CorsPolicy);
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
