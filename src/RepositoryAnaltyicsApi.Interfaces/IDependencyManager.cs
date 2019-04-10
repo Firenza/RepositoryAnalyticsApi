@@ -8,6 +8,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
     public interface IDependencyManager
     {
         Task<List<string>> SearchNamesAsync(string name, DateTime? asOf);
-        Task<List<RepositoryDependencySearchResult>> SearchAsync(string name, RepositorySearch repositorySearch);
+        Task<List<RepositoryDependencySearchResult>> ReadAsync(string name, RepositorySearch repositorySearch);
     }
 }

@@ -11,6 +11,11 @@ using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.Repositories
 {
+    public class Aggregations
+    {
+        public int Count { get; set; }
+    }
+
     public class RelationalDependencyRepository : IDependencyRepository
     {
         private RepositoryAnalysisContext repositoryAnalysisContext;
@@ -22,31 +27,83 @@ namespace RepositoryAnalyticsApi.Repositories
             this.mapper = mapper;
         }
 
-        public Task<List<RepositoryDependencySearchResult>> SearchAsync(string name, RepositorySearch repositorySearch)
+        public async Task<List<RepositoryDependencySearchResult>> ReadAsync(string name, RepositorySearch repositorySearch)
         {
-            throw new NotImplementedException();
+            var dbConnection = repositoryAnalysisContext.Database.GetDbConnection();
+
+            var respositoryDependencySearchResults = await dbConnection.QueryAsync<Model.EntityFramework.RepositoryDependency, RepositoryDependencySearchResult, RepositoryDependencySearchResult>(
+                @"SELECT name, version, Count(*) count
+                FROM repository_dependency  RD
+                JOIN repository_snapshot RS 
+	                on RS.repository_snapshot_id = RD.repository_snapshot_id
+	                and RS.window_ends_on is null
+                WHERE name = @name
+                GROUP BY name, version, padded_version
+                order by padded_version",
+                (repositoryDepenency, repositoryDependencySearchResult) => 
+                {
+                    repositoryDependencySearchResult.RepositoryDependency = mapper.Map<ServiceModel.RepositoryDependency>(repositoryDepenency);
+
+                    return repositoryDependencySearchResult;
+                },
+                new { name = name },
+                splitOn: "count");
+
+            if (respositoryDependencySearchResults != null && respositoryDependencySearchResults.Any())
+            {
+                return respositoryDependencySearchResults.ToList();
+            }
+            else
+            {
+                return new List<RepositoryDependencySearchResult>();
+            }
         }
 
         public async Task<List<string>> SearchNamesAsync(string name, DateTime? asOf)
         {
+            var matchingDependencyNames = new List<string>();
+
             var dbConnection = repositoryAnalysisContext.Database.GetDbConnection();
 
-            var matchingNames = await dbConnection.QueryAsync<string>(
-                 @"SELECT name
-                      FROM repository_dependency
-                      WHERE name LIKE @Name
-                      GROUP BY name
-                      ORDER BY name",
-                 new { Name = "%" + name + "%" });
+            if (!asOf.HasValue)
+            {
+                var startsWithMatchesTask = dbConnection.QueryAsync<string>(
+                         @"SELECT name
+                            FROM repository_dependency  RD
+                            JOIN repository_snapshot RS 
+	                            on RS.repository_snapshot_id = RD.repository_snapshot_id
+	                            and RS.window_ends_on is null
+                            WHERE name LIKE @Name
+                            GROUP BY name
+                            ORDER BY name",
+                         new { Name = name + "%" });
 
-            if (matchingNames != null)
-            {
-                return matchingNames.ToList();
+                var startsWithMatches = await startsWithMatchesTask;
+
+                var anyMatchesTask = dbConnection.QueryAsync<string>(
+                     @"SELECT name
+                        FROM repository_dependency RD
+                        JOIN repository_snapshot RS 
+	                        on RS.repository_snapshot_id = RD.repository_snapshot_id
+	                        and RS.window_ends_on is null
+                        WHERE name LIKE @Name
+                        GROUP BY name
+                        ORDER BY name",
+                     new { Name = "%" + name + "%" });
+
+                var anyMatches = await anyMatchesTask;
+
+                if (startsWithMatches.Any())
+                {
+                    matchingDependencyNames.AddRange(startsWithMatches);
+                }
+                else if (matchingDependencyNames.Count < 10 && anyMatches.Any())
+                {
+                    matchingDependencyNames.AddRange(anyMatches);
+                }
             }
-            else
-            {
-                return new List<string>();
-            }
+
+            return matchingDependencyNames;
         }
     }
 }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
-    [Route("api/dependencies")]
+    [Route("api/dependencies/{name}")]
     [ApiController]
     public class DependenciesController : ControllerBase
     {
@@ -20,12 +20,12 @@ namespace RepositoryAnaltyicsApi.Controllers
         }
 
         /// <summary>
-        /// Search dependencies
+        /// Read dependency information
         /// </summary>
         /// <param name="name">Must be an exact match</param>
         /// <returns></returns>
         /// <remarks>
-        /// Search dependency information by dependency name.  Results are grouped by Name and Version.
+        /// Read infomration about a specific dependency.  Results are grouped by version
         /// </remarks>
         [HttpGet()]
         public async Task<ActionResult<List<RepositoryDependencySearchResult>>> Get(string name, DateTime? asOf, string team, string topic, bool? hasContinuousDelivery)
@@ -38,7 +38,7 @@ namespace RepositoryAnaltyicsApi.Controllers
                 Topic = topic
             };
 
-            var dependencySearchResults = await dependencyManager.SearchAsync(name, repositorySearch).ConfigureAwait(false);
+            var dependencySearchResults = await dependencyManager.ReadAsync(name, repositorySearch).ConfigureAwait(false);
 
             return dependencySearchResults;
         }
