@@ -32,7 +32,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var versionStringBuilder = new StringBuilder();
 
-            var padCharacter = ' ';
+            var padCharacter = '0';
             // The total of actual version #'s plus padding for each section between the .'s
             var totalVersionChunkSize = 10;
             var totalPreReleaseVersionChunkSize = 50;
