@@ -15,6 +15,8 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasDefaultSchema("repositoryAnalytics");
+
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 // Snake case everything to avoid having to put quotes around everything
