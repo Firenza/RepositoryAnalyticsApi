@@ -101,15 +101,20 @@ namespace RepositoryAnalyticsApi
                 var dbConnectionStringBuilder = new DbConnectionStringBuilder();
                 dbConnectionStringBuilder.ConnectionString = dependencies.Database.ConnectionString;
 
-                var dbPasswordSecretName = $"dbpassword|{dbConnectionStringBuilder["Server"]}|{dbConnectionStringBuilder["Database"]}|{dbConnectionStringBuilder["User Id"]}";
-                var dbPassword = configuration[dbPasswordSecretName];
-
-                if (string.IsNullOrWhiteSpace(dbPassword))
+                // It's possible to use things like windows auth when running outside of a container so check for the User Id
+                // value in the connection string before trying to look for a local secret pwd
+                if (dbConnectionStringBuilder.ConnectionString.Contains("User Id"))
                 {
-                    throw new ArgumentException($"No DB password token variable named '{dbPasswordSecretName}' found in local secrets or enviornment variables");
-                }
+                    var dbPasswordSecretName = $"dbpassword|{dbConnectionStringBuilder["Server"]}|{dbConnectionStringBuilder["Database"]}|{dbConnectionStringBuilder["User Id"]}";
+                    var dbPassword = configuration[dbPasswordSecretName];
 
-                dbConnectionStringBuilder["Password"] = dbPassword;
+                    if (string.IsNullOrWhiteSpace(dbPassword))
+                    {
+                        throw new ArgumentException($"No DB password token variable named '{dbPasswordSecretName}' found in local secrets or enviornment variables");
+                    }
+
+                    dbConnectionStringBuilder["Password"] = dbPassword;
+                }
 
                 connestionString = dbConnectionStringBuilder.ConnectionString;
             }
