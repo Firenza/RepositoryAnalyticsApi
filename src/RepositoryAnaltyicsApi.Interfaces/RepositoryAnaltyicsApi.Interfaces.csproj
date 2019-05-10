@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\RepositoryAnalyticsApi.InternalModel\RepositoryAnalyticsApi.InternalModel.csproj" />
     <ProjectReference Include="..\RepositoryAnalyticsApi.ServiceModel\RepositoryAnalyticsApi.ServiceModel.csproj" />
   </ItemGroup>
