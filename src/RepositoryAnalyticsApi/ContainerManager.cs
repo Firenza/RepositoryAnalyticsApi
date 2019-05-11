@@ -47,7 +47,7 @@ namespace RepositoryAnalyticsApi
             // ---------------------------------
 
             // Read in the github api token value (either from local secrets or from environment variables)
-            var gitHubTokenSecretName = $"github_access_token|{new Uri(dependencies.GitHub.V3ApiUrl).Host}";
+            var gitHubTokenSecretName = $"GITHUB_ACCESS_TOKEN";
             var gitHubAccessToken = configuration[gitHubTokenSecretName];
 
             if (string.IsNullOrWhiteSpace(gitHubAccessToken))
@@ -103,9 +103,9 @@ namespace RepositoryAnalyticsApi
 
                 // It's possible to use things like windows auth when running outside of a container so check for the User Id
                 // value in the connection string before trying to look for a local secret pwd
-                if (dbConnectionStringBuilder.ConnectionString.Contains("User Id"))
+                if (dbConnectionStringBuilder.ConnectionString.Contains("User Id", StringComparison.OrdinalIgnoreCase))
                 {
-                    var dbPasswordSecretName = $"dbpassword|{dbConnectionStringBuilder["Server"]}|{dbConnectionStringBuilder["Database"]}|{dbConnectionStringBuilder["User Id"]}";
+                    var dbPasswordSecretName = $"DB_PASSWORD";
                     var dbPassword = configuration[dbPasswordSecretName];
 
                     if (string.IsNullOrWhiteSpace(dbPassword))
