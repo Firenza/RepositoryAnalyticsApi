@@ -24,21 +24,29 @@ The API must also provide the ability to be exended so that people can define th
 
 #### Running Locally
 
-The API uses the following environment variables to configure how to connect to GitHub.
+#####  Configure the application
 
-```
-GITHUB_ACCESS_TOKEN=YOUR_ACCESS_TOKEN
-GITHUB_V3_API_URL=https://api.github.com
-GITHUB_GRAPHQL_API_URL=https://api.github.com/graphql
-DB_TYPE=postgresql
-DB_CONNECTION_STRING=Server=localhost;Database=repository_analytics;UserID=bob;Password=bobiscool;
-```
+1. Update the default values in the `appsettings.Development.json` file (if desired)
+1. Run `docker-compose -f dependencies-docker-compose.yml up -d` to start up the dependent apps.  This will also happen when Rebuilding the solution in Visual Studio
+1. Set the `GITHUB_ACCESS_TOKEN` and `DB_PASSWORD` values in the [.NET Core Secret Manager](https://docs.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-2.2&tabs=windows#secret-manager) 
 
-To provide these to the API a run time you can do one of the following
+##### Build and run the application
 
-1. Create a `configuration.env` file (in the same directory as the docker-compose.yml file) and put the variables / values in there.  This file has been added to the `.gitignore` file so you don't have to worry about commiting it by accident.
+###### Via command line
 
-2. Provide the environment varibles in the `docker-compose` command
+1. Run `dotnet build`
+1. Run `dotnet run`
+
+###### Via Visual Studio
+
+1. Set the startup project to be `RepositoryAnaltyicsApi` (I think this is done by default)
+1. Set the startup method to just run the api directly (vs through IIS Express)
+1. Click the green start button :)
+
+##### Test out the API
+
+You can naviage to http://localhost:33283/swagger/ to interact with the API
+
 
 ##### Flushing Redis Cashe
 
