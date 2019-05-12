@@ -7,16 +7,19 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.5.2
     ports:
       - '9200:9200'
+
   kibana:
     container_name: repositoryAnalyticsApi_kibana
     image: docker.elastic.co/kibana/kibana:6.5.2
     ports:
       - '5601:5601'
+
   redis:
     container_name: repositoryAnalyticsApi_redis
     image: 'redis:5.0.3'
     ports:
       - '6379:6379'
+
   sqlserver:
     container_name: repositoryAnalyticsApi_sqlServer
     image: 'mcr.microsoft.com/mssql/server:2017-CU12'
@@ -25,6 +28,7 @@ services:
       - MSSQL_SA_PASSWORD=<YourStrong!Passw0rd>
     ports:
       - '1433:1433'
+
   postgresql:
     container_name: repositoryAnalyticsApi_postgresql
     image: 'postgres:11.2'

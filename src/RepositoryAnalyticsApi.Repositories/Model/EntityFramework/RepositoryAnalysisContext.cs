@@ -15,7 +15,7 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasDefaultSchema("repositoryAnalytics");
+            //modelBuilder.HasDefaultSchema("repositoryAnalytics");
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {

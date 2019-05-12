@@ -32,6 +32,12 @@ namespace RepositoryAnalyticsApi
         {
             // Load config data 
             var dependencies = configuration.GetSection("Dependencies").Get<InternalModel.AppSettings.Dependencies>();
+
+            if (dependencies == null)
+            {
+                throw new ArgumentException("Unable to find Dependency configuration!!!");
+            }
+
             services.AddSingleton(typeof(InternalModel.AppSettings.Dependencies), dependencies);
 
             Log.Logger = new LoggerConfiguration()
@@ -42,7 +48,6 @@ namespace RepositoryAnalyticsApi
                .WriteTo.Console()
                .WriteTo.Elasticsearch(dependencies.ElasticSearch.Url)
                .CreateLogger();
-
 
             services.AddCors(options =>
             {

@@ -47,7 +47,7 @@ namespace RepositoryAnalyticsApi
             // ---------------------------------
 
             // Read in the github api token value (either from local secrets or from environment variables)
-            var gitHubTokenSecretName = $"GITHUB_ACCESS_TOKEN";
+            var gitHubTokenSecretName = $"DEPENDENCIES:GITHUB:ACCESSTOKEN";
             var gitHubAccessToken = configuration[gitHubTokenSecretName];
 
             if (string.IsNullOrWhiteSpace(gitHubAccessToken))
@@ -105,7 +105,7 @@ namespace RepositoryAnalyticsApi
                 // value in the connection string before trying to look for a local secret pwd
                 if (dbConnectionStringBuilder.ConnectionString.Contains("User Id", StringComparison.OrdinalIgnoreCase))
                 {
-                    var dbPasswordSecretName = $"DB_PASSWORD";
+                    var dbPasswordSecretName = $"DEPENDENCIES:DATABASE:PASSWORD";
                     var dbPassword = configuration[dbPasswordSecretName];
 
                     if (string.IsNullOrWhiteSpace(dbPassword))

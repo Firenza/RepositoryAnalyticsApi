@@ -2,19 +2,49 @@ version: '3.4'
 
 services:
   repositoryanalyticsapi:
-    image: repositoryanalyticsapi
+    image: firenza/repository_analytics_api
     build:
       context: .
-      dockerfile: RepositoryAnalyticsApi/Dockerfile
+      dockerfile: Dockerfile
+    environment:
+      - DEPENDENCIES__DATABASE__TYPE=PostgreSql
+      - DEPENDENCIES__DATABASE__CONNECTIONSTRING="Server=postgresql;Database=repository_analytics;User ID=postgres"
+      - DEPENDENCIES__DATABASE__PASSWORD=mysecretpassword
+      - DEPENDENCIES__GITHUB__V3APIURL=https://api.github.com
+      - DEPENDENCIES__GITHUB__GRAPHQLAPIURL=https://api.github.com/graphql
+      - DEPENDENCIES__GITHUB__ACCESSTOKEN=YOUR_TOKEN_HERE
+      - DEPENDENCIES__ELASTICSEARCH__URL=elasticsearch:9200
+      - DEPENDENCIES__REDIS__CONFIGURATION=redis
+      - DEPENDENCIES__REDIS__INSTANCENAME=RepositoryAnalyticsApi
     ports: 
       - "32771:80"
 
   elasticsearch:
-    image: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.2
     ports:
       - "9200:9200"
 
   kibana:
-    image: kibana
+    image: docker.elastic.co/kibana/kibana:6.5.2
     ports: 
       - "5601:5601"
+
+  redis:
+    image: 'redis:5.0.3'
+    ports:
+      - '6379:6379'
+  
+  sqlserver:
+    image: 'mcr.microsoft.com/mssql/server:2017-CU12'
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=<YourStrong!Passw0rd>
+    ports:
+      - '1433:1433'
+
+  postgresql:
+    image: 'postgres:11.2'
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+    ports:
+      - '5432:5432'
