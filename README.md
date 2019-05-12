@@ -28,7 +28,7 @@ The API must also provide the ability to be exended so that people can define th
 
 1. Update the default values in the `appsettings.Development.json` file (if desired)
 1. Run `docker-compose -f dependencies-docker-compose.yml up -d` to start up the dependent apps.  This will also happen when Rebuilding the solution in Visual Studio
-1. Set the `GITHUB_ACCESS_TOKEN` and `DB_PASSWORD` values in the [.NET Core Secret Manager](https://docs.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-2.2&tabs=windows#secret-manager) 
+1. Set the `GithubAccessToken` and `DatabasePassword` values in the [.NET Core Secret Manager](https://docs.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-2.2&tabs=windows#secret-manager) 
 
 ##### Build and run the application
 
