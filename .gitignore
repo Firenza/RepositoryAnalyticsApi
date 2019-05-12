@@ -264,3 +264,4 @@ __pycache__/
 
 /src/RepositoryAnalyticsApi/Plugins/
 /src/Visual Studio 2017/Visualizers
+/src/RepositoryAnalyticsApi/Properties/PublishProfiles
