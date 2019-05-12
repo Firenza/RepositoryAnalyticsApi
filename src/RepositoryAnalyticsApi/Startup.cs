@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RepositoryAnalyticsApi.InternalModel;
 using RepositoryAnalyticsApi.Repositories.Model.EntityFramework;
 using Serilog;
 using Serilog.Events;
@@ -30,8 +31,62 @@ namespace RepositoryAnalyticsApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var flattenedAppSettings = new FlattenedAppSettings();
+            configuration.Bind(flattenedAppSettings);
+
+            // Map the flattened dependencies in to the structured ones until the whole "__" not working in docke
+            // compose thing can be figured out
+            var dependencies = new InternalModel.AppSettings.Dependencies
+            {
+                Database = new InternalModel.AppSettings.Database
+                {
+                    Type = flattenedAppSettings.DatabaseType,
+                    ConnectionString = flattenedAppSettings.DatabaseConnectionString
+                },
+                ElasticSearch = new InternalModel.AppSettings.ElasticSearch
+                {
+                    Url = flattenedAppSettings.ElasticSearchUrl
+                },
+                GitHub = new InternalModel.AppSettings.GitHub
+                {
+                    GraphQlApiUrl = flattenedAppSettings.GitHubGraphQlApiUrl,
+                    V3ApiUrl = flattenedAppSettings.GitHubV3ApiUrl
+                },
+                Redis = new InternalModel.AppSettings.Redis
+                {
+                    Configuration = flattenedAppSettings.RedisConfiguration,
+                    InstanceName = flattenedAppSettings.RedisInstanceName
+                }
+            };
+
+            var caching = new InternalModel.AppSettings.Caching
+            {
+                Durations = new InternalModel.AppSettings.CacheDurations
+                {
+                    DevOpsIntegrations = flattenedAppSettings.CachingDurationDevOpsIntegrations,
+                    OrganizationTeams = flattenedAppSettings.CachingDurationOrganizationTeams,
+                    OwnerType = flattenedAppSettings.CachingDurationOwnerType,
+                    RepositoryData = flattenedAppSettings.CachingDurationRepositoryData
+                }
+            };
+
             // Load config data 
-            var dependencies = configuration.GetSection("Dependencies").Get<InternalModel.AppSettings.Dependencies>();
+            //var dependencies = configuration.GetSection("Dependencies").Get<InternalModel.AppSettings.Dependencies>();
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.Elasticsearch(dependencies.ElasticSearch.Url)
+                .CreateLogger();
+
+            // Print out all config data
+            foreach (var child in configuration.GetChildren())
+            {
+                Log.Logger.Information($"{child.Path} ({child.Key}) = {child.Value ?? "(null)"}");
+            }
 
             if (dependencies == null)
             {
@@ -39,15 +94,6 @@ namespace RepositoryAnalyticsApi
             }
 
             services.AddSingleton(typeof(InternalModel.AppSettings.Dependencies), dependencies);
-
-            Log.Logger = new LoggerConfiguration()
-               .MinimumLevel.Debug()
-               .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-               .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-               .Enrich.FromLogContext()
-               .WriteTo.Console()
-               .WriteTo.Elasticsearch(dependencies.ElasticSearch.Url)
-               .CreateLogger();
 
             services.AddCors(options =>
             {
@@ -58,7 +104,7 @@ namespace RepositoryAnalyticsApi
                 });
             });
 
-            ContainerManager.RegisterServices(services, configuration,env);
+            ContainerManager.RegisterServices(services, configuration ,env, dependencies, caching);
             ContainerManager.RegisterExtensions(services, configuration);
 
             services.AddMvc().AddJsonOptions(options =>
@@ -100,8 +146,13 @@ namespace RepositoryAnalyticsApi
                 {
                     // Wipe the db and schema
                     //context.Database.EnsureDeleted();
+
+                    Log.Logger.Information("Initializing Database");
+
                     context.Database.EnsureCreated();
 
+                    Log.Logger.Information("Database Succesfully Initialized");
+                    
                     // Note should eventually be using the below line once everything is solidified
                     // context.Database.Migrate();
                 }

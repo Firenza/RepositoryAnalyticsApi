@@ -3,19 +3,16 @@ version: '3.4'
 services:
   repositoryanalyticsapi:
     image: firenza/repository_analytics_api
-    build:
-      context: .
-      dockerfile: Dockerfile
     environment:
-      - DEPENDENCIES__DATABASE__TYPE=PostgreSql
-      - DEPENDENCIES__DATABASE__CONNECTIONSTRING="Server=postgresql;Database=repository_analytics;User ID=postgres"
-      - DEPENDENCIES__DATABASE__PASSWORD=mysecretpassword
-      - DEPENDENCIES__GITHUB__V3APIURL=https://api.github.com
-      - DEPENDENCIES__GITHUB__GRAPHQLAPIURL=https://api.github.com/graphql
-      - DEPENDENCIES__GITHUB__ACCESSTOKEN=YOUR_TOKEN_HERE
-      - DEPENDENCIES__ELASTICSEARCH__URL=elasticsearch:9200
-      - DEPENDENCIES__REDIS__CONFIGURATION=redis
-      - DEPENDENCIES__REDIS__INSTANCENAME=RepositoryAnalyticsApi
+      - GitHubV3ApiUrl=https://api.github.com
+      - GitHubGraphQlApiUrl=https://api.github.com/graphql
+      - GitHubAccessToken=YOUR_ACCESS_TOKEN
+      - ElasticSearchUrl=http://elasticsearch:9200
+      - RedisConfiguration=redis
+      - RedisInstanceName=RepositoryAnalyticsApi
+      - DatabaseType=PostgreSql
+      - DatabaseConnectionString=Server=postgresql;Database=repository_analytics;User ID=postgres
+      - DatabasePassword=mysecretpassword
     ports: 
       - "32771:80"
 

@@ -12,6 +12,7 @@ using RepositoryAnaltyicsApi.Managers;
 using RepositoryAnaltyicsApi.Managers.Dependencies;
 using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.Extensions;
+using RepositoryAnalyticsApi.InternalModel.AppSettings;
 using RepositoryAnalyticsApi.Repositories;
 using RepositoryAnalyticsApi.Repositories.Model.EntityFramework;
 using Serilog;
@@ -32,14 +33,14 @@ namespace RepositoryAnalyticsApi
     public static class ContainerManager
     {
 
-        public static void RegisterServices(IServiceCollection services, IConfiguration configuration, IHostingEnvironment env)
+        public static void RegisterServices(IServiceCollection services, IConfiguration configuration, IHostingEnvironment env, Dependencies dependencies, Caching caching)
         {
             // Put caching config in container 
-            var caching = configuration.GetSection("Caching").Get<InternalModel.AppSettings.Caching>();
+            //var caching = configuration.GetSection("Caching").Get<InternalModel.AppSettings.Caching>();
             services.AddSingleton(typeof(InternalModel.AppSettings.Caching), caching);
 
             // Load config data
-            var dependencies = configuration.GetSection("Dependencies").Get<InternalModel.AppSettings.Dependencies>();
+            //var dependencies = configuration.GetSection("Dependencies").Get<InternalModel.AppSettings.Dependencies>();
             services.AddSingleton(typeof(InternalModel.AppSettings.Dependencies), dependencies);
 
             // ---------------------------------
@@ -47,7 +48,7 @@ namespace RepositoryAnalyticsApi
             // ---------------------------------
 
             // Read in the github api token value (either from local secrets or from environment variables)
-            var gitHubTokenSecretName = $"DEPENDENCIES:GITHUB:ACCESSTOKEN";
+            var gitHubTokenSecretName = $"GithubAccessToken";
             var gitHubAccessToken = configuration[gitHubTokenSecretName];
 
             if (string.IsNullOrWhiteSpace(gitHubAccessToken))
@@ -87,6 +88,7 @@ namespace RepositoryAnalyticsApi
             {
                 services.AddDbContext<RepositoryAnalysisContext>(options =>
                 {
+                    Log.Logger.Information(connestionString);
                     options.UseNpgsql(connestionString);
                 });
             }
@@ -105,7 +107,7 @@ namespace RepositoryAnalyticsApi
                 // value in the connection string before trying to look for a local secret pwd
                 if (dbConnectionStringBuilder.ConnectionString.Contains("User Id", StringComparison.OrdinalIgnoreCase))
                 {
-                    var dbPasswordSecretName = $"DEPENDENCIES:DATABASE:PASSWORD";
+                    var dbPasswordSecretName = $"DatabasePassword";
                     var dbPassword = configuration[dbPasswordSecretName];
 
                     if (string.IsNullOrWhiteSpace(dbPassword))

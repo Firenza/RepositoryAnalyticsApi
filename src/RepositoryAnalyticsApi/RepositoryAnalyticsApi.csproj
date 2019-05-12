@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
     <UserSecretsId>8ed6a0ec-5715-4d03-b344-76c012ddbca6</UserSecretsId>
@@ -43,5 +43,4 @@
     <ProjectReference Include="..\RepositoryAnalyticsApi.Extensibility\RepositoryAnalyticsApi.Extensibility.csproj" />
     <ProjectReference Include="..\RepositoryAnalyticsApi.Repositories\RepositoryAnalyticsApi.Repositories.csproj" />
   </ItemGroup>
-
 </Project>
