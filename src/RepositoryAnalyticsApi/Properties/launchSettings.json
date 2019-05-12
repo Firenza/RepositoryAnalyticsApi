@@ -1,26 +1,27 @@
 {
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:33282/",
-      "sslPort": 0
-    }
-  },
   "profiles": {
-    "IIS Express": {
-      "commandName": "IISExpress",
-      "launchBrowser": true,
-      "launchUrl": "swagger",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
-    },
     "RepositoryAnalyticsApi": {
       "commandName": "Project",
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:33283/"
+    },
+    "RepositoryAnalyticsApi - Env Variables": {
+      "commandName": "Project",
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "DEPENDENCIES__GITHUB__V3APIURL": "https://api.github.com",
+        "DEPENDENCIES__GITHUB__ACCESSTOKEN": "YOUR_TOKEN_HERE",
+        "DEPENDENCIES__DATABASE__TYPE": "PostgreSql",
+        "DEPENDENCIES__ELASTICSEARCH__URL": "http://localhost:9200",
+        "DEPENDENCIES__GITHUB__GRAPHQLAPIURL": "https://api.github.com/graphql",
+        "DEPENDENCIES__REDIS__INSTANCENAME": "RepositoryAnalyticsApi",
+        "DEPENDENCIES__REDIS__CONFIGURATION": "localhost",
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "DEPENDENCIES__DATABASE__CONNECTIONSTRING": "Server=postgresql;Database=repository_analytics;User ID=postgres",
+        "DEPENDENCIES__DATABASE__PASSWORD": "mysecretpassword"
       },
       "applicationUrl": "http://localhost:33283/"
     }
