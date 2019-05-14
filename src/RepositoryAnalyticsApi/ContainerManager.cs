@@ -116,7 +116,6 @@ namespace RepositoryAnalyticsApi
             {
                 services.AddDbContext<RepositoryAnalysisContext>(options =>
                 {
-                    Log.Logger.Information(connestionString);
                     options.UseNpgsql(connestionString);
                 });
             }

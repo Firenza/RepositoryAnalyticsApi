@@ -82,11 +82,11 @@ namespace RepositoryAnalyticsApi
                 .WriteTo.Elasticsearch(dependencies.ElasticSearch.Url)
                 .CreateLogger();
 
-            // Print out all config data
-            foreach (var child in configuration.GetChildren())
-            {
-                Log.Logger.Information($"{child.Path} ({child.Key}) = {child.Value ?? "(null)"}");
-            }
+            //// Print out all config data
+            //foreach (var child in configuration.GetChildren())
+            //{
+            //    Log.Logger.Information($"{child.Path} ({child.Key}) = {child.Value ?? "(null)"}");
+            //}
 
             if (dependencies == null)
             {
