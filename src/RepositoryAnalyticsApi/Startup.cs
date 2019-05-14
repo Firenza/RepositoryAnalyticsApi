@@ -79,7 +79,6 @@ namespace RepositoryAnalyticsApi
                 .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
-                .WriteTo.Elasticsearch(dependencies.ElasticSearch.Url)
                 .CreateLogger();
 
             //// Print out all config data

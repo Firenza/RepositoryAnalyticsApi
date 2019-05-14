@@ -7,7 +7,6 @@ services:
       - GitHubV3ApiUrl=https://api.github.com
       - GitHubGraphQlApiUrl=https://api.github.com/graphql
       - GitHubAccessToken=YOUR_ACCESS_TOKEN
-      - ElasticSearchUrl=http://elasticsearch:9200
       - RedisConfiguration=redis
       - RedisInstanceName=RepositoryAnalyticsApi
       - DatabaseType=PostgreSql
@@ -16,21 +15,9 @@ services:
     ports: 
       - "32771:80"
     depends_on:
-      - elasticsearch
-      # - kibana
       - redis
       # - sqlserver
       - postgresql
-
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.2
-    ports:
-      - "9200:9200"
-
-  # kibana:
-  #   image: docker.elastic.co/kibana/kibana:6.5.2
-  #   ports: 
-  #     - "5601:5601"
 
   redis:
     image: 'redis:5.0.3'
