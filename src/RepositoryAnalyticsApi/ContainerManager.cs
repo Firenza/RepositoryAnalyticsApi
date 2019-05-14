@@ -72,7 +72,35 @@ namespace RepositoryAnalyticsApi
             // -- Configure the Database --
             // ----------------------------
 
-            var connestionString = dependencies.Database.ConnectionString;
+            var dbConnectionStringBuilder = new DbConnectionStringBuilder();
+            dbConnectionStringBuilder.ConnectionString = dependencies.Database.ConnectionString;
+
+            // It's possible to use things like windows auth when running outside of a container so check for the User Id
+            // value in the connection string before trying to look for a local secret pwd
+            if (dbConnectionStringBuilder.ConnectionString.Contains("User Id", StringComparison.OrdinalIgnoreCase))
+            {
+                Log.Logger.Debug("User Id found in connection string, attempting to integrate password into connection string");
+
+                var dbPasswordSecretName = $"DatabasePassword";
+                var dbPassword = configuration[dbPasswordSecretName];
+
+                if (string.IsNullOrWhiteSpace(dbPassword))
+                {
+                    throw new ArgumentException($"No DB password token variable named '{dbPasswordSecretName}' found in local secrets or enviornment variables");
+                }
+                else
+                {
+                    Log.Logger.Debug("Password found in configuration, adding it to connection string");
+                }
+
+                dbConnectionStringBuilder["Password"] = dbPassword;
+            }
+            else
+            {
+                Log.Logger.Debug("No User Id found in connection string, assuming passowrd less (E.G. Windows Auth) authentication is in use");
+            }
+
+            var connestionString = dbConnectionStringBuilder.ConnectionString;
 
             // Figure out which DB type needs to be loaded
             var formattedDbType = dependencies.Database.Type.ToLower().Replace(" ", string.Empty);
@@ -95,30 +123,6 @@ namespace RepositoryAnalyticsApi
             else
             {
                 throw new ArgumentException("Unsupported DB Type, only PostgreSQL and SQL Server are supported");
-            }
-
-            // In development assume DB password is not a part of the connection string and in a local secret
-            if (env.IsDevelopment())
-            {
-                var dbConnectionStringBuilder = new DbConnectionStringBuilder();
-                dbConnectionStringBuilder.ConnectionString = dependencies.Database.ConnectionString;
-
-                // It's possible to use things like windows auth when running outside of a container so check for the User Id
-                // value in the connection string before trying to look for a local secret pwd
-                if (dbConnectionStringBuilder.ConnectionString.Contains("User Id", StringComparison.OrdinalIgnoreCase))
-                {
-                    var dbPasswordSecretName = $"DatabasePassword";
-                    var dbPassword = configuration[dbPasswordSecretName];
-
-                    if (string.IsNullOrWhiteSpace(dbPassword))
-                    {
-                        throw new ArgumentException($"No DB password token variable named '{dbPasswordSecretName}' found in local secrets or enviornment variables");
-                    }
-
-                    dbConnectionStringBuilder["Password"] = dbPassword;
-                }
-
-                connestionString = dbConnectionStringBuilder.ConnectionString;
             }
 
             // Now setup all the mapping between the Entity Framework objects
