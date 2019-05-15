@@ -52,10 +52,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var repository = await repositoryManager.ReadAsync(repositoryId, repositoryAnalysis.AsOf).ConfigureAwait(false);
 
-            // If we only need to do an internal reprocessing we can skip a lot of stuff
-            var internalReprocessingOnly = repositoryAnalysis.OnlyReprocessTypeAndImplementationData;
-
-            if (internalReprocessingOnly)
+            if (repositoryAnalysis.OnlyReprocessTypeAndImplementationData)
             {
                 if (repository != null)
                 {
