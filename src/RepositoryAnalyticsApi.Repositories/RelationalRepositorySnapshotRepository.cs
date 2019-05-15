@@ -53,9 +53,27 @@ namespace RepositoryAnalyticsApi.Repositories
             return repositorySnapshots;
         }
 
-        public Task<ServiceModel.RepositorySnapshot> ReadAsync(string id)
+        public async Task<ServiceModel.RepositorySnapshot> ReadAsync(string repositoryId, DateTime? asOf)
         {
-            throw new NotImplementedException();
+            var dbRepositoryCurrentState = await repositoryAnalysisContext
+                                       .RepositoryCurrentState
+                                       .Include(rcs => rcs.RepositorySnapshots)
+                                         .ThenInclude(rs => rs.Dependencies)
+                                       .Include(rcs => rcs.RepositorySnapshots)
+                                         .ThenInclude(rs => rs.Files)
+                                       .Include(rcs => rcs.RepositorySnapshots)
+                                         .ThenInclude(rs => rs.TypesAndImplementations)
+                                             .ThenInclude(rti => rti.Implementations)
+                                       .Where(rcs => 
+                                            rcs.RepositoryId == repositoryId && 
+                                            rcs.RepositorySnapshots.Any(rs => 
+                                                !asOf.HasValue && rs.WindowEndsOn == null || 
+                                                asOf.HasValue && rs.WindowStartsOn < asOf.Value && rs.WindowEndsOn > asOf.Value))
+                                       .SingleOrDefaultAsync();
+
+            var repositorySnapshot = mapper.Map<ServiceModel.RepositorySnapshot>(dbRepositoryCurrentState.RepositorySnapshots.FirstOrDefault());
+
+            return repositorySnapshot;
         }
 
         public async Task UpsertAsync(ServiceModel.RepositorySnapshot snapshot, int? repositoryCurrentStateId = null)
