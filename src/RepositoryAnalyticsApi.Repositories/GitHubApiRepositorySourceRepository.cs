@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Octokit;
+using Polly;
+using Polly.Retry;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.InternalModel;
 using RepositoryAnalyticsApi.ServiceModel;
@@ -22,6 +24,7 @@ namespace RepositoryAnalyticsApi.Repositories
         private ITreesClient treesClient;
         private IGraphQLClient graphQLClient;
         private ILogger<GitHubApiRepositorySourceRepository> logger;
+        private AsyncRetryPolicy githubAbuseRateLimitPolicy;
 
         public GitHubApiRepositorySourceRepository(IGitHubClient gitHubClient, ITreesClient treesClient, IGraphQLClient graphQLClient, ILogger<GitHubApiRepositorySourceRepository> logger)
         {
@@ -29,6 +32,14 @@ namespace RepositoryAnalyticsApi.Repositories
             this.treesClient = treesClient;
             this.graphQLClient = graphQLClient;
             this.logger = logger;
+
+            this.githubAbuseRateLimitPolicy = Policy.Handle<GraphQLRequestException>(ex =>
+                    ex.HttpStatusCode == System.Net.HttpStatusCode.Forbidden &&
+                    ex.ResponseBody.Contains("You have triggered an abuse detection mechanism", StringComparison.OrdinalIgnoreCase))
+              .WaitAndRetryAsync(5, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), (exception, timespan) => 
+                {
+                    logger.LogWarning($"GitHub abuse rate limit hit, waiting {timespan.TotalSeconds} seconds before trying again");
+                });
         }
 
         public async Task<string> ReadFileContentAsync(string owner, string name, string fullFilePath, string gitRef)
@@ -458,7 +469,10 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 var allTeamsRepositoriesVariables = new { login = organization, afterCursor = teamAfterCursor };
 
-                var graphQLOrganization = await graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(allTeamsRepositoriesQuery, allTeamsRepositoriesVariables).ConfigureAwait(false);
+                var graphQLOrganization = await githubAbuseRateLimitPolicy.ExecuteAsync(() =>
+                {
+                   return graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(allTeamsRepositoriesQuery, allTeamsRepositoriesVariables);
+                }).ConfigureAwait(false);
 
                 if (graphQLOrganization.Teams.Nodes != null && graphQLOrganization.Teams.Nodes.Any())
                 {
@@ -545,7 +559,10 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 var teamRepositoriesVariables = new { login = organization, teamName = teamName, repositoriesAfter = afterCursor };
 
-                var graphQLOrganization = await graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(teamRepositoriesQuery, teamRepositoriesVariables).ConfigureAwait(false);
+                var graphQLOrganization = await githubAbuseRateLimitPolicy.ExecuteAsync(() =>
+                {
+                    return graphQLClient.QueryAsync<Model.Github.GraphQL.Organization>(teamRepositoriesQuery, teamRepositoriesVariables);
+                }).ConfigureAwait(false);
 
                 var teamRepositoryConnections = new List<TeamRepositoryConnection>();
 
