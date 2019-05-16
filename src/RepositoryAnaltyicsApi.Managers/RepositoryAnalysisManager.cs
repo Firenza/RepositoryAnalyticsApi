@@ -113,8 +113,7 @@ namespace RepositoryAnaltyicsApi.Managers
                     repositorySnapshot.TakenOn = DateTime.Now;
                     repositorySnapshot.BranchUsed = branchName;
                     repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
-                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositorySnapshot.Dependencies, repositoryCurrentState.Topics?.Select(topic => topic.Name), repositoryAnalysis.AsOf).ConfigureAwait(false);
-                    repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
+                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryCurrentState.HasIssues, repositorySnapshot.Dependencies, repositoryCurrentState.Topics?.Select(topic => topic.Name), repositoryAnalysis.AsOf).ConfigureAwait(false); repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
                 }
 
                 var updatedRepository = new Repository
@@ -206,7 +205,7 @@ namespace RepositoryAnaltyicsApi.Managers
             return allDependencies;
         }
 
-        private async Task<List<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(string owner, string name, string branch, IEnumerable<RepositoryDependency> dependencies, IEnumerable<string> topicNames, DateTime? asOf)
+        private async Task<List<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(string owner, string name, string branch, bool? hasIssues, IEnumerable<RepositoryDependency> dependencies, IEnumerable<string> topicNames, DateTime? asOf)
         {
             var typesAndImplementations = new List<RepositoryTypeAndImplementations>();
 
@@ -227,6 +226,10 @@ namespace RepositoryAnaltyicsApi.Managers
                 if (typeAndImplementationDeriver is IRequireFileListAccess)
                 {
                     (typeAndImplementationDeriver as IRequireFileListAccess).ReadFileListAsync = readFilesAsync;
+                }
+                if (typeAndImplementationDeriver is IRequireBacklogInfoAccess)
+                {
+                    (typeAndImplementationDeriver as IRequireBacklogInfoAccess).BacklogInfo = new BacklogInfo { HasIssues = true };
                 }
 
                 var typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(name);
