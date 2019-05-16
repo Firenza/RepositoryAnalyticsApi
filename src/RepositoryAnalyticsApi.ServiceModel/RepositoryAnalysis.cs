@@ -25,5 +25,11 @@ namespace RepositoryAnalyticsApi.ServiceModel
         /// The point in time at which to do the analysis.  If not populated the current time is used.
         /// </summary>
         public DateTime?  AsOf { get; set; }
+
+        /// <summary>
+        /// Only update the type and impelemtation data saved for a repository.  Usefull when all that's needed is apply a change to
+        /// the plugins that derive this information as it's much faster due to not needing any external API calls.
+        /// </summary>
+        public bool OnlyReprocessTypeAndImplementationData { get; set; }
     }
 }

@@ -104,13 +104,14 @@ namespace RepositoryAnaltyicsApi.Managers
             Repository repository = null;
 
             var repoCurrentState = await repositoryCurrentStateRepository.ReadAsync(id);
-            // For now don't worry about the snapshot as we don't need it
+            var repoSnapshot = await repositorySnapshotRepository.ReadAsync(id, asOf);
 
             if (repoCurrentState != null)
             {
                 repository = new Repository
                 {
-                    CurrentState = repoCurrentState
+                    CurrentState = repoCurrentState,
+                    Snapshot = repoSnapshot
                 };
             }
 
