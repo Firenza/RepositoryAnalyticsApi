@@ -113,7 +113,8 @@ namespace RepositoryAnaltyicsApi.Managers
                     repositorySnapshot.TakenOn = DateTime.Now;
                     repositorySnapshot.BranchUsed = branchName;
                     repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
-                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryCurrentState.HasIssues, repositorySnapshot.Dependencies, repositoryCurrentState.Topics?.Select(topic => topic.Name), repositoryAnalysis.AsOf).ConfigureAwait(false); repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
+                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryCurrentState.HasIssues, repositorySnapshot.Dependencies, repositoryCurrentState.Topics?.Select(topic => topic.Name), repositoryAnalysis.AsOf).ConfigureAwait(false);
+                    repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
                 }
 
                 var updatedRepository = new Repository
