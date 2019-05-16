@@ -11,17 +11,15 @@ using System.Threading.Tasks;
 namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
 {
     [Export(typeof(IDeriveRepositoryTypeAndImplementations))]
-    public class AspNetApi : IDeriveRepositoryTypeAndImplementations, IRequireDependenciesAccess, IRequireFileListAccess
+    public class AspNetApi : IDeriveRepositoryTypeAndImplementations, IRequireDependenciesAccess, IRequireFilesAccess
     {
         public IEnumerable<RepositoryDependency> Dependencies { get; set; }
-        public Func<Task<List<RepositoryFile>>> ReadFileListAsync { get; set; }
+        public IEnumerable<RepositoryFile> Files { get; set; }
 
         public async Task<RepositoryTypeAndImplementations> DeriveImplementationAsync(string repositoryName)
         {
-            var files = await ReadFileListAsync();
-
             // Check for ASP.NET based projects
-            var globalAsaxFile = files.FirstOrDefault(file => file.Name == "Global.asax");
+            var globalAsaxFile = Files.FirstOrDefault(file => file.Name == "Global.asax");
 
             if (globalAsaxFile != null)
             {

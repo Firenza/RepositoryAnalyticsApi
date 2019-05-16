@@ -241,12 +241,7 @@ namespace RepositoryAnaltyicsApi.Managers
         private async Task<List<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(string owner, string name, string branch, IEnumerable<RepositoryFile> files, IEnumerable<RepositoryDependency> dependencies, IEnumerable<string> topicNames, DateTime? asOf)
         {
             var typesAndImplementations = new List<RepositoryTypeAndImplementations>();
-
-            // TODO: This can be changed from a func to just a property now that the list has already been computed
-            var readFilesAsync = new Func<Task<List<RepositoryFile>>>(async () =>
-                await Task.FromResult(files.ToList())
-            );
-
+          
             foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
             {
                 if (typeAndImplementationDeriver is IRequireDependenciesAccess)
@@ -257,9 +252,9 @@ namespace RepositoryAnaltyicsApi.Managers
                 {
                     (typeAndImplementationDeriver as IRequireTopicsAccess).TopicNames = topicNames;
                 }
-                if (typeAndImplementationDeriver is IRequireFileListAccess)
+                if (typeAndImplementationDeriver is IRequireFilesAccess)
                 {
-                    (typeAndImplementationDeriver as IRequireFileListAccess).ReadFileListAsync = readFilesAsync;
+                    (typeAndImplementationDeriver as IRequireFilesAccess).Files = files;
                 }
                 if (typeAndImplementationDeriver is IRequireBacklogInfoAccess)
                 {
