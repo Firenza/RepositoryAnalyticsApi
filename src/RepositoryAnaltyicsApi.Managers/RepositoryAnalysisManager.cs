@@ -261,6 +261,10 @@ namespace RepositoryAnaltyicsApi.Managers
                 {
                     (typeAndImplementationDeriver as IRequireFileListAccess).ReadFileListAsync = readFilesAsync;
                 }
+                if (typeAndImplementationDeriver is IRequireBacklogInfoAccess)
+                {
+                    (typeAndImplementationDeriver as IRequireBacklogInfoAccess).BacklogInfo = new BacklogInfo { HasIssues = true };
+                }
 
                 var typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(name);
 
