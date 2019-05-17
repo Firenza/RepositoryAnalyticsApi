@@ -309,18 +309,34 @@ namespace RepositoryAnalyticsApi
 
                 if (Directory.Exists(directory))
                 {
-                    foreach (var file in Directory.GetFiles(directory, "*.dll"))
+                    var filePaths = Directory.GetFiles(directory);
+
+                    // Print out all the files found in the plugin directory for debugging purposes
+                    foreach (var filePath in filePaths)
+                    {
+                        Log.Logger.Debug($"Found file {filePath}");
+                    }
+
+                    var assemblyFilePaths = filePaths.Where(filePath => filePath.EndsWith("*.dll"));
+
+                    foreach (var assemblyFilePath in assemblyFilePaths)
                     {
                         try
                         {
-                            var assembly = Assembly.LoadFile(file);
+                            Log.Logger.Debug($"Attempting to load assembly {assemblyFilePath}");
+
+                            var assembly = Assembly.LoadFile(assemblyFilePath);
                             assemblies.Add(assembly);
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(ex.Message);
+                            Log.Logger.Error(ex.Message);
                         }
                     }
+                }
+                else
+                {
+                    Log.Logger.Information($"The plugin directory {directory} was not found");
                 }
 
                 return assemblies;
