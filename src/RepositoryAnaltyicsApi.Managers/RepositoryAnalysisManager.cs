@@ -24,10 +24,10 @@ namespace RepositoryAnaltyicsApi.Managers
         private Caching cachingSettings;
 
         public RepositoryAnalysisManager(
-            IRepositoryManager repositoryManager, 
-            IRepositorySourceManager repositorySourceManager, 
-            IEnumerable<IDependencyScraperManager> dependencyScraperManagers, 
-            IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers, 
+            IRepositoryManager repositoryManager,
+            IRepositorySourceManager repositorySourceManager,
+            IEnumerable<IDependencyScraperManager> dependencyScraperManagers,
+            IEnumerable<IDeriveRepositoryTypeAndImplementations> typeAndImplementationDerivers,
             IDeriveRepositoryDevOpsIntegrations devOpsIntegrationsDeriver,
             IDistributedCache distributedCache,
             ILogger<RepositoryAnalysisManager> logger,
@@ -43,6 +43,39 @@ namespace RepositoryAnaltyicsApi.Managers
             this.cachingSettings = cachingSettings;
         }
 
+        public async Task ReAnalyzeExistingAsync()
+        {
+            var pageSize = 100;
+            var currentPage = 0;
+            var recordsLastFetched = 0;
+
+            do
+            {
+                var currentRepositoryBatch = await repositoryManager.ReadMultipleAsync(null, currentPage, pageSize);
+
+                if (currentRepositoryBatch.Count > 0)
+                {
+                    foreach (var repository in currentRepositoryBatch)
+                    {
+                        repository.Snapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(
+                        repository.CurrentState.Owner,
+                        repository.CurrentState.Name,
+                        repository.Snapshot.BranchUsed,
+                        repository.Snapshot.Files,
+                        repository.Snapshot.Dependencies,
+                        repository.CurrentState.Topics?.Select(topic => topic.Name),
+                        null).ConfigureAwait(false);
+
+                        await repositoryManager.UpsertAsync(repository, null).ConfigureAwait(false);
+                    }
+                }
+
+                recordsLastFetched = currentRepositoryBatch.Count;
+                currentPage++;
+
+            } while (recordsLastFetched == pageSize);
+        }
+
         public async Task CreateAsync(RepositoryAnalysis repositoryAnalysis)
         {
             var parsedRepoUrl = ParseRepositoryUrl();
@@ -53,112 +86,89 @@ namespace RepositoryAnaltyicsApi.Managers
             var repository = await repositoryManager.ReadAsync(repositoryId, repositoryAnalysis.AsOf).ConfigureAwait(false);
 
             var repositories = await repositoryManager.ReadMultipleAsync(null, 0, 10);
-           
 
-            if (repositoryAnalysis.OnlyReprocessTypeAndImplementationData)
+
+            DateTime? repositoryLastUpdatedOn = null;
+
+            // If a last updated time for the repo was provided, use that to hopefully save an API call
+            if (repositoryAnalysis.RepositoryLastUpdatedOn.HasValue)
             {
-                if (repository != null)
-                {
-                    repository.Snapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(
-                                           parsedRepoUrl.Owner,
-                                           parsedRepoUrl.Name,
-                                           repository.Snapshot.BranchUsed,
-                                           repository.Snapshot.Files,
-                                           repository.Snapshot.Dependencies,
-                                           repository.CurrentState.Topics?.Select(topic => topic.Name),
-                                           repositoryAnalysis.AsOf).ConfigureAwait(false);
-
-                    await repositoryManager.UpsertAsync(repository, repositoryAnalysis.AsOf).ConfigureAwait(false);
-                }
-                else
-                {
-                    throw new ArgumentException($"The repository {repository.CurrentState.Name} has not yet been fully processed so only reprocessing part of it is not possible");
-                }
+                repositoryLastUpdatedOn = repositoryAnalysis.RepositoryLastUpdatedOn.Value;
             }
             else
             {
-                DateTime? repositoryLastUpdatedOn = null;
+                var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name).ConfigureAwait(false);
 
-                // If a last updated time for the repo was provided, use that to hopefully save an API call
-                if (repositoryAnalysis.RepositoryLastUpdatedOn.HasValue)
+                repositoryLastUpdatedOn = repositorySummary.UpdatedAt;
+            }
+
+            if (repositoryAnalysis.ForceCompleteRefresh || repository == null || repositoryLastUpdatedOn > repository.CurrentState.RepositoryLastUpdatedOn)
+            {
+
+                // Do repository summary call to get the commit Id of the latest commit and the date that commit was pushed for the snapshot
+                // populate the snapshot date with the corresponding manager calls (E.G. ScrapeDependenciesAsync) 
+                // Do full repository read to get all the current state stuff (including calls to get derived data like devops integrations)
+                var sourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name).ConfigureAwait(false);
+
+                var repositoryCurrentState = new RepositoryCurrentState();
+                repositoryCurrentState.Id = repositoryId;
+                repositoryCurrentState.Name = sourceRepository.Name;
+                repositoryCurrentState.Owner = parsedRepoUrl.Owner;
+                repositoryCurrentState.DefaultBranch = sourceRepository.DefaultBranchName;
+                repositoryCurrentState.HasIssues = sourceRepository.IssueCount > 0;
+                repositoryCurrentState.HasProjects = sourceRepository.ProjectCount > 0;
+                repositoryCurrentState.HasPullRequests = sourceRepository.PullRequestCount > 0;
+                repositoryCurrentState.RepositoryCreatedOn = sourceRepository.CreatedAt;
+                repositoryCurrentState.RepositoryLastUpdatedOn = sourceRepository.PushedAt;
+
+                repositoryCurrentState.Teams = sourceRepository.Teams;
+                repositoryCurrentState.Topics = sourceRepository.TopicNames?.Select(name => new RepositoryTopic { Name = name }).ToList();
+                repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name).ConfigureAwait(false);
+
+                // Need to pick a branch for the snapshot stuff
+                string branchName = null;
+
+                if (sourceRepository.BranchNames.Contains("master"))
                 {
-                    repositoryLastUpdatedOn = repositoryAnalysis.RepositoryLastUpdatedOn.Value;
+                    branchName = "master";
                 }
-                else
+                else if (sourceRepository.BranchNames.Contains("development"))
                 {
-                    var repositorySummary = await repositorySourceManager.ReadRepositorySummaryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name).ConfigureAwait(false);
-
-                    repositoryLastUpdatedOn = repositorySummary.UpdatedAt;
+                    branchName = "development";
                 }
-
-                if (repositoryAnalysis.ForceCompleteRefresh || repository == null || repositoryLastUpdatedOn > repository.CurrentState.RepositoryLastUpdatedOn)
+                else if (!string.IsNullOrWhiteSpace(sourceRepository.DefaultBranchName))
                 {
-
-                    // Do repository summary call to get the commit Id of the latest commit and the date that commit was pushed for the snapshot
-                    // populate the snapshot date with the corresponding manager calls (E.G. ScrapeDependenciesAsync) 
-                    // Do full repository read to get all the current state stuff (including calls to get derived data like devops integrations)
-                    var sourceRepository = await repositorySourceManager.ReadRepositoryAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name).ConfigureAwait(false);
-
-                    var repositoryCurrentState = new RepositoryCurrentState();
-                    repositoryCurrentState.Id = repositoryId;
-                    repositoryCurrentState.Name = sourceRepository.Name;
-                    repositoryCurrentState.Owner = parsedRepoUrl.Owner;
-                    repositoryCurrentState.DefaultBranch = sourceRepository.DefaultBranchName;
-                    repositoryCurrentState.HasIssues = sourceRepository.IssueCount > 0;
-                    repositoryCurrentState.HasProjects = sourceRepository.ProjectCount > 0;
-                    repositoryCurrentState.HasPullRequests = sourceRepository.PullRequestCount > 0;
-                    repositoryCurrentState.RepositoryCreatedOn = sourceRepository.CreatedAt;
-                    repositoryCurrentState.RepositoryLastUpdatedOn = sourceRepository.PushedAt;
-
-                    repositoryCurrentState.Teams = sourceRepository.Teams;
-                    repositoryCurrentState.Topics = sourceRepository.TopicNames?.Select(name => new RepositoryTopic { Name = name }).ToList();
-                    repositoryCurrentState.DevOpsIntegrations = await ScrapeDevOpsIntegrations(repositoryCurrentState.Name).ConfigureAwait(false);
-
-                    // Need to pick a branch for the snapshot stuff
-                    string branchName = null;
-
-                    if (sourceRepository.BranchNames.Contains("master"))
-                    {
-                        branchName = "master";
-                    }
-                    else if (sourceRepository.BranchNames.Contains("development"))
-                    {
-                        branchName = "development";
-                    }
-                    else if (!string.IsNullOrWhiteSpace(sourceRepository.DefaultBranchName))
-                    {
-                        branchName = sourceRepository.DefaultBranchName;
-                    }
-
-                    RepositorySnapshot repositorySnapshot = null;
-
-                    if (branchName != null)
-                    {
-                        repositorySnapshot = new RepositorySnapshot();
-                        // Have to set the windows in the manager
-                        repositorySnapshot.RepositoryCurrentStateRepositoryId = repositoryCurrentState.Id;
-                        repositorySnapshot.TakenOn = DateTime.Now;
-                        repositorySnapshot.BranchUsed = branchName;
-                        repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
-                        repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
-                        repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(
-                            parsedRepoUrl.Owner,
-                            parsedRepoUrl.Name,
-                            branchName,
-                            repositorySnapshot.Files,
-                            repositorySnapshot.Dependencies,
-                            repositoryCurrentState.Topics?.Select(topic => topic.Name),
-                            repositoryAnalysis.AsOf).ConfigureAwait(false);
-                    }
-
-                    var updatedRepository = new Repository
-                    {
-                        CurrentState = repositoryCurrentState,
-                        Snapshot = repositorySnapshot
-                    };
-
-                    await repositoryManager.UpsertAsync(updatedRepository, repositoryAnalysis.AsOf).ConfigureAwait(false);
+                    branchName = sourceRepository.DefaultBranchName;
                 }
+
+                RepositorySnapshot repositorySnapshot = null;
+
+                if (branchName != null)
+                {
+                    repositorySnapshot = new RepositorySnapshot();
+                    // Have to set the windows in the manager
+                    repositorySnapshot.RepositoryCurrentStateRepositoryId = repositoryCurrentState.Id;
+                    repositorySnapshot.TakenOn = DateTime.Now;
+                    repositorySnapshot.BranchUsed = branchName;
+                    repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
+                    repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
+                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(
+                        parsedRepoUrl.Owner,
+                        parsedRepoUrl.Name,
+                        branchName,
+                        repositorySnapshot.Files,
+                        repositorySnapshot.Dependencies,
+                        repositoryCurrentState.Topics?.Select(topic => topic.Name),
+                        repositoryAnalysis.AsOf).ConfigureAwait(false);
+                }
+
+                var updatedRepository = new Repository
+                {
+                    CurrentState = repositoryCurrentState,
+                    Snapshot = repositorySnapshot
+                };
+
+                await repositoryManager.UpsertAsync(updatedRepository, repositoryAnalysis.AsOf).ConfigureAwait(false);
             }
 
             (string Owner, string Name, string Host) ParseRepositoryUrl()
@@ -244,7 +254,7 @@ namespace RepositoryAnaltyicsApi.Managers
         private async Task<List<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(string owner, string name, string branch, IEnumerable<RepositoryFile> files, IEnumerable<RepositoryDependency> dependencies, IEnumerable<string> topicNames, DateTime? asOf)
         {
             var typesAndImplementations = new List<RepositoryTypeAndImplementations>();
-          
+
             foreach (var typeAndImplementationDeriver in typeAndImplementationDerivers)
             {
                 if (typeAndImplementationDeriver is IRequireDependenciesAccess)
@@ -274,5 +284,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
             return typesAndImplementations;
         }
+
+
     }
 }
