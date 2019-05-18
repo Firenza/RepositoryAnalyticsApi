@@ -52,6 +52,9 @@ namespace RepositoryAnaltyicsApi.Managers
 
             var repository = await repositoryManager.ReadAsync(repositoryId, repositoryAnalysis.AsOf).ConfigureAwait(false);
 
+            var repositories = await repositoryManager.ReadMultipleAsync(null, 0, 10);
+           
+
             if (repositoryAnalysis.OnlyReprocessTypeAndImplementationData)
             {
                 if (repository != null)

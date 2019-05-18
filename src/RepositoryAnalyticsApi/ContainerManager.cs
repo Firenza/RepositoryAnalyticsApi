@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.EquivalencyExpression;
+using Dapper.FluentMap;
 using GraphQl.NetStandard.Client;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -192,6 +193,7 @@ namespace RepositoryAnalyticsApi
             services.AddTransient<IVersionManager, VersionManager>();
             services.AddTransient<IRepositoryCurrentStateRepository, RelationalRepositoryCurrentStateRepository>();
             services.AddTransient<IRepositorySnapshotRepository, RelationalRepositorySnapshotRepository>();
+            services.AddTransient<IRepositoryRepository, RelationalRepositoryRepository>();
 
             services.AddTransient<IEnumerable<IDependencyScraperManager>>((serviceProvider) => new List<IDependencyScraperManager> {
                 new BowerDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),

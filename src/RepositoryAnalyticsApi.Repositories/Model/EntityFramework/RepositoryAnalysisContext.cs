@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
+﻿using Dapper.FluentMap;
+using Microsoft.EntityFrameworkCore;
 
 namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
 {
@@ -8,10 +8,19 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
         public RepositoryAnalysisContext(DbContextOptions<RepositoryAnalysisContext> options)
         : base(options)
         {
-            //this.ConfigureLogging(s => Debug.WriteLine(s));
         }
 
         public DbSet<RepositoryCurrentState> RepositoryCurrentState { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            // Configure Dapper to map PostgreSql snake case column names to pascal case .NET property names
+            FluentMapper.Initialize(config =>
+            {
+                config.AddConvention<SnakeCaseToPascalCasePropertyTransformConvention>()
+                      .ForEntitiesInCurrentAssembly();
+            });
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

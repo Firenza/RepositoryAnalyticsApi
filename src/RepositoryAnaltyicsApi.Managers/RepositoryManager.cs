@@ -12,18 +12,22 @@ namespace RepositoryAnaltyicsApi.Managers
         private IRepositorySnapshotRepository repositorySnapshotRepository;
         private IRepositoryCurrentStateRepository repositoryCurrentStateRepository;
         private IRepositorySourceManager repositorySourceManager;
-       // private IRepositorySearchRepository repositorySearchRepository;
+        private IRepositoryRepository repositoryRepository;
+
+        // private IRepositorySearchRepository repositorySearchRepository;
 
         public RepositoryManager(
             IRepositorySnapshotRepository repositorySnapshotRepository,
             IRepositoryCurrentStateRepository repositoryCurrentStateRepository,
-            IRepositorySourceManager repositorySourceManager 
+            IRepositorySourceManager repositorySourceManager,
+            IRepositoryRepository repositoryRepository
             //IRepositorySearchRepository repositorySearchRepository
         )
         {
             this.repositorySnapshotRepository = repositorySnapshotRepository;
             this.repositoryCurrentStateRepository = repositoryCurrentStateRepository;
             this.repositorySourceManager = repositorySourceManager;
+            this.repositoryRepository = repositoryRepository;
            // this.repositorySearchRepository = repositorySearchRepository;
         }
 
@@ -101,21 +105,16 @@ namespace RepositoryAnaltyicsApi.Managers
 
         public async Task<Repository> ReadAsync(string id, DateTime? asOf)
         {
-            Repository repository = null;
-
-            var repoCurrentState = await repositoryCurrentStateRepository.ReadAsync(id);
-            var repoSnapshot = await repositorySnapshotRepository.ReadAsync(id, asOf);
-
-            if (repoCurrentState != null)
-            {
-                repository = new Repository
-                {
-                    CurrentState = repoCurrentState,
-                    Snapshot = repoSnapshot
-                };
-            }
+            var repository = await repositoryRepository.ReadAsync(id, asOf);
 
             return repository;
+        }
+
+        public async Task<List<Repository>> ReadMultipleAsync(DateTime? asOf, int? page, int? pageSize)
+        {
+            var repositories = await repositoryRepository.ReadMultipleAsync(asOf, page, pageSize);
+
+            return repositories;
         }
 
         public async Task<List<string>> SearchAsync(RepositorySearch repositorySearch)
@@ -123,6 +122,5 @@ namespace RepositoryAnaltyicsApi.Managers
             throw new NotImplementedException();
             //return await repositorySearchRepository.SearchAsync(repositorySearch).ConfigureAwait(false);
         }
-
     }
 }
