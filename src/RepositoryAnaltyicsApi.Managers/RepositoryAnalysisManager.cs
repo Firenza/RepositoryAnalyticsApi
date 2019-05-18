@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
+﻿using KellermanSoftware.CompareNetObjects;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.Extensibility;
@@ -57,16 +58,26 @@ namespace RepositoryAnaltyicsApi.Managers
                 {
                     foreach (var repository in currentRepositoryBatch)
                     {
-                        repository.Snapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(
-                        repository.CurrentState.Owner,
-                        repository.CurrentState.Name,
-                        repository.Snapshot.BranchUsed,
-                        repository.Snapshot.Files,
-                        repository.Snapshot.Dependencies,
-                        repository.CurrentState.Topics?.Select(topic => topic.Name),
-                        null).ConfigureAwait(false);
+                        var existingTypeAndImplementations = repository.Snapshot.TypesAndImplementations;
 
-                        await repositoryManager.UpsertAsync(repository, null).ConfigureAwait(false);
+                        var reCalculatedTypeAndImplementations = await ScrapeRepositoryTypeAndImplementation(
+                            repository.CurrentState.Owner,
+                            repository.CurrentState.Name,
+                            repository.Snapshot.BranchUsed,
+                            repository.Snapshot.Files,
+                            repository.Snapshot.Dependencies,
+                            repository.CurrentState.Topics?.Select(topic => topic.Name),
+                            null).ConfigureAwait(false);
+
+                        var compareLogic = new CompareLogic();
+                        var comparisonResult = compareLogic.Compare(existingTypeAndImplementations, reCalculatedTypeAndImplementations);
+
+                        if (!comparisonResult.AreEqual)
+                        {
+                            repository.Snapshot.TypesAndImplementations = reCalculatedTypeAndImplementations;
+
+                            await repositoryManager.UpsertAsync(repository, null).ConfigureAwait(false);
+                        }
                     }
                 }
 
