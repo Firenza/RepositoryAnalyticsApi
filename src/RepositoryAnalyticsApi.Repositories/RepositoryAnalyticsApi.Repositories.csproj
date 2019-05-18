@@ -8,6 +8,7 @@
     <PackageReference Include="AutoMapper" Version="8.0.0" />
     <PackageReference Include="AutoMapper.Collection.EntityFrameworkCore" Version="0.2.0" />
     <PackageReference Include="Dapper.Contrib" Version="1.50.5" />
+    <PackageReference Include="Dapper.FluentMap" Version="1.8.0" />
     <PackageReference Include="GraphQl.NetStandard.Client" Version="2.3.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.1.4" />
