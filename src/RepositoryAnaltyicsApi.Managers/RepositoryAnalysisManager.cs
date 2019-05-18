@@ -44,11 +44,12 @@ namespace RepositoryAnaltyicsApi.Managers
             this.cachingSettings = cachingSettings;
         }
 
-        public async Task ReAnalyzeExistingAsync()
+        public async Task<ReAnalysisResults> ReAnalyzeExistingAsync()
         {
             var pageSize = 100;
             var currentPage = 0;
             var recordsLastFetched = 0;
+            var reAnalysisResults = new ReAnalysisResults();
 
             do
             {
@@ -74,10 +75,15 @@ namespace RepositoryAnaltyicsApi.Managers
 
                         if (!comparisonResult.AreEqual)
                         {
+
                             repository.Snapshot.TypesAndImplementations = reCalculatedTypeAndImplementations;
 
                             await repositoryManager.UpsertAsync(repository, null).ConfigureAwait(false);
+
+                            reAnalysisResults.RecordsUpdated++;
                         }
+
+                        reAnalysisResults.RecordsAnalyized++;
                     }
                 }
 
@@ -85,6 +91,8 @@ namespace RepositoryAnaltyicsApi.Managers
                 currentPage++;
 
             } while (recordsLastFetched == pageSize);
+
+            return reAnalysisResults;
         }
 
         public async Task CreateAsync(RepositoryAnalysis repositoryAnalysis)

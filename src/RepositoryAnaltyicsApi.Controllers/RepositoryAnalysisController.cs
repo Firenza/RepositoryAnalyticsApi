@@ -25,9 +25,11 @@ namespace RepositoryAnaltyicsApi.Controllers
 
         [HttpPost]
         [Route("api/[controller]/Existing")]
-        public async Task Post()
+        public async Task<ReAnalysisResults> Post()
         {
-            await repositoryAnalysisManager.ReAnalyzeExistingAsync().ConfigureAwait(false);
+            var reAnalysisResults = await repositoryAnalysisManager.ReAnalyzeExistingAsync().ConfigureAwait(false);
+
+            return reAnalysisResults;
         }
     }
 }
