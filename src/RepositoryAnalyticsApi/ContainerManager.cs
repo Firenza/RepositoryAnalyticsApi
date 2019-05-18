@@ -319,7 +319,7 @@ namespace RepositoryAnalyticsApi
                         Log.Logger.Debug($"Found file {filePath}");
                     }
 
-                    var assemblyFilePaths = filePaths.Where(filePath => filePath.EndsWith("*.dll"));
+                    var assemblyFilePaths = filePaths.Where(filePath => filePath.EndsWith(".dll"));
 
                     foreach (var assemblyFilePath in assemblyFilePaths)
                     {
