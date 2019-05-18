@@ -6,5 +6,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
     public interface IRepositoryAnalysisManager
     {
         Task CreateAsync(RepositoryAnalysis repositoryAnalysis);
+        Task <ReAnalysisResults> ReAnalyzeExistingAsync();
     }
 }

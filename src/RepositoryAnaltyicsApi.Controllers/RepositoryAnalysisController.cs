@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
-    [Route("api/[controller]")]
     [ApiController]
     public class RepositoryAnalysisController : ControllerBase
     {
@@ -18,9 +17,19 @@ namespace RepositoryAnaltyicsApi.Controllers
         }
 
         [HttpPost]
+        [Route("api/[controller]")]
         public async Task Post(RepositoryAnalysis repositoyAnalysis)
         {
              await repositoryAnalysisManager.CreateAsync(repositoyAnalysis).ConfigureAwait(false);
+        }
+
+        [HttpPost]
+        [Route("api/[controller]/Existing")]
+        public async Task<ReAnalysisResults> Post()
+        {
+            var reAnalysisResults = await repositoryAnalysisManager.ReAnalyzeExistingAsync().ConfigureAwait(false);
+
+            return reAnalysisResults;
         }
     }
 }

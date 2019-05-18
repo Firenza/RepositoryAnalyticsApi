@@ -5,11 +5,9 @@ using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Interfaces
 {
-    public interface IRepositoryManager
+    public interface IRepositoryRepository
     {
-        Task UpsertAsync(Repository repository, DateTime? asOf);
-        Task<Repository> ReadAsync(string id, DateTime? asOf);
         Task<List<Repository>> ReadMultipleAsync(DateTime? asOf, int? page, int? pageSize);
-        Task<List<string>> SearchAsync(RepositorySearch repositorySearch);
+        Task<Repository> ReadAsync(string repositoryId, DateTime? asOf);
     }
 }
