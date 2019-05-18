@@ -20,14 +20,7 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
             {
                 var typeAndImplementations = new RepositoryTypeAndImplementations();
                 typeAndImplementations.TypeName = "API";
-
-                var implementations = new List<RepositoryImplementation>
-                {
-                    new RepositoryImplementation
-                    {
-                        Name = "Node JS"
-                    }
-                };
+                var implementations = new List<RepositoryImplementation>();
 
                 var expressDepencency = bowerAndNpmDependencies.FirstOrDefault(dependency => dependency.Name == "express");
                 var hapiDependency = bowerAndNpmDependencies.FirstOrDefault(dependency => dependency.Name == "hapi");
@@ -36,7 +29,7 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                 {
                     implementations.Add(new RepositoryImplementation
                     {
-                        Name = "express",
+                        Name = "Node JS - Express",
                         Version = expressDepencency.Version,
                         MajorVersion = expressDepencency.Version.GetMajorVersion()
                     });
@@ -49,7 +42,7 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                 {
                     implementations.Add(new RepositoryImplementation
                     {
-                        Name = "hapi",
+                        Name = "Node JS - Hapi",
                         Version = hapiDependency.Version,
                         MajorVersion = hapiDependency.Version.GetMajorVersion()
                     });

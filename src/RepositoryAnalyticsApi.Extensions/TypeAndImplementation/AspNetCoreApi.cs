@@ -1,6 +1,5 @@
 ﻿using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.ServiceModel;
-using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -32,7 +31,7 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                 {
                     new RepositoryImplementation
                     {
-                        Name = "ASP.NET Core",
+                        Name = "ASP.NET Core - Web API",
                         Version = aspNetCoreDependency.Version,
                         MajorVersion = aspNetCoreDependency.Version.GetMajorVersion()
                     }
