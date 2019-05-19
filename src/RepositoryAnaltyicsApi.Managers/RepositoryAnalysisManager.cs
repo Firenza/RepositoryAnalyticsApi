@@ -22,6 +22,7 @@ namespace RepositoryAnaltyicsApi.Managers
         private IDistributedCache distributedCache;
         private ILogger<RepositoryAnalysisManager> logger;
         private Caching cachingSettings;
+        private IRepositorySnapshotRepository repositorySnapshotRepository;
 
         public RepositoryAnalysisManager(
             IRepositoryManager repositoryManager,
@@ -31,7 +32,8 @@ namespace RepositoryAnaltyicsApi.Managers
             IDeriveRepositoryDevOpsIntegrations devOpsIntegrationsDeriver,
             IDistributedCache distributedCache,
             ILogger<RepositoryAnalysisManager> logger,
-            Caching cachingSettings)
+            Caching cachingSettings,
+            IRepositorySnapshotRepository repositorySnapshotRepository)
         {
             this.repositoryManager = repositoryManager;
             this.repositorySourceManager = repositorySourceManager;
@@ -41,6 +43,7 @@ namespace RepositoryAnaltyicsApi.Managers
             this.distributedCache = distributedCache;
             this.logger = logger;
             this.cachingSettings = cachingSettings;
+            this.repositorySnapshotRepository = repositorySnapshotRepository;
         }
 
         public async Task<ReAnalysisResults> ReAnalyzeExistingAsync()
@@ -77,7 +80,9 @@ namespace RepositoryAnaltyicsApi.Managers
 
                             repository.Snapshot.TypesAndImplementations = reCalculatedTypeAndImplementations;
 
-                            await repositoryManager.UpsertAsync(repository, null).ConfigureAwait(false);
+                            // TODO: Have this go through the manager and bypass existing logic ... there aren't any snapshot window
+                            // updates needed here
+                            await repositorySnapshotRepository.UpsertAsync(repository.Snapshot).ConfigureAwait(false);
 
                             reAnalysisResults.RecordsUpdated++;
                         }
