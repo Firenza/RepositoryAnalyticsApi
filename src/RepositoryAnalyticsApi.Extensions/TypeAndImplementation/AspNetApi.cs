@@ -1,10 +1,8 @@
 ﻿using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.ServiceModel;
-using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -25,15 +23,8 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
             {
                 var typeAndImplementations = new RepositoryTypeAndImplementations();
                 typeAndImplementations.TypeName = "API";
+                var implementations = new List<RepositoryImplementation>();
 
-                var implementations = new List<RepositoryImplementation>
-                {
-                    new RepositoryImplementation
-                    {
-                        Name = "ASP.NET"
-                    }
-                };
-                
                 // Can't use .NET path commands due to the unix style paths being used
                 var fileNameRegex = @"[^/]+\Z";
                 var globalAsaxDirectory = Regex.Replace(globalAsaxFile.FullPath, fileNameRegex, string.Empty);
@@ -48,7 +39,7 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                 {
                     implementations.Add(new RepositoryImplementation
                     {
-                        Name = "ServiceStack",
+                        Name = "ASP.NET - ServiceStack",
                         Version = serviceStackDependency.Version,
                         MajorVersion = serviceStackDependency.Version.GetMajorVersion()
                     });
@@ -61,7 +52,7 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                 {
                     implementations.Add(new RepositoryImplementation
                     {
-                        Name = "Web Api",
+                        Name = "ASP.NET - Web Api",
                         Version = webApiDependency.Version,
                         MajorVersion = webApiDependency.Version.GetMajorVersion()
                     });
