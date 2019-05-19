@@ -297,10 +297,9 @@ namespace RepositoryAnaltyicsApi.Managers
                 {
                     typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(repositoryName);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    logger.LogError($"Exception running {typeAndImplementationDeriver.GetType().Name} Type And Implementations Deriver on repository {repositoryName}");
-                    throw;
+                    logger.LogError(ex, $"Exception running {typeAndImplementationDeriver.GetType().Name} Type And Implementations Deriver on repository {repositoryName}");
                 }
 
                 if (typeAndImplementationInfo != null)
