@@ -55,7 +55,11 @@ namespace RepositoryAnaltyicsApi.Managers
 
             do
             {
+                logger.LogDebug($"Reading batch of {pageSize} repositories from the database");
+
                 var currentRepositoryBatch = await repositoryManager.ReadMultipleAsync(null, currentPage, pageSize);
+
+                logger.LogDebug($"Successfully read {currentRepositoryBatch.Count} repositories");
 
                 if (currentRepositoryBatch.Count > 0)
                 {
@@ -77,6 +81,8 @@ namespace RepositoryAnaltyicsApi.Managers
                         if (!comparisonResult.AreEqual)
                         {
                             repository.Snapshot.TypesAndImplementations = reCalculatedTypeAndImplementations;
+
+                            logger.LogDebug($"Updating TypeAndImplementations information for repository {repository.CurrentState.Name}");
 
                             // TODO: Have this go through the manager and bypass existing logic ... there aren't any snapshot window
                             // updates needed here
