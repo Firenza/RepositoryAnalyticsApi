@@ -24,6 +24,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
         public async Task<Repository> ReadAsync(string repositoryId, DateTime? asOf)
         {
+
             var dbRepositoryCurrentState = await repositoryAnalysisContext
                                 .RepositoryCurrentState
                                 .Include(rcs => rcs.RepositorySnapshots)
@@ -40,13 +41,20 @@ namespace RepositoryAnalyticsApi.Repositories
                                          asOf.HasValue && rs.WindowStartsOn < asOf.Value && rs.WindowEndsOn > asOf.Value))
                                 .SingleOrDefaultAsync();
 
-            var repository = new Repository
+            if (dbRepositoryCurrentState != null)
             {
-                CurrentState = mapper.Map<ServiceModel.RepositoryCurrentState>(dbRepositoryCurrentState),
-                Snapshot = mapper.Map<ServiceModel.RepositorySnapshot>(dbRepositoryCurrentState.RepositorySnapshots.FirstOrDefault())
-            };
+                var repository = new Repository
+                {
+                    CurrentState = mapper.Map<ServiceModel.RepositoryCurrentState>(dbRepositoryCurrentState),
+                    Snapshot = mapper.Map<ServiceModel.RepositorySnapshot>(dbRepositoryCurrentState.RepositorySnapshots.FirstOrDefault())
+                };
 
-            return repository;
+                return repository;
+            }
+            else
+            {
+                return null;
+            }
 
             //var dbConnection = repositoryAnalysisContext.Database.GetDbConnection();
 
