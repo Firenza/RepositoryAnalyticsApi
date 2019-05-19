@@ -64,12 +64,11 @@ namespace RepositoryAnaltyicsApi.Managers
                         var existingTypeAndImplementations = repository.Snapshot.TypesAndImplementations;
 
                         var reCalculatedTypeAndImplementations = await ScrapeRepositoryTypeAndImplementation(
-                            repository.CurrentState.Owner,
                             repository.CurrentState.Name,
-                            repository.Snapshot.BranchUsed,
                             repository.Snapshot.Files,
                             repository.Snapshot.Dependencies,
                             repository.CurrentState.Topics?.Select(topic => topic.Name),
+                            new BacklogInfo { HasIssues = repository.CurrentState.HasIssues ?? false },
                             null).ConfigureAwait(false);
 
                         var compareLogic = new CompareLogic();
@@ -77,7 +76,6 @@ namespace RepositoryAnaltyicsApi.Managers
 
                         if (!comparisonResult.AreEqual)
                         {
-
                             repository.Snapshot.TypesAndImplementations = reCalculatedTypeAndImplementations;
 
                             // TODO: Have this go through the manager and bypass existing logic ... there aren't any snapshot window
@@ -173,12 +171,11 @@ namespace RepositoryAnaltyicsApi.Managers
                     repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
                     repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
                     repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(
-                        parsedRepoUrl.Owner,
                         parsedRepoUrl.Name,
-                        branchName,
                         repositorySnapshot.Files,
                         repositorySnapshot.Dependencies,
                         repositoryCurrentState.Topics?.Select(topic => topic.Name),
+                        new BacklogInfo { HasIssues = repositoryCurrentState.HasIssues ?? false },
                         repositoryAnalysis.AsOf).ConfigureAwait(false);
                 }
 
@@ -271,7 +268,7 @@ namespace RepositoryAnaltyicsApi.Managers
             return allDependencies;
         }
 
-        private async Task<List<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(string owner, string name, string branch, IEnumerable<RepositoryFile> files, IEnumerable<RepositoryDependency> dependencies, IEnumerable<string> topicNames, DateTime? asOf)
+        private async Task<List<RepositoryTypeAndImplementations>> ScrapeRepositoryTypeAndImplementation(string repositoryName, IEnumerable<RepositoryFile> files, IEnumerable<RepositoryDependency> dependencies, IEnumerable<string> topicNames, BacklogInfo backlogInfo, DateTime? asOf)
         {
             var typesAndImplementations = new List<RepositoryTypeAndImplementations>();
 
@@ -291,10 +288,20 @@ namespace RepositoryAnaltyicsApi.Managers
                 }
                 if (typeAndImplementationDeriver is IRequireBacklogInfoAccess)
                 {
-                    (typeAndImplementationDeriver as IRequireBacklogInfoAccess).BacklogInfo = new BacklogInfo { HasIssues = true };
+                    (typeAndImplementationDeriver as IRequireBacklogInfoAccess).BacklogInfo = backlogInfo;
                 }
 
-                var typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(name);
+                RepositoryTypeAndImplementations typeAndImplementationInfo = null;
+
+                try
+                {
+                    typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(repositoryName);
+                }
+                catch (Exception)
+                {
+                    logger.LogError($"Exception running {typeAndImplementationDeriver.GetType().Name} Type And Implementations Deriver on repository {repositoryName}");
+                    throw;
+                }
 
                 if (typeAndImplementationInfo != null)
                 {
