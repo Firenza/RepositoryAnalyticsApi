@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RepositoryAnalyticsApi.InternalModel;
@@ -9,7 +8,6 @@ using Serilog;
 using Serilog.Events;
 using Swashbuckle.AspNetCore.Swagger;
 using System;
-using System.Configuration;
 using System.IO;
 
 namespace RepositoryAnalyticsApi

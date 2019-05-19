@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace RepositoryAnalyticsApi.InternalModel.AppSettings
+﻿namespace RepositoryAnalyticsApi.InternalModel.AppSettings
 {
     public class Database
     {

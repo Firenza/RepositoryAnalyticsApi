@@ -1,8 +1,5 @@
 ﻿using GraphQl.NetStandard.Client;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace RepositoryAnalyticsApi.Repositories.Model.Github.GraphQL
 {

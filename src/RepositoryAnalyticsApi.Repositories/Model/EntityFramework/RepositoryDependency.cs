@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
+﻿namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
 {
     public class RepositoryDependency
     {

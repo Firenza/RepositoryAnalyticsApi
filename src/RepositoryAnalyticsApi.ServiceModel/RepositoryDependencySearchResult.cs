@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace RepositoryAnalyticsApi.ServiceModel
+﻿namespace RepositoryAnalyticsApi.ServiceModel
 {
     public class RepositoryDependencySearchResult
     {

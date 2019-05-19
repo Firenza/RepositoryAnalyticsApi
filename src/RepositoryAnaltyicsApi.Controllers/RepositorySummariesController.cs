@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.ServiceModel;
-using System;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsApi.Controllers

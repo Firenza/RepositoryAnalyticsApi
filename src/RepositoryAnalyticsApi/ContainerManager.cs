@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using AutoMapper.EquivalencyExpression;
-using Dapper.FluentMap;
 using GraphQl.NetStandard.Client;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +26,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Text.RegularExpressions;
 
 namespace RepositoryAnalyticsApi
 {

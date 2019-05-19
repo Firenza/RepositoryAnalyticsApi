@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnalyticsApi.InternalModel;
