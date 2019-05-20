@@ -30,6 +30,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnalyticsApi.Exte
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnalyticsApi.InternalModel", "RepositoryAnalyticsApi.InternalModel\RepositoryAnalyticsApi.InternalModel.csproj", "{F03864DC-6D83-4835-AC5F-193D7064FC24}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{9EA24C34-BCBE-4A18-8D5D-D15C690EF119}"
+	ProjectSection(SolutionItems) = preProject
+		BuildTagAndPushImage.bat = BuildTagAndPushImage.bat
+		Dockerfile = Dockerfile
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
