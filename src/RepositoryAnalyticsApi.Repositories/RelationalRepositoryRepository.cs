@@ -27,6 +27,7 @@ namespace RepositoryAnalyticsApi.Repositories
 
             var dbRepositoryCurrentState = await repositoryAnalysisContext
                                 .RepositoryCurrentState
+                                .AsNoTracking()
                                 .Include(rcs => rcs.RepositorySnapshots)
                                   .ThenInclude(rs => rs.Dependencies)
                                 .Include(rcs => rcs.RepositorySnapshots)
@@ -143,18 +144,37 @@ namespace RepositoryAnalyticsApi.Repositories
                     offset @offset",
                 new { limit = pageSize.Value, offset = page.Value * pageSize.Value });
 
+            var dbRepositoryCurrentStates = await repositoryAnalysisContext
+                      .RepositoryCurrentState
+                      .AsNoTracking()
+                      .Include(rcs => rcs.RepositorySnapshots)
+                        .ThenInclude(rs => rs.Dependencies)
+                      .Include(rcs => rcs.RepositorySnapshots)
+                        .ThenInclude(rs => rs.Files)
+                      .Include(rcs => rcs.RepositorySnapshots)
+                        .ThenInclude(rs => rs.TypesAndImplementations)
+                            .ThenInclude(rti => rti.Implementations)
+                      .Where(rcs =>
+                           repositoryIdsInPage.Contains(rcs.RepositoryId) &&
+                           rcs.RepositorySnapshots.Any(rs =>
+                               !asOf.HasValue && rs.WindowEndsOn == null ||
+                               asOf.HasValue && rs.WindowStartsOn < asOf.Value && rs.WindowEndsOn > asOf.Value))
+                      .ToListAsync();
+
             var repositories = new List<Repository>();
 
-            foreach (var repositoryId in repositoryIdsInPage)
+            foreach (var dbRepositoryCurrentState in dbRepositoryCurrentStates)
             {
-                var repository = await ReadAsync(repositoryId, asOf);
+                var repository = new Repository
+                {
+                    CurrentState = mapper.Map<ServiceModel.RepositoryCurrentState>(dbRepositoryCurrentState),
+                    Snapshot = mapper.Map<ServiceModel.RepositorySnapshot>(dbRepositoryCurrentState.RepositorySnapshots.FirstOrDefault())
+                };
 
                 repositories.Add(repository);
             }
 
             return repositories;
-
-          //var dbConnection = repositoryAnalysisContext.Database.GetDbConnection();
 
           //  var dbrcss = new List<Model.EntityFramework.RepositoryCurrentState>();
 
