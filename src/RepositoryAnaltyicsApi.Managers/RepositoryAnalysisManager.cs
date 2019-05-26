@@ -75,8 +75,12 @@ namespace RepositoryAnaltyicsApi.Managers
                             new BacklogInfo { HasIssues = repository.CurrentState.HasIssues ?? false },
                             null).ConfigureAwait(false);
 
+                        // Sort both collections so when comparing we don't get false differences if the list order is different
+                        var sortedExistingTypeAndImplemetnations = existingTypeAndImplementations.OrderBy(typeAndImpl => typeAndImpl.TypeName);
+                        var sortedReCalculatedTypeAndImplementations = reCalculatedTypeAndImplementations.OrderBy(typeAndImpl => typeAndImpl.TypeName);
+
                         var compareLogic = new CompareLogic();
-                        var comparisonResult = compareLogic.Compare(existingTypeAndImplementations, reCalculatedTypeAndImplementations);
+                        var comparisonResult = compareLogic.Compare(sortedExistingTypeAndImplemetnations, sortedReCalculatedTypeAndImplementations);
 
                         if (!comparisonResult.AreEqual)
                         {
