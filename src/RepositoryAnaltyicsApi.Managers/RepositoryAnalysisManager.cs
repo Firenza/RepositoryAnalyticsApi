@@ -314,9 +314,22 @@ namespace RepositoryAnaltyicsApi.Managers
                 }
             }
 
+            if (!typesAndImplementations.Any())
+            {
+                typesAndImplementations.Add(new RepositoryTypeAndImplementations
+                {
+                    TypeName = "Unknown",
+                    Implementations = new List<RepositoryImplementation>
+                    {
+                        new RepositoryImplementation
+                        {
+                            Name = "Unknown"
+                        }
+                    }
+                });
+            }
+
             return typesAndImplementations;
         }
-
-
     }
 }
