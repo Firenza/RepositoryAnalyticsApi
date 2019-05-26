@@ -37,66 +37,79 @@ namespace RepositoryAnaltyicsApi.Managers
 
             if (repository.Snapshot != null)
             {
-                // Get the commit related information for the repo at the specified point in time
-                // Need this to properly set the window time range for which the snapshot information we are 
-                // saving is valid for 
-                var repoSourceSnapshot = await repositorySourceManager.ReadRepositorySourceSnapshotAsync(repository.CurrentState.Owner, repository.CurrentState.Name, repository.CurrentState.DefaultBranch, asOf).ConfigureAwait(false);
-
-                repository.Snapshot.WindowStartCommitId = repoSourceSnapshot.ClosestCommitId;
-                // Sometimes the pushed date is null, E.G. When a repository is renamed and the commit occured prior to the rename
-                repository.Snapshot.WindowStartsOn = repoSourceSnapshot.ClosestCommitPushedDate ?? repoSourceSnapshot.ClosestCommitCommittedDate;
-
-                // Do we really need to read all existing repository snapshots here?  Could probably get away with just reading
-                // the first one before the asOf date and the first one after the asOf date but that can be left as a future
-                // optimization
-                var existingSnapshots = await repositorySnapshotRepository.ReadAllForParent(repository.CurrentState.Id).ConfigureAwait(false);
-
-                if (!existingSnapshots.Any())
+                // Avoid messing with the window stuff if the repository currently has no branches
+                // TODO: Figure out how this is going to work when a repository that is currently empty is no longer empty ... 
+                // Do we care that it was empty at one point?  It save to assume that a repo will only go from empty to non empty 
+                // and not vice versa?  If so we could set the window start date for this snapshot to the repo creation date
+                if (repository.CurrentState.DefaultBranch != null)
                 {
-                    repository.Snapshot.WindowEndsOn = null;
+                    // Get the commit related information for the repo at the specified point in time
+                    // Need this to properly set the window time range for which the snapshot information we are 
+                    // saving is valid for 
+                    var repoSourceSnapshot = await repositorySourceManager.ReadRepositorySourceSnapshotAsync(repository.CurrentState.Owner, repository.CurrentState.Name, repository.CurrentState.DefaultBranch, asOf).ConfigureAwait(false);
+
+                    repository.Snapshot.WindowStartCommitId = repoSourceSnapshot.ClosestCommitId;
+                    // Sometimes the pushed date is null, E.G. When a repository is renamed and the commit occured prior to the rename
+                    repository.Snapshot.WindowStartsOn = repoSourceSnapshot.ClosestCommitPushedDate ?? repoSourceSnapshot.ClosestCommitCommittedDate;
+
+                    // Do we really need to read all existing repository snapshots here?  Could probably get away with just reading
+                    // the first one before the asOf date and the first one after the asOf date but that can be left as a future
+                    // optimization
+                    var existingSnapshots = await repositorySnapshotRepository.ReadAllForParent(repository.CurrentState.Id).ConfigureAwait(false);
+
+                    if (!existingSnapshots.Any())
+                    {
+                        repository.Snapshot.WindowEndsOn = null;
+                    }
+                    else
+                    {
+                        /*
+                         * We need to figure out the following two things
+                         * 
+                         * 1) When should this snapshots window end?  
+                         * 
+                         * If there is a snapshot with a window starting at a later date then this
+                         * later snapshots starting window time should be this snapshots ending window time
+                         * 
+                         * 2) Do we need to update the window end of an existing snapshot? 
+                         * 
+                         * If there an existing snapshot who's end date is later than the current snapshots start date 
+                         * then we need to update this existing snapshots end date
+                         */
+
+                        var snapshotsWithLaterStartingDate = existingSnapshots.Where(snapshot => snapshot.WindowStartsOn > repository.Snapshot.WindowStartsOn);
+
+                        if (snapshotsWithLaterStartingDate.Any())
+                        {
+                            var closestLaterStartingSnapshot = snapshotsWithLaterStartingDate.OrderBy(snapshot => snapshot.WindowStartsOn).First();
+
+                            repository.Snapshot.WindowEndsOn = closestLaterStartingSnapshot.WindowStartsOn.Value.AddTicks(-1);
+                        }
+
+                        var snapshotsWithEarlierStartingDate = existingSnapshots.Where(snapshot => snapshot.WindowStartsOn < repository.Snapshot.WindowStartsOn);
+
+                        if (snapshotsWithEarlierStartingDate.Any())
+                        {
+                            var closestEarlierStartingSnapshot = snapshotsWithEarlierStartingDate.OrderByDescending(snapshot => snapshot.WindowStartsOn).First();
+
+                            var newEndTime = repository.Snapshot.WindowStartsOn.Value.AddTicks(-1);
+
+                            closestEarlierStartingSnapshot.WindowEndsOn = repository.Snapshot.WindowStartsOn.Value.AddTicks(-1);
+
+                            if (closestEarlierStartingSnapshot.WindowEndsOn != newEndTime)
+                            {
+                                closestEarlierStartingSnapshot.WindowEndsOn = newEndTime;
+
+                                await repositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot, repositoryCurrentStateId).ConfigureAwait(false);
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                    /*
-                     * We need to figure out the following two things
-                     * 
-                     * 1) When should this snapshots window end?  
-                     * 
-                     * If there is a snapshot with a window starting at a later date then this
-                     * later snapshots starting window time should be this snapshots ending window time
-                     * 
-                     * 2) Do we need to update the window end of an existing snapshot? 
-                     * 
-                     * If there an existing snapshot who's end date is later than the current snapshots start date 
-                     * then we need to update this existing snapshots end date
-                     */
-
-                    var snapshotsWithLaterStartingDate = existingSnapshots.Where(snapshot => snapshot.WindowStartsOn > repository.Snapshot.WindowStartsOn);
-
-                    if (snapshotsWithLaterStartingDate.Any())
-                    {
-                        var closestLaterStartingSnapshot = snapshotsWithLaterStartingDate.OrderBy(snapshot => snapshot.WindowStartsOn).First();
-
-                        repository.Snapshot.WindowEndsOn = closestLaterStartingSnapshot.WindowStartsOn.Value.AddTicks(-1);
-                    }
-
-                    var snapshotsWithEarlierStartingDate = existingSnapshots.Where(snapshot => snapshot.WindowStartsOn < repository.Snapshot.WindowStartsOn);
-
-                    if (snapshotsWithEarlierStartingDate.Any())
-                    {
-                        var closestEarlierStartingSnapshot = snapshotsWithEarlierStartingDate.OrderByDescending(snapshot => snapshot.WindowStartsOn).First();
-
-                        var newEndTime = repository.Snapshot.WindowStartsOn.Value.AddTicks(-1);
-
-                        closestEarlierStartingSnapshot.WindowEndsOn = repository.Snapshot.WindowStartsOn.Value.AddTicks(-1);
-
-                        if (closestEarlierStartingSnapshot.WindowEndsOn != newEndTime)
-                        {
-                            closestEarlierStartingSnapshot.WindowEndsOn = newEndTime;
-
-                            await repositorySnapshotRepository.UpsertAsync(closestEarlierStartingSnapshot, repositoryCurrentStateId).ConfigureAwait(false);
-                        }
-                    }
+                    // If there isn't any branch information then set this snapshot to start now.  This way it can have it's end daate set 
+                    // when and if the repository does get a branch and some updated type information
+                    repository.Snapshot.WindowStartsOn = repository.Snapshot.TakenOn;
                 }
 
                 await repositorySnapshotRepository.UpsertAsync(repository.Snapshot, repositoryCurrentStateId).ConfigureAwait(false);

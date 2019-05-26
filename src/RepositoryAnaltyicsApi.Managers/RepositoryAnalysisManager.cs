@@ -166,24 +166,30 @@ namespace RepositoryAnaltyicsApi.Managers
                 }
 
                 RepositorySnapshot repositorySnapshot = null;
+                repositorySnapshot = new RepositorySnapshot();
+                // Have to set the windows in the manager
+                repositorySnapshot.RepositoryCurrentStateRepositoryId = repositoryCurrentState.Id;
+                repositorySnapshot.TakenOn = DateTime.Now;
+                repositorySnapshot.BranchUsed = branchName;
 
                 if (branchName != null)
                 {
-                    repositorySnapshot = new RepositorySnapshot();
-                    // Have to set the windows in the manager
-                    repositorySnapshot.RepositoryCurrentStateRepositoryId = repositoryCurrentState.Id;
-                    repositorySnapshot.TakenOn = DateTime.Now;
-                    repositorySnapshot.BranchUsed = branchName;
                     repositorySnapshot.Dependencies = await ScrapeDependenciesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
                     repositorySnapshot.Files = await repositorySourceManager.ReadFilesAsync(parsedRepoUrl.Owner, parsedRepoUrl.Name, branchName, repositoryAnalysis.AsOf).ConfigureAwait(false);
-                    repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(
-                        parsedRepoUrl.Name,
-                        repositorySnapshot.Files,
-                        repositorySnapshot.Dependencies,
-                        repositoryCurrentState.Topics?.Select(topic => topic.Name),
-                        new BacklogInfo { HasIssues = repositoryCurrentState.HasIssues ?? false },
-                        repositoryAnalysis.AsOf).ConfigureAwait(false);
                 }
+                else
+                {
+                    repositorySnapshot.Dependencies = new List<RepositoryDependency>();
+                    repositorySnapshot.Files = new List<RepositoryFile>();
+                }
+
+                repositorySnapshot.TypesAndImplementations = await ScrapeRepositoryTypeAndImplementation(
+                    parsedRepoUrl.Name,
+                    repositorySnapshot.Files,
+                    repositorySnapshot.Dependencies,
+                    repositoryCurrentState.Topics?.Select(topic => topic.Name),
+                    new BacklogInfo { HasIssues = repositoryCurrentState.HasIssues ?? false },
+                    repositoryAnalysis.AsOf).ConfigureAwait(false);
 
                 var updatedRepository = new Repository
                 {
