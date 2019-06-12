@@ -24,6 +24,7 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
 
                 var expressDepencency = bowerAndNpmDependencies.FirstOrDefault(dependency => dependency.Name == "express");
                 var hapiDependency = bowerAndNpmDependencies.FirstOrDefault(dependency => dependency.Name == "hapi");
+                var koaDependency = bowerAndNpmDependencies.FirstOrDefault(dependency => dependency.Name == "koa");
 
                 if (expressDepencency != null)
                 {
@@ -45,6 +46,19 @@ namespace RepositoryAnalyticsApi.Extensions.TypeAndImplementation
                         Name = "Node JS - Hapi",
                         Version = hapiDependency.Version,
                         MajorVersion = hapiDependency.Version.GetMajorVersion()
+                    });
+
+                    typeAndImplementations.Implementations = implementations;
+
+                    return typeAndImplementations;
+                }
+                else if (koaDependency != null)
+                {
+                    implementations.Add(new RepositoryImplementation
+                    {
+                        Name = "Node JS - Koa",
+                        Version = koaDependency.Version,
+                        MajorVersion = koaDependency.Version.GetMajorVersion()
                     });
 
                     typeAndImplementations.Implementations = implementations;
