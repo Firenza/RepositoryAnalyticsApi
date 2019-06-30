@@ -68,28 +68,28 @@ namespace RepositoryAnalyticsApi.Repositories
             if (!asOf.HasValue)
             {
                 var startsWithMatchesTask = dbConnection.QueryAsync<string>(
-                         @"SELECT name
-                            FROM repository_dependency  RD
-                            JOIN repository_snapshot RS 
-	                            on RS.repository_snapshot_id = RD.repository_snapshot_id
-	                            and RS.window_ends_on is null
-                            WHERE name LIKE @Name
-                            GROUP BY name
-                            ORDER BY name",
-                         new { Name = name + "%" });
+                    @"SELECT name
+                    FROM repository_dependency  RD
+                    JOIN repository_snapshot RS 
+	                    on RS.repository_snapshot_id = RD.repository_snapshot_id
+	                    and RS.window_ends_on is null
+                    WHERE name ILIKE @Name
+                    GROUP BY name
+                    ORDER BY COUNT(*) DESC",
+                    new { Name = name + "%" });
 
                 var startsWithMatches = await startsWithMatchesTask;
 
                 var anyMatchesTask = dbConnection.QueryAsync<string>(
-                     @"SELECT name
-                        FROM repository_dependency RD
-                        JOIN repository_snapshot RS 
-	                        on RS.repository_snapshot_id = RD.repository_snapshot_id
-	                        and RS.window_ends_on is null
-                        WHERE name LIKE @Name
-                        GROUP BY name
-                        ORDER BY name",
-                     new { Name = "%" + name + "%" });
+                    @"SELECT name
+                    FROM repository_dependency RD
+                    JOIN repository_snapshot RS 
+	                    on RS.repository_snapshot_id = RD.repository_snapshot_id
+	                    and RS.window_ends_on is null
+                    WHERE name ILIKE @Name
+                    GROUP BY name
+                    ORDER BY COUNT(*) DESC",
+                    new { Name = "%" + name + "%" });
 
                 var anyMatches = await anyMatchesTask;
 
