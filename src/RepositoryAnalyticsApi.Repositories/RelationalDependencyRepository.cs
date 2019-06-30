@@ -93,13 +93,22 @@ namespace RepositoryAnalyticsApi.Repositories
 
                 var anyMatches = await anyMatchesTask;
 
+                // Prefer matches at the start of the name
                 if (startsWithMatches.Any())
                 {
                     matchingDependencyNames.AddRange(startsWithMatches);
                 }
-                else if (matchingDependencyNames.Count < 10 && anyMatches.Any())
+
+                // Also add in matches not at the start of the stream if more matches are needed
+                if (matchingDependencyNames.Count < 10 && anyMatches.Any())
                 {
-                    matchingDependencyNames.AddRange(anyMatches);
+                    foreach (var anyMatch in anyMatches)
+                    {
+                        if (matchingDependencyNames.Count < 10 && !matchingDependencyNames.Contains(anyMatch))
+                        {
+                            matchingDependencyNames.Add(anyMatch);
+                        }
+                    }
                 }
             }
 
