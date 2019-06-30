@@ -24,7 +24,11 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //modelBuilder.HasDefaultSchema("repositoryAnalytics");
+            // This is meant to have the same effect as the following SQL
+            // CREATE INDEX trgm_idx_repository_dependency_name ON public.repository_dependency USING gin (name gin_trgm_ops);
+            modelBuilder.Entity<RepositoryDependency>()
+                   .HasIndex(rd => rd.Name)
+                   .ForNpgsqlHasMethod("gin");
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
