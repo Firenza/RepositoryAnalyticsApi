@@ -6,6 +6,7 @@
         public int CachingDurationOrganizationTeams { get; set; }
         public int CachingDurationOwnerType { get; set; }
         public int CachingDurationDevOpsIntegrations { get; set; }
+        public int CachingDurationDependencyNameSearchResults { get; set; }
         public string GitHubV3ApiUrl { get; set; }
         public string GitHubGraphQlApiUrl { get; set; }
         public string ElasticSearchUrl { get; set; }

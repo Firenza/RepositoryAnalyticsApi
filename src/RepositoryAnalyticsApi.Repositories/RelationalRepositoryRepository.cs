@@ -156,9 +156,10 @@ namespace RepositoryAnalyticsApi.Repositories
                             .ThenInclude(rti => rti.Implementations)
                       .Where(rcs =>
                            repositoryIdsInPage.Contains(rcs.RepositoryId) &&
+                           (!rcs.RepositorySnapshots.Any() ||
                            rcs.RepositorySnapshots.Any(rs =>
                                !asOf.HasValue && rs.WindowEndsOn == null ||
-                               asOf.HasValue && rs.WindowStartsOn < asOf.Value && rs.WindowEndsOn > asOf.Value))
+                               asOf.HasValue && rs.WindowStartsOn < asOf.Value && rs.WindowEndsOn > asOf.Value)))
                       .ToListAsync();
 
             var repositories = new List<Repository>();

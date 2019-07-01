@@ -32,7 +32,7 @@ namespace RepositoryAnalyticsApi
             var flattenedAppSettings = new FlattenedAppSettings();
             configuration.Bind(flattenedAppSettings);
 
-            // Map the flattened dependencies in to the structured ones until the whole "__" not working in docke
+            // Map the flattened dependencies in to the structured ones until the whole "__" not working in docker
             // compose thing can be figured out
             var dependencies = new InternalModel.AppSettings.Dependencies
             {
@@ -64,7 +64,8 @@ namespace RepositoryAnalyticsApi
                     DevOpsIntegrations = flattenedAppSettings.CachingDurationDevOpsIntegrations,
                     OrganizationTeams = flattenedAppSettings.CachingDurationOrganizationTeams,
                     OwnerType = flattenedAppSettings.CachingDurationOwnerType,
-                    RepositoryData = flattenedAppSettings.CachingDurationRepositoryData
+                    RepositoryData = flattenedAppSettings.CachingDurationRepositoryData,
+                    DependencyNameSearchResults = flattenedAppSettings.CachingDurationDependencyNameSearchResults
                 }
             };
 

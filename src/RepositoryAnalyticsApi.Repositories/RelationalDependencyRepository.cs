@@ -68,38 +68,47 @@ namespace RepositoryAnalyticsApi.Repositories
             if (!asOf.HasValue)
             {
                 var startsWithMatchesTask = dbConnection.QueryAsync<string>(
-                         @"SELECT name
-                            FROM repository_dependency  RD
-                            JOIN repository_snapshot RS 
-	                            on RS.repository_snapshot_id = RD.repository_snapshot_id
-	                            and RS.window_ends_on is null
-                            WHERE name LIKE @Name
-                            GROUP BY name
-                            ORDER BY name",
-                         new { Name = name + "%" });
+                    @"SELECT name
+                    FROM repository_dependency  RD
+                    JOIN repository_snapshot RS 
+	                    on RS.repository_snapshot_id = RD.repository_snapshot_id
+	                    and RS.window_ends_on is null
+                    WHERE name ILIKE @Name
+                    GROUP BY name
+                    ORDER BY COUNT(*) DESC",
+                    new { Name = name + "%" });
 
                 var startsWithMatches = await startsWithMatchesTask;
 
                 var anyMatchesTask = dbConnection.QueryAsync<string>(
-                     @"SELECT name
-                        FROM repository_dependency RD
-                        JOIN repository_snapshot RS 
-	                        on RS.repository_snapshot_id = RD.repository_snapshot_id
-	                        and RS.window_ends_on is null
-                        WHERE name LIKE @Name
-                        GROUP BY name
-                        ORDER BY name",
-                     new { Name = "%" + name + "%" });
+                    @"SELECT name
+                    FROM repository_dependency RD
+                    JOIN repository_snapshot RS 
+	                    on RS.repository_snapshot_id = RD.repository_snapshot_id
+	                    and RS.window_ends_on is null
+                    WHERE name ILIKE @Name
+                    GROUP BY name
+                    ORDER BY COUNT(*) DESC",
+                    new { Name = "%" + name + "%" });
 
                 var anyMatches = await anyMatchesTask;
 
+                // Prefer matches at the start of the name
                 if (startsWithMatches.Any())
                 {
                     matchingDependencyNames.AddRange(startsWithMatches);
                 }
-                else if (matchingDependencyNames.Count < 10 && anyMatches.Any())
+
+                // Also add in matches not at the start of the stream if more matches are needed
+                if (matchingDependencyNames.Count < 10 && anyMatches.Any())
                 {
-                    matchingDependencyNames.AddRange(anyMatches);
+                    foreach (var anyMatch in anyMatches)
+                    {
+                        if (matchingDependencyNames.Count < 10 && !matchingDependencyNames.Contains(anyMatch))
+                        {
+                            matchingDependencyNames.Add(anyMatch);
+                        }
+                    }
                 }
             }
 
