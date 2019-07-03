@@ -101,27 +101,10 @@ namespace RepositoryAnalyticsApi
 
             var connestionString = dbConnectionStringBuilder.ConnectionString;
 
-            // Figure out which DB type needs to be loaded
-            var formattedDbType = dependencies.Database.Type.ToLower().Replace(" ", string.Empty);
-
-            if (formattedDbType == "sqlserver")
+            services.AddDbContext<RepositoryAnalysisContext>(options =>
             {
-                services.AddDbContext<RepositoryAnalysisContext>(options =>
-                {
-                    options.UseSqlServer(connestionString);
-                });
-            }
-            else if (formattedDbType == "postgresql")
-            {
-                services.AddDbContext<RepositoryAnalysisContext>(options =>
-                {
-                    options.UseNpgsql(connestionString);
-                });
-            }
-            else
-            {
-                throw new ArgumentException("Unsupported DB Type, only PostgreSQL and SQL Server are supported");
-            }
+                options.UseNpgsql(connestionString);
+            });
 
             // Now setup all the mapping between the Entity Framework objects
             var config = new MapperConfiguration(cfg =>
