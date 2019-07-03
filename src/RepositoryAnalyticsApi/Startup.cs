@@ -148,6 +148,7 @@ namespace RepositoryAnalyticsApi
                     Log.Logger.Information("Initializing Database");
 
                     context.Database.EnsureCreated();
+                    context.ManualConfiguration();
 
                     Log.Logger.Information("Database Succesfully Initialized");
                     

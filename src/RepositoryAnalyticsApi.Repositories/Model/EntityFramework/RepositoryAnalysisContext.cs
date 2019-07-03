@@ -12,6 +12,14 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
 
         public DbSet<RepositoryCurrentState> RepositoryCurrentState { get; set; }
 
+        /// <summary>
+        /// Any DB configuration that is not possible via EF Core.
+        /// </summary>
+        public void ManualConfiguration()
+        {
+            this.Database.ExecuteSqlCommand("CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE INDEX IF NOT EXISTS trgm_idx_repository_dependency_name ON public.repository_dependency USING gin (name gin_trgm_ops)");
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             // Configure Dapper to map PostgreSql snake case column names to pascal case .NET property names
@@ -24,12 +32,6 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // This is meant to have the same effect as the following SQL
-            // CREATE INDEX trgm_idx_repository_dependency_name ON public.repository_dependency USING gin (name gin_trgm_ops);
-            modelBuilder.Entity<RepositoryDependency>()
-                   .HasIndex(rd => rd.Name)
-                   .ForNpgsqlHasMethod("gin");
-
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 // Snake case everything to avoid having to put quotes around everything
