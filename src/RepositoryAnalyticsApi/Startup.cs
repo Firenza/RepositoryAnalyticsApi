@@ -38,7 +38,6 @@ namespace RepositoryAnalyticsApi
             {
                 Database = new InternalModel.AppSettings.Database
                 {
-                    Type = flattenedAppSettings.DatabaseType,
                     ConnectionString = flattenedAppSettings.DatabaseConnectionString
                 },
                 ElasticSearch = new InternalModel.AppSettings.ElasticSearch
