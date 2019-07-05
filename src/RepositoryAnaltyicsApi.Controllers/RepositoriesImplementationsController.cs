@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace RepositoryAnaltyicsApi.Controllers
 {
     [Produces("application/json")]
-    [Route("api/repoistories/{type}/implementations")]
+    [Route("api/repositories/{type}/implementations")]
     [ApiController]
     public class RepositoriesImplementationsController : ControllerBase
     {
