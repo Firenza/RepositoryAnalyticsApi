@@ -172,9 +172,11 @@ namespace RepositoryAnalyticsApi
             //services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
             //services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();
             services.AddTransient<IVersionManager, VersionManager>();
+            services.AddTransient<IRepositoryTypeManager, RepositoryTypeManager>();
             services.AddTransient<IRepositoryCurrentStateRepository, RelationalRepositoryCurrentStateRepository>();
             services.AddTransient<IRepositorySnapshotRepository, RelationalRepositorySnapshotRepository>();
             services.AddTransient<IRepositoryRepository, RelationalRepositoryRepository>();
+            services.AddTransient<IRepositoryTypeRepository, PostgreSqlRepositoryTypeRepository>();
 
             services.AddTransient<IEnumerable<IDependencyScraperManager>>((serviceProvider) => new List<IDependencyScraperManager> {
                 new BowerDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),

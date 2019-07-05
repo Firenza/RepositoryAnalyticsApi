@@ -7,6 +7,6 @@ namespace RepositoryAnalyticsApi.ServiceModel
     {
         public DateTime? IntervalStart { get; set; }
         public DateTime? IntervalEnd { get; set; }
-        public List<CountAggreation> CountAggreations { get; set; }
+        public List<CountAggregationResult> CountAggreations { get; set; }
     }
 }
