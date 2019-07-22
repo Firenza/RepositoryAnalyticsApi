@@ -6,6 +6,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
 {
     public interface IRepositoryImplementationsManager
     {
-        Task<List<IntervalCountAggregations>> SearchAsync(RepositorySearch repositorySearch, IntervalInfo intervalInfo);
+        Task<List<CountAggregationResult>> SearchAsync(RepositorySearch repositorySearch);
     }
 }

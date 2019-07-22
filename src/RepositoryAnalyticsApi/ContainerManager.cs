@@ -167,7 +167,7 @@ namespace RepositoryAnalyticsApi
                    serviceProvider.GetService<ILogger<GitHubApiRepositorySourceRepository>>()
             ));
             services.AddTransient<IRepositoryImplementationsManager, RepositoryImplementationsManager>();
-            //services.AddTransient<IRepositoryImplementationsRepository, MongoRepositoryImplementationsRepository>();
+            services.AddTransient<IRepositoryImplementationsRepository, PostgreSqlRepositoryImplementationRespository>();
             services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
             //services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
             //services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();

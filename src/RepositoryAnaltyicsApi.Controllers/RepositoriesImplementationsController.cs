@@ -29,43 +29,25 @@ namespace RepositoryAnaltyicsApi.Controllers
         /// <param name="intervals"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<List<IntervalCountAggregations>>> GetAsync(
+        public async Task<ActionResult<List<CountAggregationResult>>> GetAsync(
             string type, 
             string team, 
             string topic, 
-            bool? hasContinuousDelivery,
-            DateTime? asOf, 
-            DateTime?intervalStartTime, 
-            DateTime? intervalEndTime, 
-            int? intervals)
+            bool? hasContinuousDelivery)
         {
-            if (intervals.HasValue && (!intervalStartTime.HasValue && !intervalEndTime.HasValue))
-            {
-                var modelStateDictionary = new ModelStateDictionary();
-                modelStateDictionary.TryAddModelError(nameof(intervals), "Can not specify an interval without a start or end time");
-
-                return BadRequest(modelStateDictionary);
-            }
-
+      
             var repositorySearch = new RepositorySearch
             {
                 TypeName = type,
                 Team = team,
                 Topic = topic,
                 HasContinuousDelivery = hasContinuousDelivery,
-                AsOf = asOf
             };
 
-            var intervalInfo = new IntervalInfo
-            {
-                IntervalStartTime = intervalStartTime,
-                IntervalEndTime = intervalEndTime,
-                Intervals = intervals
-            };
+   
+            var countAggregations =  await repositoryImplementationsManager.SearchAsync(repositorySearch);
 
-            var intervalCountAggregations =  await repositoryImplementationsManager.SearchAsync(repositorySearch, intervalInfo);
-
-            return intervalCountAggregations;
+            return countAggregations;
         }
     }
 }
