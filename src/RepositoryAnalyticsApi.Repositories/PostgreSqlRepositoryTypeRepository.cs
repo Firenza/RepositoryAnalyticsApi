@@ -19,15 +19,11 @@ namespace RepositoryAnalyticsApi.Repositories
 
         public async Task<List<CountAggregationResult>> ReadAllAsync()
         {
-            var matchingDependencyNames = new List<string>();
-
             var dbConnection = repositoryAnalysisContext.Database.GetDbConnection();
 
             var countAggregationResults = await dbConnection.QueryAsync<CountAggregationResult>(
                     @"select RTI.type_name as name, Count(*)
-                    FROM repository_implementation RI
-                    join repository_type_and_implementations RTI
-	                    on RTI.repository_type_and_implementations_id = RI.repository_type_and_implementations_id
+                    FROM repository_type_and_implementations RTI
                     join repository_snapshot RS
 	                    on RS.repository_snapshot_id = RTI.repository_snapshot_id
                             -- This will cause only the current state of the repositories to be included in the results
