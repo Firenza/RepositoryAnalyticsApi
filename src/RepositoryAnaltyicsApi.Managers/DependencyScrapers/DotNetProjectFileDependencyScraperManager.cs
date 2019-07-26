@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace RepositoryAnaltyicsApi.Managers.Dependencies
+namespace RepositoryAnaltyicsApi.Managers.DependencyScrapers
 {
     public class DotNetProjectFileDependencyScraperManager : IDependencyScraperManager
     {

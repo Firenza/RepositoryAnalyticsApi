@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace RepositoryAnaltyicsApi.Managers.Dependencies
+namespace RepositoryAnaltyicsApi.Managers.DependencyScrapers
 {
     public class BowerDependencyScraperManager : IDependencyScraperManager
     {
