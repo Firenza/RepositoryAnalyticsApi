@@ -7,6 +7,7 @@ using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.UnitTests
@@ -62,9 +63,50 @@ namespace RepositoryAnalyticsApi.UnitTests
             var dependencies = await this.manager.ReadAsync(owner, name, branch, asOf);
 
             // Assert
-            dependencies.Should().Contain(expectedDependency);
+            dependencies.Should().Contain(dependency => dependency.Name == expectedDependency.Name);
+            dependencies.First(dependency => dependency.Name == expectedDependency.Name).Should().BeEquivalentTo(expectedDependency);
+        }
 
+        [TestMethod]
+        public async Task ParseVariablizedNonScopedDependency()
+        {
+            // Arrange
+            var owner = "bob";
+            var name = "someRepo";
+            var branch = "master";
+            var asOf = DateTime.Now;
 
+            var mavenFile = new ServiceModel.RepositoryFile
+            {
+                Name = "pom.xml",
+                FullPath = "/repo/src/pom.xml"
+            };
+
+            var mavenFileContent = await File.ReadAllTextAsync(@"Managers\DependencyScrapers\TestDependencyFiles\ValidMavenPom.xml");
+
+            this.mockRepositorySourceManger
+                .Setup(mock => mock.ReadFilesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime?>()))
+                .ReturnsAsync(new List<ServiceModel.RepositoryFile> { mavenFile });
+
+            this.mockRepositorySourceManger
+                .Setup(mock => mock.ReadFileContentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime?>()))
+                .ReturnsAsync(mavenFileContent);
+
+            var expectedDependency = new RepositoryDependency
+            {
+                Name = "aether-util",
+                Version = "1.1.0",
+                MajorVersion = "1",
+                RepoPath = mavenFile.FullPath,
+                Source = "Maven",
+            };
+
+            // Act
+            var dependencies = await this.manager.ReadAsync(owner, name, branch, asOf);
+
+            // Assert
+            dependencies.Should().Contain(dependency => dependency.Name == expectedDependency.Name);
+            dependencies.First(dependency => dependency.Name == expectedDependency.Name).Should().BeEquivalentTo(expectedDependency);
         }
     }
 }
