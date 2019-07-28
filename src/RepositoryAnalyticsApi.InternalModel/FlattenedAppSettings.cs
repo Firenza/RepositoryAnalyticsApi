@@ -9,10 +9,8 @@
         public int CachingDurationDependencyNameSearchResults { get; set; }
         public string GitHubV3ApiUrl { get; set; }
         public string GitHubGraphQlApiUrl { get; set; }
-        public string ElasticSearchUrl { get; set; }
         public string RedisConfiguration { get; set; }
         public string RedisInstanceName { get; set; }
-        public string DatabaseType { get; set; }
         public string DatabaseConnectionString { get; set; }
     }
 }
