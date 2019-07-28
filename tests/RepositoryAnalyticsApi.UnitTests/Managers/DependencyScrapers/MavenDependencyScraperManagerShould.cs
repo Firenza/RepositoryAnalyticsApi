@@ -108,5 +108,46 @@ namespace RepositoryAnalyticsApi.UnitTests
             dependencies.Should().Contain(dependency => dependency.Name == expectedDependency.Name);
             dependencies.First(dependency => dependency.Name == expectedDependency.Name).Should().BeEquivalentTo(expectedDependency);
         }
+
+        [TestMethod]
+        public async Task NotAddDuplicateDependency()
+        {
+            // Arrange
+            var owner = "bob";
+            var name = "someRepo";
+            var branch = "master";
+            var asOf = DateTime.Now;
+
+            var mavenFile = new ServiceModel.RepositoryFile
+            {
+                Name = "pom.xml",
+                FullPath = "/repo/src/pom.xml"
+            };
+
+            var mavenFileContent = await File.ReadAllTextAsync(@"Managers\DependencyScrapers\TestDependencyFiles\ValidMavenPom.xml");
+
+            this.mockRepositorySourceManger
+                .Setup(mock => mock.ReadFilesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime?>()))
+                .ReturnsAsync(new List<ServiceModel.RepositoryFile> { mavenFile });
+
+            this.mockRepositorySourceManger
+                .Setup(mock => mock.ReadFileContentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime?>()))
+                .ReturnsAsync(mavenFileContent);
+
+            var expectedDependency = new RepositoryDependency
+            {
+                Name = "junit",
+                Version = "4.8.2",
+                MajorVersion = "4",
+                RepoPath = mavenFile.FullPath,
+                Source = "Maven",
+            };
+
+            // Act
+            var dependencies = await this.manager.ReadAsync(owner, name, branch, asOf);
+
+            // Assert
+            dependencies.Should().ContainSingle(dependency => dependency.Name == expectedDependency.Name);
+        }
     }
 }

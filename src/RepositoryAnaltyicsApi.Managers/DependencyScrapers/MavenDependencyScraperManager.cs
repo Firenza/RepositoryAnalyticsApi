@@ -68,7 +68,6 @@ namespace RepositoryAnaltyicsApi.Managers.DependencyScrapers
                         {
                             var repositoryDependency = new RepositoryDependency();
 
-
                             repositoryDependency.Name = dependencyElement.Elements().First(element => element.Name.LocalName == "artifactId").Value;
                             repositoryDependency.Version = dependencyElement.Elements().First(element => element.Name.LocalName == "version").Value;
 
@@ -84,8 +83,13 @@ namespace RepositoryAnaltyicsApi.Managers.DependencyScrapers
                             repositoryDependency.RepoPath = mavenFile.FullPath;
                             repositoryDependency.Source = "Maven";
 
-
-                            dependencies.Add(repositoryDependency);
+                            if (!dependencies.Any(
+                                dependency => dependency.Name == repositoryDependency.Name && 
+                                dependency.Version == repositoryDependency.Version && 
+                                dependency.RepoPath == repositoryDependency.RepoPath))
+                            {
+                                dependencies.Add(repositoryDependency);
+                            }
                         }
                     }
                 }
