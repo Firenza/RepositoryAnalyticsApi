@@ -36,6 +36,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{9EA24C
 		Dockerfile = Dockerfile
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RepositoryAnalyticsApi.UnitTests", "..\tests\RepositoryAnalyticsApi.UnitTests\RepositoryAnalyticsApi.UnitTests.csproj", "{4230C365-0326-4F3C-9B3C-7AAF9C6605AD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +84,10 @@ Global
 		{F03864DC-6D83-4835-AC5F-193D7064FC24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F03864DC-6D83-4835-AC5F-193D7064FC24}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F03864DC-6D83-4835-AC5F-193D7064FC24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4230C365-0326-4F3C-9B3C-7AAF9C6605AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4230C365-0326-4F3C-9B3C-7AAF9C6605AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4230C365-0326-4F3C-9B3C-7AAF9C6605AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4230C365-0326-4F3C-9B3C-7AAF9C6605AD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

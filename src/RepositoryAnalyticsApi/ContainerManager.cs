@@ -10,6 +10,7 @@ using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnaltyicsApi.Managers;
 using RepositoryAnaltyicsApi.Managers.Dependencies;
+using RepositoryAnaltyicsApi.Managers.DependencyScrapers;
 using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.Extensions;
 using RepositoryAnalyticsApi.InternalModel.AppSettings;
@@ -182,7 +183,8 @@ namespace RepositoryAnalyticsApi
                 new BowerDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
                 new DotNetProjectFileDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
                 new NpmDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
-                new NuGetDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>())
+                new NuGetDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>()),
+                new MavenDependencyScraperManager(serviceProvider.GetService<IRepositorySourceManager>())
             });
         }
 
