@@ -82,9 +82,18 @@ namespace RepositoryAnaltyicsApi.Managers.DependencyScrapers
                             var repositoryDependency = new RepositoryDependency();
 
                             repositoryDependency.Name = dependencyElement.Elements().First(element => element.Name.LocalName == "artifactId").Value;
+
+                            var match = Regex.Match(repositoryDependency.Name, @"\${(.*)}");
+
+                            if (match.Success)
+                            {
+                                var propertyName = match.Groups[1].Value;
+                                repositoryDependency.Name = Regex.Replace(repositoryDependency.Name, @"\${.*}", propertiesNameToValueMap[propertyName]);
+                            }
+
                             repositoryDependency.Version = dependencyElement.Elements().First(element => element.Name.LocalName == "version").Value;
 
-                            var match = Regex.Match(repositoryDependency.Version, @"\${(.*)}");
+                            match = Regex.Match(repositoryDependency.Version, @"\${(.*)}");
 
                             if (match.Success)
                             {
