@@ -40,10 +40,6 @@ namespace RepositoryAnalyticsApi
                 {
                     ConnectionString = flattenedAppSettings.DatabaseConnectionString
                 },
-                ElasticSearch = new InternalModel.AppSettings.ElasticSearch
-                {
-                    Url = flattenedAppSettings.ElasticSearchUrl
-                },
                 GitHub = new InternalModel.AppSettings.GitHub
                 {
                     GraphQlApiUrl = flattenedAppSettings.GitHubGraphQlApiUrl,
