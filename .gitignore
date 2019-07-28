@@ -260,8 +260,11 @@ paket-files/
 __pycache__/
 *.pyc
 
-/src/RepositoryAnalyticsApi/configuration.env
-
+## Avoid comitting any plugin assemblies being used for testing
 /src/RepositoryAnalyticsApi/Plugins/
+
+# Avoid committing any sensitive development settings
+/src/RepositoryAnalyticsApi/appsettings.Development.json
+
 /src/Visual Studio 2017/Visualizers
 /src/RepositoryAnalyticsApi/Properties/PublishProfiles
