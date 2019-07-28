@@ -60,6 +60,19 @@ namespace RepositoryAnaltyicsApi.Managers.DependencyScrapers
                             {
                                 propertiesNameToValueMap.Add(propertyElement.Name.LocalName, propertyElement.Value);
                             }
+
+                            // Replace any property names in the property values
+                            foreach (var key in propertiesNameToValueMap.Keys.ToList())
+                            {
+                                var value = propertiesNameToValueMap[key];
+
+                                var match = Regex.Match(value, @"\${(.*)}");
+
+                                if (match.Success)
+                                {
+                                    propertiesNameToValueMap[key] = Regex.Replace(value, @"\${.*}", propertiesNameToValueMap[match.Groups[1].Value]);
+                                }
+                            }
                         }
 
                         var dependencyElements = xDoc.Descendants().Where(descendant => descendant.Name.LocalName == "dependency");
@@ -76,7 +89,7 @@ namespace RepositoryAnaltyicsApi.Managers.DependencyScrapers
                             if (match.Success)
                             {
                                 var propertyName = match.Groups[1].Value;
-                                repositoryDependency.Version = propertiesNameToValueMap[propertyName];
+                                repositoryDependency.Version = Regex.Replace(repositoryDependency.Version, @"\${.*}", propertiesNameToValueMap[propertyName]);
                             }
 
                             repositoryDependency.MajorVersion = Regex.Match(repositoryDependency.Version, @"\A\d+").Value;
