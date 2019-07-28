@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using Octokit;
 using RepositoryAnaltyicsApi.Interfaces;
 using RepositoryAnaltyicsApi.Managers;
-using RepositoryAnaltyicsApi.Managers.Dependencies;
 using RepositoryAnaltyicsApi.Managers.DependencyScrapers;
 using RepositoryAnalyticsApi.Extensibility;
 using RepositoryAnalyticsApi.Extensions;
