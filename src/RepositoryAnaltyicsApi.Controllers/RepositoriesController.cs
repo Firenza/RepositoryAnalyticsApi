@@ -17,7 +17,7 @@ namespace RepositoryAnaltyicsApi.Controllers
         private IRepositoryManager repositoryManager;
         // Get any non digit portion at the start of the version number.  If there is one assume it's a range
         // specifier like >=
-        private string rangeSpecifierRegex = @"^[^\w]+";
+        private string dependencyAndVersionRegex = @"(?<DependencyName>.*) (?<RangeSpecifier>>=|<=|<|>|=) (?<VersionNumber>.*)";
 
         public RepositoriesController(IRepositoryManager repositoryManager)
         {
@@ -37,13 +37,13 @@ namespace RepositoryAnaltyicsApi.Controllers
         ///     `.NET Framework`
         /// 2. A name and an exact version you want to match, with a `:` seperating the two
         ///
-        ///     `.NET Framework:4.6.2`
+        ///     `.NET Framework = 4.6.2`
         /// 3. A name and a partial version you want to match
         ///
-        ///     `.NET Framwork:4.6` will match versions `4.6.1`, `4.6.2`, etc.
+        ///     `.NET Framweork = 4.6` will match versions `4.6.1`, `4.6.2`, etc.
         /// 4. A name and a version with a range specifier (>, >=, etc)
         ///
-        ///    `.NET Framework:>=4` will match versions `4.x.x`, `5.x.x`, etc.
+        ///    `.NET Framework >= 4` will match versions `4.x.x`, `5.x.x`, etc.
         /// </remarks>
         /// <returns></returns>
         [HttpGet]
@@ -65,48 +65,38 @@ namespace RepositoryAnaltyicsApi.Controllers
             {
                 foreach (var dependency in dependencies)
                 {
-                    var dependencyParts = dependency.Split(':');
+                    var depenencyAndVersionMatch = Regex.Match(dependency, dependencyAndVersionRegex);
 
-                    var dependencyName = dependencyParts[0];
-                    string dependencyVersion = null;
-
-                    if (dependencyParts.Length == 2)
+                    if (!depenencyAndVersionMatch.Success)
                     {
-                        dependencyVersion = dependencyParts[1];
-                    }
-
-                    if (string.IsNullOrWhiteSpace(dependencyVersion))
-                    {
-                        parsedDependencies.Add((dependencyParts[0], null, RangeSpecifier.Unspecified));
+                        parsedDependencies.Add((dependency, null, RangeSpecifier.Unspecified));
                     }
                     else
                     {
                         var rangeSpecifier = RangeSpecifier.Unspecified;
 
-                        var match = Regex.Match(dependencyVersion, rangeSpecifierRegex);
-
-                        if (match.Success)
+                        // Match the range specifier to an enum value
+                        switch (depenencyAndVersionMatch.Groups["RangeSpecifier"].Value)
                         {
-                            switch (match.Value)
-                            {
-                                case ">=":
-                                    dependencyVersion = dependencyVersion.Replace(">=", "");
-                                    rangeSpecifier = RangeSpecifier.GreaterThanOrEqualTo;
-                                    break;
-                                case ">":
-                                    dependencyVersion = dependencyVersion.Replace(">", "");
-                                    rangeSpecifier = RangeSpecifier.GreaterThan;
-                                    break;
-                                case "<":
-                                    dependencyVersion = dependencyVersion.Replace("<", "");
-                                    rangeSpecifier = RangeSpecifier.LessThan;
-                                    break;
-                                case "<=":
-                                    dependencyVersion = dependencyVersion.Replace("<=", "");
-                                    rangeSpecifier = RangeSpecifier.LessThanOrEqualTo;
-                                    break;
-                            }
+                            case ">=":
+                                rangeSpecifier = RangeSpecifier.GreaterThanOrEqualTo;
+                                break;
+                            case ">":
+                                rangeSpecifier = RangeSpecifier.GreaterThan;
+                                break;
+                            case "<":
+                                rangeSpecifier = RangeSpecifier.LessThan;
+                                break;
+                            case "<=":
+                                rangeSpecifier = RangeSpecifier.LessThanOrEqualTo;
+                                break;
+                            case "=":
+                                rangeSpecifier = RangeSpecifier.EqualTo;
+                                break;
                         }
+
+                        var dependencyName = depenencyAndVersionMatch.Groups["DependencyName"].Value;
+                        var dependencyVersion = depenencyAndVersionMatch.Groups["VersionNumber"].Value;
 
                         parsedDependencies.Add((dependencyName, dependencyVersion, rangeSpecifier));
                     }
