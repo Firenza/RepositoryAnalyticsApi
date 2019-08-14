@@ -56,7 +56,8 @@ namespace RepositoryAnaltyicsApi.Controllers
             bool? hasContinuousDelivery,
             DateTime? asOf,
             string topic,
-            string team
+            string team,
+            string teamPermissions
         )
         {
             var parsedDependencies = new List<(string Name, string Version, RangeSpecifier RangeSpecifier)>();
@@ -111,7 +112,8 @@ namespace RepositoryAnaltyicsApi.Controllers
                 Dependencies = parsedDependencies,
                 AsOf = asOf,
                 Team = team,
-                Topic = topic
+                Topic = topic,
+                TeamPermissions = teamPermissions
             };
 
             var repositoryNames = await repositoryManager.SearchAsync(repositorySearch);

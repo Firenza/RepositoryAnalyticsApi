@@ -7,6 +7,7 @@ using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.Repositories
@@ -15,11 +16,13 @@ namespace RepositoryAnalyticsApi.Repositories
     {
         private RepositoryAnalysisContext repositoryAnalysisContext;
         private IMapper mapper;
+        private IVersionManager versionManager;
 
-        public RelationalRepositoryRepository(RepositoryAnalysisContext repositoryAnalysisContext, IMapper mapper)
+        public RelationalRepositoryRepository(RepositoryAnalysisContext repositoryAnalysisContext, IMapper mapper, IVersionManager versionManager)
         {
             this.repositoryAnalysisContext = repositoryAnalysisContext;
             this.mapper = mapper;
+            this.versionManager = versionManager;
         }
 
         public async Task<Repository> ReadAsync(string repositoryId, DateTime? asOf)
@@ -255,5 +258,95 @@ namespace RepositoryAnalyticsApi.Repositories
           //  return repositories;
         }
 
+        public async Task<List<string>> SearchAsync(RepositorySearch repositorySearch)
+        {
+            var query = @"
+            select rcs.name
+            from repository_current_state as rcs
+            join repository_team as rt
+              on rt.repository_current_state_id = rcs.repository_current_state_id
+            join repository_snapshot as rs
+              on rs.repository_current_state_id = rcs.repository_current_state_id
+            join repository_type_and_implementations as rti 
+              on rti.repository_snapshot_id = rs.repository_snapshot_id
+            join repository_implementation as ri 
+              on ri.repository_type_and_implementations_id = rti.repository_type_and_implementations_id
+            join repository_dependency as rd
+              on rd.repository_snapshot_id = rs.repository_snapshot_id
+            where 1=1
+            {{WHERE_CLAUSES}}
+            group by rcs.name
+            order by rcs.name
+            ";
+
+            var whereClausesStringBuilder = new StringBuilder();
+
+            if (!repositorySearch.AsOf.HasValue)
+            {
+                whereClausesStringBuilder.AppendLine("and rs.window_ends_on is null");
+            }
+
+            if (repositorySearch.HasContinuousDelivery.HasValue)
+            {
+                whereClausesStringBuilder.AppendLine($"and rcs.continuous_delivery = {repositorySearch.HasContinuousDelivery.ToString()}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(repositorySearch.Team))
+            {
+                whereClausesStringBuilder.AppendLine($"and rt.name = '{repositorySearch.Team}'");
+            }
+
+            if (!string.IsNullOrWhiteSpace(repositorySearch.TeamPermissions))
+            {
+                whereClausesStringBuilder.AppendLine($"and rt.permission = '{repositorySearch.TeamPermissions}'");
+            }
+
+            if (!string.IsNullOrWhiteSpace(repositorySearch.TypeName))
+            {
+                whereClausesStringBuilder.AppendLine($"and rti.type_name = '{repositorySearch.TypeName}'");
+            }
+
+            // For now just support one dependency filter
+            if (repositorySearch.Dependencies.Any())
+            {
+                whereClausesStringBuilder.AppendLine($"and rd.name = '{repositorySearch.Dependencies.First().Name}'");
+
+                if (!string.IsNullOrWhiteSpace(repositorySearch.Dependencies.First().Version))
+                {
+                    var paddedVersion = versionManager.GetPaddedVersion(repositorySearch.Dependencies.First().Version);
+
+                    var rangeSpecifierText = GetRangeSpecifierString(repositorySearch.Dependencies.First().RangeSpecifier);
+
+                    whereClausesStringBuilder.AppendLine($"and rd.padded_version {rangeSpecifierText} '{paddedVersion}'");
+                }
+            }
+
+            query = query.Replace("{{WHERE_CLAUSES}}", whereClausesStringBuilder.ToString());
+            
+            var dbConnection = repositoryAnalysisContext.Database.GetDbConnection();
+
+            var repositoryNames = await dbConnection.QueryAsync<string>(query);
+
+            return repositoryNames.AsList();
+
+            string GetRangeSpecifierString(RangeSpecifier rangeSpecifier)
+            {
+                switch (rangeSpecifier)
+                {
+                    case RangeSpecifier.GreaterThan:
+                        return ">";
+                    case RangeSpecifier.GreaterThanOrEqualTo:
+                        return ">=";
+                    case RangeSpecifier.LessThan:
+                        return "<";
+                    case RangeSpecifier.LessThanOrEqualTo:
+                        return "<=";
+                    case RangeSpecifier.EqualTo:
+                        return "=";
+                    default:
+                        return null;
+                }
+            }
+        }
     }
 }
