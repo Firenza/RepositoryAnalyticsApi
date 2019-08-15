@@ -273,6 +273,7 @@ namespace RepositoryAnalyticsApi.Repositories
               on ri.repository_type_and_implementations_id = rti.repository_type_and_implementations_id
             join repository_dependency as rd
               on rd.repository_snapshot_id = rs.repository_snapshot_id
+              {{DEPENDENCY_JOIN}}
             where 1=1
             {{WHERE_CLAUSES}}
             group by rcs.name
@@ -306,20 +307,7 @@ namespace RepositoryAnalyticsApi.Repositories
                 whereClausesStringBuilder.AppendLine($"and rti.type_name = '{repositorySearch.TypeName}'");
             }
 
-            // For now just support one dependency filter
-            if (repositorySearch.Dependencies.Any())
-            {
-                whereClausesStringBuilder.AppendLine($"and rd.name = '{repositorySearch.Dependencies.First().Name}'");
-
-                if (!string.IsNullOrWhiteSpace(repositorySearch.Dependencies.First().Version))
-                {
-                    var paddedVersion = versionManager.GetPaddedVersion(repositorySearch.Dependencies.First().Version);
-
-                    var rangeSpecifierText = GetRangeSpecifierString(repositorySearch.Dependencies.First().RangeSpecifier);
-
-                    whereClausesStringBuilder.AppendLine($"and rd.padded_version {rangeSpecifierText} '{paddedVersion}'");
-                }
-            }
+            query = query.Replace("{{DEPENDENCY_JOIN}}", BuildDependenciesJoin());
 
             query = query.Replace("{{WHERE_CLAUSES}}", whereClausesStringBuilder.ToString());
             
@@ -345,6 +333,48 @@ namespace RepositoryAnalyticsApi.Repositories
                         return "=";
                     default:
                         return null;
+                }
+            }
+
+            string BuildDependenciesJoin()
+            {
+                if (repositorySearch.Dependencies.Any())
+                {
+                    var depdendencyJoinStringBuilder = new StringBuilder();
+                    depdendencyJoinStringBuilder.AppendLine("and rd.repository_snapshot_id in (");
+
+                    var dependenciesAdded = 0;
+
+                    foreach (var dependency in repositorySearch.Dependencies)
+                    {
+                        if (dependenciesAdded > 0)
+                        {
+                            depdendencyJoinStringBuilder.AppendLine("intersect");
+                        }
+
+                        depdendencyJoinStringBuilder.AppendLine("select repository_snapshot_id");
+                        depdendencyJoinStringBuilder.AppendLine("from public.repository_dependency");
+                        depdendencyJoinStringBuilder.AppendLine($"where name ilike '{dependency.Name}'");
+
+                        if (!string.IsNullOrWhiteSpace(dependency.Version))
+                        {
+                            var paddedVersion = versionManager.GetPaddedVersion(dependency.Version);
+
+                            var rangeSpecifierText = GetRangeSpecifierString(dependency.RangeSpecifier);
+
+                            depdendencyJoinStringBuilder.AppendLine($"and padded_version {rangeSpecifierText} '{paddedVersion}'");
+                        }
+
+                        dependenciesAdded++;
+                    }
+
+                    depdendencyJoinStringBuilder.AppendLine(")");
+
+                    return depdendencyJoinStringBuilder.ToString();
+                }
+                else
+                {
+                    return string.Empty;
                 }
             }
         }
