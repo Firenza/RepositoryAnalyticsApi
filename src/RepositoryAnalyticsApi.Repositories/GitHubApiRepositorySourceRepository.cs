@@ -442,7 +442,7 @@ namespace RepositoryAnalyticsApi.Repositories
                 var allTeamsRepositoriesQuery = @"
                 query ($login: String!, $afterCursor: String) {
                   organization(login: $login) {
-                    teams(first:100, after: $afterCursor, orderBy:{field:NAME, direction:ASC}){
+                    teams(first:20, after: $afterCursor, orderBy:{field:NAME, direction:ASC}){
                       nodes{
                         name,
                         repositoryEdges: repositories(first:100){
