@@ -13,6 +13,7 @@ namespace RepositoryAnaltyicsApi.Managers
         private IRepositoryCurrentStateRepository repositoryCurrentStateRepository;
         private IRepositorySourceManager repositorySourceManager;
         private IRepositoryRepository repositoryRepository;
+        private IVersionManager versionManager;
 
         // private IRepositorySearchRepository repositorySearchRepository;
 
@@ -20,7 +21,8 @@ namespace RepositoryAnaltyicsApi.Managers
             IRepositorySnapshotRepository repositorySnapshotRepository,
             IRepositoryCurrentStateRepository repositoryCurrentStateRepository,
             IRepositorySourceManager repositorySourceManager,
-            IRepositoryRepository repositoryRepository
+            IRepositoryRepository repositoryRepository,
+            IVersionManager versionManager
             //IRepositorySearchRepository repositorySearchRepository
         )
         {
@@ -28,6 +30,7 @@ namespace RepositoryAnaltyicsApi.Managers
             this.repositoryCurrentStateRepository = repositoryCurrentStateRepository;
             this.repositorySourceManager = repositorySourceManager;
             this.repositoryRepository = repositoryRepository;
+            this.versionManager = versionManager;
            // this.repositorySearchRepository = repositorySearchRepository;
         }
 
@@ -132,8 +135,9 @@ namespace RepositoryAnaltyicsApi.Managers
 
         public async Task<List<string>> SearchAsync(RepositorySearch repositorySearch)
         {
-            throw new NotImplementedException();
-            //return await repositorySearchRepository.SearchAsync(repositorySearch).ConfigureAwait(false);
+            var repositoryNames = await repositoryRepository.SearchAsync(repositorySearch).ConfigureAwait(false);
+
+            return repositoryNames;
         }
     }
 }

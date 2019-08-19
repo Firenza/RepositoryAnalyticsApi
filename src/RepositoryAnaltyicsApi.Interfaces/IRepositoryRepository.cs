@@ -9,5 +9,6 @@ namespace RepositoryAnaltyicsApi.Interfaces
     {
         Task<List<Repository>> ReadMultipleAsync(DateTime? asOf, int? page, int? pageSize);
         Task<Repository> ReadAsync(string repositoryId, DateTime? asOf);
+        Task<List<string>> SearchAsync(RepositorySearch repositorySearch);
     }
 }

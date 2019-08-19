@@ -7,6 +7,7 @@ using RepositoryAnalyticsApi.ServiceModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace RepositoryAnalyticsApi.Repositories
@@ -15,11 +16,13 @@ namespace RepositoryAnalyticsApi.Repositories
     {
         private RepositoryAnalysisContext repositoryAnalysisContext;
         private IMapper mapper;
+        private IVersionManager versionManager;
 
-        public RelationalRepositoryRepository(RepositoryAnalysisContext repositoryAnalysisContext, IMapper mapper)
+        public RelationalRepositoryRepository(RepositoryAnalysisContext repositoryAnalysisContext, IMapper mapper, IVersionManager versionManager)
         {
             this.repositoryAnalysisContext = repositoryAnalysisContext;
             this.mapper = mapper;
+            this.versionManager = versionManager;
         }
 
         public async Task<Repository> ReadAsync(string repositoryId, DateTime? asOf)
@@ -56,80 +59,6 @@ namespace RepositoryAnalyticsApi.Repositories
             {
                 return null;
             }
-
-            //var dbConnection = repositoryAnalysisContext.Database.GetDbConnection();
-
-            //var dbrcss = new List<Model.EntityFramework.RepositoryCurrentState>();
-
-            //var respositoryDependencySearchResults = await dbConnection.QueryAsync<Model.EntityFramework.RepositoryCurrentState, Model.EntityFramework.RepositorySnapshot, Model.EntityFramework.RepositoryDependency, ServiceModel.Repository>(
-            //    @"select * 
-            //        from repository_current_state RCS
-            //        join repository_snapshot RS
-	           //         on RS.repository_current_state_id = RCS.repository_current_state_id
-            //        join repository_dependency RD
-	           //         on RD.repository_snapshot_id = RS.repository_snapshot_id
-            //        where RCS.repository_id = @RepositoryId",
-
-            //(rcs, rs, rd) =>
-            //{
-            //    var dbrcs = dbrcss.FirstOrDefault(dbrcsx => dbrcsx.RepositoryCurrentStateId == rcs.RepositoryCurrentStateId);
-
-            //    // First add the rcs
-            //    if (dbrcs == null)
-            //    {
-            //        dbrcss.Add(rcs);
-            //        dbrcs = rcs;
-            //    }
-
-            //    if(dbrcs.RepositorySnapshots == null)
-            //    {
-            //        dbrcs.RepositorySnapshots = new List<Model.EntityFramework.RepositorySnapshot>();
-            //    }
-
-            //    var rsnappp = dbrcs.RepositorySnapshots?.FirstOrDefault(rsnap => rsnap.RepositorySnapshotId == rsnap.RepositorySnapshotId);
-
-            //    if (rsnappp == null)
-            //    {
-            //        dbrcs.RepositorySnapshots.Add(rs);
-            //        rsnappp = rs;
-            //    }
-
-            //    if (rsnappp.Dependencies == null)
-            //    {
-            //        rsnappp.Dependencies = new List<Model.EntityFramework.RepositoryDependency>();
-            //    }
-
-            //    var dep = rsnappp.Dependencies.FirstOrDefault(xyz => xyz.RepositoryDependencyId == rd.RepositoryDependencyId);
-
-            //    if (dep == null)
-            //    {
-            //        rsnappp.Dependencies.Add(rd);
-            //        dep = rd;
-            //    }
-
-            //    return null;
-            //},
-            //new { RepositoryId = repositoryId },
-            //splitOn: "repository_snapshot_id, repository_dependency_id");
-
-            //var repositories = new List<ServiceModel.Repository>();
-
-            //foreach (var x in dbrcss)
-            //{
-            //    var repositorySnapshot = mapper.Map<ServiceModel.RepositorySnapshot>(x.RepositorySnapshots.FirstOrDefault());
-            //    var repositoryCurrentState = mapper.Map<ServiceModel.RepositoryCurrentState>(x);
-
-            //    var newR =  new Repository
-            //    {
-            //        CurrentState = repositoryCurrentState,
-            //        Snapshot = repositorySnapshot
-            //    };
-
-            //    repositories.Add(newR);
-            //}
-
-
-            //return repositories.FirstOrDefault();
         }
 
         public async Task<List<ServiceModel.Repository>> ReadMultipleAsync(DateTime? asOf, int? page, int? pageSize)
@@ -176,84 +105,127 @@ namespace RepositoryAnalyticsApi.Repositories
             }
 
             return repositories;
-
-          //  var dbrcss = new List<Model.EntityFramework.RepositoryCurrentState>();
-
-          //  var respositoryDependencySearchResults = await dbConnection.QueryAsync<Model.EntityFramework.RepositoryCurrentState, Model.EntityFramework.RepositorySnapshot, Model.EntityFramework.RepositoryDependency, ServiceModel.Repository>(
-          //      @"select * 
-          //          from repository_current_state RCS
-          //          join repository_snapshot RS
-	         //           on RS.repository_current_state_id = RCS.repository_current_state_id
-          //          join repository_dependency RD
-	         //           on RD.repository_snapshot_id = RS.repository_snapshot_id
-          //          where RCS.repository_current_state_id in (
-          //              select repository_current_state_id
-          //              from repository_current_state
-          //              limit @limit
-          //              offset @offset
-          //          )",
-
-          //  (rcs, rs, rd) =>
-          //  {
-          //      var dbrcs = dbrcss.FirstOrDefault(dbrcsx => dbrcsx.RepositoryCurrentStateId == rcs.RepositoryCurrentStateId);
-
-          //      // First add the rcs
-          //      if (dbrcs == null)
-          //      {
-          //          dbrcss.Add(rcs);
-          //          dbrcs = rcs;
-          //      }
-
-          //      if (dbrcs.RepositorySnapshots == null)
-          //      {
-          //          dbrcs.RepositorySnapshots = new List<Model.EntityFramework.RepositorySnapshot>();
-          //      }
-
-          //      var rsnappp = dbrcs.RepositorySnapshots?.FirstOrDefault(rsnap => rsnap.RepositorySnapshotId == rsnap.RepositorySnapshotId);
-
-          //      if (rsnappp == null)
-          //      {
-          //          dbrcs.RepositorySnapshots.Add(rs);
-          //          rsnappp = rs;
-          //      }
-
-          //      if (rsnappp.Dependencies == null)
-          //      {
-          //          rsnappp.Dependencies = new List<Model.EntityFramework.RepositoryDependency>();
-          //      }
-
-          //      var dep = rsnappp.Dependencies.FirstOrDefault(xyz => xyz.RepositoryDependencyId == rd.RepositoryDependencyId);
-
-          //      if (dep == null)
-          //      {
-          //          rsnappp.Dependencies.Add(rd);
-          //          dep = rd;
-          //      }
-
-          //      return null;
-          //  },
-          //  new { limit = pageSize.Value, offset = page.Value * pageSize.Value},
-          //  splitOn: "repository_snapshot_id, repository_dependency_id");
-
-          //  var repositories = new List<ServiceModel.Repository>();
-
-          //  foreach (var x in dbrcss)
-          //  {
-          //      var repositorySnapshot = mapper.Map<ServiceModel.RepositorySnapshot>(x.RepositorySnapshots.FirstOrDefault());
-          //      var repositoryCurrentState = mapper.Map<ServiceModel.RepositoryCurrentState>(x);
-
-          //      var newR = new Repository
-          //      {
-          //          CurrentState = repositoryCurrentState,
-          //          Snapshot = repositorySnapshot
-          //      };
-
-          //      repositories.Add(newR);
-          //  }
-
-
-          //  return repositories;
         }
 
+        public async Task<List<string>> SearchAsync(RepositorySearch repositorySearch)
+        {
+            var query = @"
+            select rcs.name
+            from repository_current_state as rcs
+            join repository_team as rt
+              on rt.repository_current_state_id = rcs.repository_current_state_id
+            join repository_snapshot as rs
+              on rs.repository_current_state_id = rcs.repository_current_state_id
+            join repository_type_and_implementations as rti 
+              on rti.repository_snapshot_id = rs.repository_snapshot_id
+            join repository_implementation as ri 
+              on ri.repository_type_and_implementations_id = rti.repository_type_and_implementations_id
+            join repository_dependency as rd
+              on rd.repository_snapshot_id = rs.repository_snapshot_id
+              {{DEPENDENCY_JOIN}}
+            where 1=1
+            {{WHERE_CLAUSES}}
+            group by rcs.name
+            order by rcs.name
+            ";
+
+            var whereClausesStringBuilder = new StringBuilder();
+
+            if (!repositorySearch.AsOf.HasValue)
+            {
+                whereClausesStringBuilder.AppendLine("and rs.window_ends_on is null");
+            }
+
+            if (repositorySearch.HasContinuousDelivery.HasValue)
+            {
+                whereClausesStringBuilder.AppendLine($"and rcs.continuous_delivery = {repositorySearch.HasContinuousDelivery.ToString()}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(repositorySearch.Team))
+            {
+                whereClausesStringBuilder.AppendLine($"and rt.name = '{repositorySearch.Team}'");
+            }
+
+            if (!string.IsNullOrWhiteSpace(repositorySearch.TeamPermissions))
+            {
+                whereClausesStringBuilder.AppendLine($"and rt.permission = '{repositorySearch.TeamPermissions}'");
+            }
+
+            if (!string.IsNullOrWhiteSpace(repositorySearch.TypeName))
+            {
+                whereClausesStringBuilder.AppendLine($"and rti.type_name = '{repositorySearch.TypeName}'");
+            }
+
+            query = query.Replace("{{DEPENDENCY_JOIN}}", BuildDependenciesJoin());
+
+            query = query.Replace("{{WHERE_CLAUSES}}", whereClausesStringBuilder.ToString());
+            
+            var dbConnection = repositoryAnalysisContext.Database.GetDbConnection();
+
+            var repositoryNames = await dbConnection.QueryAsync<string>(query);
+
+            return repositoryNames.AsList();
+
+            string GetRangeSpecifierString(RangeSpecifier rangeSpecifier)
+            {
+                switch (rangeSpecifier)
+                {
+                    case RangeSpecifier.GreaterThan:
+                        return ">";
+                    case RangeSpecifier.GreaterThanOrEqualTo:
+                        return ">=";
+                    case RangeSpecifier.LessThan:
+                        return "<";
+                    case RangeSpecifier.LessThanOrEqualTo:
+                        return "<=";
+                    case RangeSpecifier.EqualTo:
+                        return "=";
+                    default:
+                        return null;
+                }
+            }
+
+            string BuildDependenciesJoin()
+            {
+                if (repositorySearch.Dependencies.Any())
+                {
+                    var depdendencyJoinStringBuilder = new StringBuilder();
+                    depdendencyJoinStringBuilder.AppendLine("and rd.repository_snapshot_id in (");
+
+                    var dependenciesAdded = 0;
+
+                    foreach (var dependency in repositorySearch.Dependencies)
+                    {
+                        if (dependenciesAdded > 0)
+                        {
+                            depdendencyJoinStringBuilder.AppendLine("intersect");
+                        }
+
+                        depdendencyJoinStringBuilder.AppendLine("select repository_snapshot_id");
+                        depdendencyJoinStringBuilder.AppendLine("from public.repository_dependency");
+                        depdendencyJoinStringBuilder.AppendLine($"where name ilike '{dependency.Name}'");
+
+                        if (!string.IsNullOrWhiteSpace(dependency.Version))
+                        {
+                            var paddedVersion = versionManager.GetPaddedVersion(dependency.Version);
+
+                            var rangeSpecifierText = GetRangeSpecifierString(dependency.RangeSpecifier);
+
+                            depdendencyJoinStringBuilder.AppendLine($"and padded_version {rangeSpecifierText} '{paddedVersion}'");
+                        }
+
+                        dependenciesAdded++;
+                    }
+
+                    depdendencyJoinStringBuilder.AppendLine(")");
+
+                    return depdendencyJoinStringBuilder.ToString();
+                }
+                else
+                {
+                    return string.Empty;
+                }
+            }
+        }
     }
 }
