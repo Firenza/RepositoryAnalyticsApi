@@ -38,27 +38,27 @@ namespace RepositoryAnalyticsApi.Repositories.Model.EntityFramework
                 // when using PostgreSQL
 
                 // Replace table names
-                entityType.Relational().TableName = entityType.Relational().TableName.ToSnakeCase();
+                entityType.SetTableName(entityType.GetTableName().ToSnakeCase());
 
                 // Replace column names            
                 foreach (var property in entityType.GetProperties())
                 {
-                    property.Relational().ColumnName = property.Name.ToSnakeCase();
+                    property.SetColumnName(property.GetColumnName().ToSnakeCase());
                 }
 
                 foreach (var key in entityType.GetKeys())
                 {
-                    key.Relational().Name = key.Relational().Name.ToSnakeCase();
+                    key.SetName(key.GetName().ToSnakeCase());
                 }
 
                 foreach (var key in entityType.GetForeignKeys())
                 {
-                    key.Relational().Name = key.Relational().Name.ToSnakeCase();
+                    key.SetConstraintName(key.GetConstraintName().ToSnakeCase());
                 }
 
                 foreach (var index in entityType.GetIndexes())
                 {
-                    index.Relational().Name = index.Relational().Name.ToSnakeCase();
+                    index.SetName(index.GetName().ToSnakeCase());
                 }
             }
 
