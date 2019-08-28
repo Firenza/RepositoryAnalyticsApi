@@ -168,7 +168,7 @@ namespace RepositoryAnalyticsApi
             ));
             services.AddTransient<IRepositoryImplementationsManager, RepositoryImplementationsManager>();
             services.AddTransient<IRepositoryImplementationsRepository, PostgreSqlRepositoryImplementationRespository>();
-            services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
+            //services.AddTransient<IRepositoriesTypeNamesManager, RepositoriesTypeNamesManager>();
             //services.AddTransient<IRepositoriesTypeNamesRepository, MongoRepositoriesTypeNamesRepository>();
             //services.AddTransient<IRepositorySearchRepository, MongoRepositorySearchRepository>();
             services.AddTransient<IVersionManager, VersionManager>();
