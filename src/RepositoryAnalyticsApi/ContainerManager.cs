@@ -32,7 +32,7 @@ namespace RepositoryAnalyticsApi
     public static class ContainerManager
     {
 
-        public static void RegisterServices(IServiceCollection services, IConfiguration configuration, IHostingEnvironment env, Dependencies dependencies, Caching caching)
+        public static void RegisterServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env, Dependencies dependencies, Caching caching)
         {
             // Put caching config in container 
             //var caching = configuration.GetSection("Caching").Get<InternalModel.AppSettings.Caching>();

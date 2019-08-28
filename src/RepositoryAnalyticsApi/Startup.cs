@@ -16,11 +16,11 @@ namespace RepositoryAnalyticsApi
     {
         private const string appName = "Repo Analytics API";
         private const int appVersion = 1;
-        private IHostingEnvironment env;
+        private IWebHostEnvironment env;
         private IConfiguration configuration;
         readonly string CorsPolicy = "CorsPolicy";
 
-        public Startup(IHostingEnvironment env, IConfiguration configuration)
+        public Startup(IWebHostEnvironment env, IConfiguration configuration)
         {
             this.env = env;
             this.configuration = configuration;
@@ -101,7 +101,7 @@ namespace RepositoryAnalyticsApi
             ContainerManager.RegisterExtensions(services, configuration);
 
             services.AddMvc().AddJsonOptions(options =>
-                options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+                options.JsonSerializerOptions.IgnoreNullValues = true
             );
 
             services.AddDistributedRedisCache(options =>
@@ -122,10 +122,9 @@ namespace RepositoryAnalyticsApi
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-
-            if (env.IsDevelopment())
+            if (env.EnvironmentName == "development")
             {
                 app.UseDeveloperExceptionPage();
             }
