@@ -29,12 +29,20 @@ namespace RepositoryAnalyticsApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            Log.Logger = new LoggerConfiguration()
+                 .MinimumLevel.Debug()
+                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                 .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+                 .Enrich.FromLogContext()
+                 .WriteTo.Console()
+                 .CreateLogger();
+
             var flattenedAppSettings = new FlattenedAppSettings();
             configuration.Bind(flattenedAppSettings);
 
             // Map the flattened dependencies in to the structured ones until the whole "__" not working in docker
             // compose thing can be figured out
-            var dependencies = new InternalModel.AppSettings.Dependencies
+            var dependencySettings = new InternalModel.AppSettings.Dependencies
             {
                 Database = new InternalModel.AppSettings.Database
                 {
@@ -52,7 +60,9 @@ namespace RepositoryAnalyticsApi
                 }
             };
 
-            var caching = new InternalModel.AppSettings.Caching
+            Log.Logger.Information("Dependency Configuration = {@dependencySettings}", dependencySettings);
+
+            var cachingSettings = new InternalModel.AppSettings.Caching
             {
                 Durations = new InternalModel.AppSettings.CacheDurations
                 {
@@ -64,29 +74,14 @@ namespace RepositoryAnalyticsApi
                 }
             };
 
-            // Load config data 
-            //var dependencies = configuration.GetSection("Dependencies").Get<InternalModel.AppSettings.Dependencies>();
+            Log.Logger.Information("Caching Configuration = {@cachingSettings}", cachingSettings);
 
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-                .Enrich.FromLogContext()
-                .WriteTo.Console()
-                .CreateLogger();
-
-            //// Print out all config data
-            //foreach (var child in configuration.GetChildren())
-            //{
-            //    Log.Logger.Information($"{child.Path} ({child.Key}) = {child.Value ?? "(null)"}");
-            //}
-
-            if (dependencies == null)
+            if (dependencySettings == null)
             {
                 throw new ArgumentException("Unable to find Dependency configuration!!!");
             }
 
-            services.AddSingleton(typeof(InternalModel.AppSettings.Dependencies), dependencies);
+            services.AddSingleton(typeof(InternalModel.AppSettings.Dependencies), dependencySettings);
 
             services.AddCors(options =>
             {
@@ -97,7 +92,7 @@ namespace RepositoryAnalyticsApi
                 });
             });
 
-            ContainerManager.RegisterServices(services, configuration ,env, dependencies, caching);
+            ContainerManager.RegisterServices(services, configuration ,env, dependencySettings, cachingSettings);
             ContainerManager.RegisterExtensions(services, configuration);
 
             services.AddMvc().AddJsonOptions(options =>
@@ -106,8 +101,8 @@ namespace RepositoryAnalyticsApi
 
             services.AddDistributedRedisCache(options =>
             {
-                options.Configuration = dependencies.Redis.Configuration;
-                options.InstanceName = dependencies.Redis.InstanceName;
+                options.Configuration = dependencySettings.Redis.Configuration;
+                options.InstanceName = dependencySettings.Redis.InstanceName;
             });
 
             // Register the Swagger generator, defining one or more Swagger documents
