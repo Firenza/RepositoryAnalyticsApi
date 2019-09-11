@@ -52,8 +52,8 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 filesContentInformation = await repositorySourceRepository.GetMultipleFileContentsAsync(repositoryOwner, repositoryName, gitRef, fullFilePaths).ConfigureAwait(false);
 
-                // The depenency containing files should probably never be empty, so log a warning if they are so these
-                // cases can be manually examimed after the fact
+                // The dependency containing files should probably never be empty, so log a warning if they are so these
+                // cases can be manually examined after the fact
                 var filesWithNoContent = filesContentInformation.Where(tuple => string.IsNullOrWhiteSpace(tuple.fileContent));
 
                 if (filesWithNoContent != null || filesWithNoContent.Any())
@@ -66,7 +66,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
-                    SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
                 await distributedCache.SetAsync(multipleFileContentsCacheKey, filesContentInformation, cacheOptions).ConfigureAwait(false);
@@ -79,7 +79,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
-                    SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
                 // For whatever reason the current call to get repo file content sometimes returns null even when the file has content
@@ -113,7 +113,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
-                    SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
                 await distributedCache.SetStringAsync(cacheKey, fileContent, cacheOptions).ConfigureAwait(false);
@@ -144,10 +144,10 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
-                    SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
-                await distributedCache.SetAsync(cacheKey, repositoryFiles).ConfigureAwait(false);
+                await distributedCache.SetAsync(cacheKey, repositoryFiles, cacheOptions).ConfigureAwait(false);
             }
 
             return repositoryFiles;
@@ -191,7 +191,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
-                        SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                     };
 
                     await distributedCache.SetAsync(cacheKey, repositorySummary, cacheOptions).ConfigureAwait(false);
@@ -209,7 +209,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
-                        SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                     };
 
                     await distributedCache.SetAsync(cacheKey, repositorySummary, cacheOptions).ConfigureAwait(false);
@@ -239,7 +239,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
-                        SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                     };
 
                     await distributedCache.SetAsync(cacheKey, repositorySourceSnapshot, cacheOptions).ConfigureAwait(false);
@@ -257,7 +257,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
-                        SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                     };
 
                     await distributedCache.SetAsync(cacheKey, repositorySourceSnapshot, cacheOptions).ConfigureAwait(false);
@@ -289,7 +289,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
-                    SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.RepositoryData)
                 };
 
                 await distributedCache.SetAsync(cacheKey, repository, cacheOptions).ConfigureAwait(false);
@@ -312,7 +312,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
-                        SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.OrganizationTeams)
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.OrganizationTeams)
                     };
 
                     await distributedCache.SetAsync(orgTeamsCacheKey, teamToRepositoriesMap, cacheOptions).ConfigureAwait(false);
@@ -354,7 +354,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
-                    SlidingExpiration = TimeSpan.FromSeconds(cachingSettings.Durations.OwnerType)
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cachingSettings.Durations.OwnerType)
                 };
 
                 await distributedCache.SetAsync(cacheKey, ownerType, cacheOptions).ConfigureAwait(false);
