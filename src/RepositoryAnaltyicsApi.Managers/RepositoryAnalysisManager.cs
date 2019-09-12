@@ -311,6 +311,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 try
                 {
+                    logger.LogDebug($"Running Type and Implementation Deriver {typeAndImplementationDeriver.GetType().Name}");
                     typeAndImplementationInfo = await typeAndImplementationDeriver.DeriveImplementationAsync(repositoryName);
                 }
                 catch (Exception ex)
@@ -320,6 +321,7 @@ namespace RepositoryAnaltyicsApi.Managers
 
                 if (typeAndImplementationInfo != null)
                 {
+                    logger.LogDebug($"Match found for Type and Implementation Deriver {typeAndImplementationDeriver.GetType().Name}");
                     typesAndImplementations.Add(typeAndImplementationInfo);
                 }
             }
