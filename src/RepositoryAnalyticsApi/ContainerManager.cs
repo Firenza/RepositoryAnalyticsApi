@@ -276,9 +276,12 @@ namespace RepositoryAnalyticsApi
                 typeAndImplementationDerivers.Add(internalTypeAndImplementationDeriver);
             }
 
-            typeAndImplementationDerivers.AddRange(externalTypeAndImplementationDerivers);
+            if (externalTypeAndImplementationDerivers != null)
+            {
+                typeAndImplementationDerivers.AddRange(externalTypeAndImplementationDerivers);
+            }
 
-            // Now add all the derivesr to the container
+            // Now add all the derivers to the container
             services.AddTransient((serviceProvider) => typeAndImplementationDerivers.AsEnumerable());
 
             if (devOpsIntegrationDeriver != null)
